@@ -8,8 +8,6 @@ services:
       POSTGRES_DB: flight_management
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,8 +21,6 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: flight_management_backend
-    ports:
-      - "5001:5001"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -47,7 +43,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5001/api/welcome
+      - NEXT_PUBLIC_API_URL=/api
+      - INTERNAL_API_URL=http://backend:5001
     depends_on:
       - backend
     volumes:
@@ -57,3 +54,4 @@ services:
 
 volumes:
   postgres_data:
+

@@ -17,8 +17,9 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
         const response = await axios.get<WelcomeData>(
-          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/welcome'
+          `${apiUrl}/welcome`
         );
         setData(response.data);
       } catch (err) {
