@@ -21,6 +21,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: flight_management_backend
+    ports: 
+      - "5001:5001"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
