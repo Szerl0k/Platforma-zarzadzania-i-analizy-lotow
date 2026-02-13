@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:16-alpine
+    build:
+      context: ./database
     container_name: flight_management_db
     environment:
       POSTGRES_DB: flight_management
