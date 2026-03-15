@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  smoke-test:
+  smoke-tests:
     runs-on: ubuntu-22.04
 
     steps:
@@ -25,11 +25,18 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
-      - name: Run Active Probing script
+      - name: Run AeroAPI smoke test
         working-directory: ./backend
         env:
           AEROAPI_SMOKE_TEST_KEY: ${{ secrets.AEROAPI_SMOKE_TEST_KEY }}
         run: npx ts-node scripts/smoke-test-aeroapi.ts
+
+      - name: Run OpenSky Network API smoke test
+        working-directory: ./backend
+        env:
+          OPENSKY_CLIENT_ID_SMOKE_TEST: ${{ secrets.OPENSKY_CLIENT_ID_SMOKE_TEST}}
+          OPENSKY_CLIENT_SECRET_SMOKE_TEST: ${{ secrets.OPENSKY_CLIENT_SECRET_SMOKE_TEST}}
+        run: npx ts-node scripts/smoke-test-opensky.ts
 
       - name: Failure notification
         if: failure()

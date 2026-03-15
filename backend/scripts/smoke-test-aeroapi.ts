@@ -35,7 +35,7 @@ async function runSmokeTest() : Promise<void> {
         console.log(`Smoke test successful. Duration: ${duration}ms`);
         process.exit(0);
     } catch (error: unknown) {
-        console.error('CRITICAL: Smoke test failed');
+        console.error('CRITICAL: AeroAPI Smoke test failed');
 
         if (axios.isAxiosError(error)) {
             console.error(`Status: ${error.response?.status} | Message: ${error.message}`);
