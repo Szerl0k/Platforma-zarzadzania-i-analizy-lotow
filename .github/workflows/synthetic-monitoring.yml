@@ -28,7 +28,7 @@ jobs:
       - name: Run Active Probing script
         working-directory: ./backend
         env:
-          AEROAPI_KEY: ${{ secrets.AEROAPI_KEY }}
+          AEROAPI_KEY: ${{ secrets.AEROAPI_SMOKE_TEST_KEY }}
         run: npx ts-node scripts/smoke-test-aeroapi.ts
 
       - name: Failure notification

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 async function runSmokeTest() : Promise<void> {
-    const apiKey = process.env.AEROAPI_KEY;
+    const apiKey = process.env.AEROAPI_SMOKE_TEST_KEY;
     const apiUrl = 'https://aeroapi.flightaware.com/aeroapi/airports/EPWA';
 
     if (!apiKey) {
