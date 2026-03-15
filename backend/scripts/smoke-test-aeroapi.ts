@@ -5,7 +5,7 @@ async function runSmokeTest() : Promise<void> {
     const apiUrl = 'https://aeroapi.flightaware.com/aeroapi/airports/EPWA';
 
     if (!apiKey) {
-        console.error('CRITICAL: AEROAPI_KEY environment variable is missing')
+        console.error('CRITICAL: AEROAPI_SMOKE_TEST_KEY environment variable is missing')
         process.exit(1);
     }
 
