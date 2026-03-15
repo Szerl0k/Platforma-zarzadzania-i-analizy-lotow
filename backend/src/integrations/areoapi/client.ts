@@ -5,11 +5,11 @@ import {
     AeroAPIQueryParams,
     AeroAPIAirportFlightParams,
     AeroAPIAirportInfo,
-    AeroAPIFlight,
-    AeroAPIFlightsResponse,
+    AeroAPIFlightDetails,
+    AeroAPIStandardFlightsResponse,
     AeroAPILocation,
     AeroAPIRoute,
-    AeroAPIRoutesResponse
+    AeroAPIRoutesResponse, AeroAPIFlightsBetweenParams, AeroAPISegmentedFlightsResponse
 } from './types'
 
 export class AeroAPIClient {
@@ -45,29 +45,33 @@ export class AeroAPIClient {
     private handleAxiosError(error: unknown, customMessage: string): never {
         if (axios.isAxiosError(error)) {
             const statusCode = error.response?.status || 'Unknown Status';
-            const responseData = JSON.stringify(error.response?.data || {});
+            const responseData = JSON.stringify(error.response?.data || {}, null, 2);
             throw new Error(`${customMessage} | Status: ${statusCode} | Details: ${responseData} | Message: ${error.message}`);
         }
         throw new Error(`${customMessage} | Unexpected error: ${String(error)}`)
     }
 
-    public async getFlightInfo(ident: string, params?: AeroAPIQueryParams) : Promise<AeroAPIFlightsResponse> {
-        return this.request<AeroAPIFlightsResponse>(`/flights/${ident}`, params);
+    public async getFlightInfo(ident: string, params?: AeroAPIQueryParams) : Promise<AeroAPIStandardFlightsResponse> {
+        return this.request<AeroAPIStandardFlightsResponse>(`/flights/${ident}`, params);
     }
 
-    public async getAllAirportFlights(airportId: string, params?: AeroAPIAirportFlightParams) : Promise<AeroAPIFlightsResponse> {
-        return this.request<AeroAPIFlightsResponse>(`/airports/${airportId}/flights/`, params)
+    public async getAllAirportFlights(airportId: string, params?: AeroAPIAirportFlightParams) : Promise<AeroAPIStandardFlightsResponse> {
+        return this.request<AeroAPIStandardFlightsResponse>(`/airports/${airportId}/flights`, params)
     }
 
-    public async getAirportArrivals(airportId: string, params?: AeroAPIAirportFlightParams) : Promise<AeroAPIFlightsResponse> {
-        return this.request<AeroAPIFlightsResponse>(`/airports/${airportId}/flights/arrivals`, params)
+    public async getAirportArrivals(airportId: string, params?: AeroAPIAirportFlightParams) : Promise<AeroAPIStandardFlightsResponse> {
+        return this.request<AeroAPIStandardFlightsResponse>(`/airports/${airportId}/flights/arrivals`, params)
     }
-    public async getAirportDepartures(airportId: string, params?: AeroAPIAirportFlightParams) : Promise<AeroAPIFlightsResponse> {
-        return this.request<AeroAPIFlightsResponse>(`/airports/${airportId}/flights/departures`, params)
+    public async getAirportDepartures(airportId: string, params?: AeroAPIAirportFlightParams) : Promise<AeroAPIStandardFlightsResponse> {
+        return this.request<AeroAPIStandardFlightsResponse>(`/airports/${airportId}/flights/departures`, params)
     }
 
-    public async getFlightsBetween(origin: string, destination: string, params?: AeroAPIQueryParams) : Promise<AeroAPIFlightsResponse> {
-        return this.request<AeroAPIFlightsResponse>(`/flights/search/origin/${origin}/destination/${destination}`, params)
+    public async getFlightsBetween(
+        origin: string,
+        destination: string,
+        params?: AeroAPIFlightsBetweenParams
+    ) : Promise<AeroAPISegmentedFlightsResponse> {
+        return this.request<AeroAPISegmentedFlightsResponse>(`/airports/${origin}/flights/to/${destination}`, params)
     }
 
     public async getRoutesBetweenTwoAirports(origin: string, destination: string, params?: AeroAPIQueryParams) : Promise<AeroAPIRoutesResponse> {

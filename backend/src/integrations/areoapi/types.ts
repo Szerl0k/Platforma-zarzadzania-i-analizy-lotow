@@ -10,7 +10,12 @@ export interface AeroAPIAirportFlightParams extends AeroAPIQueryParams {
     airline?: string;
 }
 
-export interface AeroAPIFlight {
+export interface AeroAPIFlightsBetweenParams extends AeroAPIQueryParams {
+    type?: 'Airline';
+    connection?: 'nonstop' | 'onestop';
+}
+
+export interface AeroAPIFlightDetails {
     ident: string;
     ident_icao: string;
     ident_iata: string;
@@ -89,8 +94,16 @@ export interface AeroAPIPaginatedResponse {
     num_pages?: number;
 }
 
-export interface AeroAPIFlightsResponse extends AeroAPIPaginatedResponse {
-    flights: AeroAPIFlight[];
+export interface AeroAPIStandardFlightsResponse extends AeroAPIPaginatedResponse {
+    flights: AeroAPIFlightDetails[];
+}
+
+export interface AeroAPISegmentedFlight {
+    segments: AeroAPIFlightDetails[];
+}
+
+export interface AeroAPISegmentedFlightsResponse extends AeroAPIPaginatedResponse {
+    flights: AeroAPISegmentedFlight[];
 }
 
 export interface AeroAPIRoutesResponse extends AeroAPIPaginatedResponse {

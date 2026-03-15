@@ -1,0 +1,36 @@
+name: AeroAPI Synthetic Monitoring
+
+on:
+  schedule:
+    # Runs at 08:00 and 20:00 CET
+    - cron: '0 7,19 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Download repo
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run Active Probing script
+        working-directory: ./backend
+        env:
+          AEROAPI_KEY: ${{ secrets.AEROAPI_KEY }}
+        run: npx ts-node scripts/smoke-test-aeroapi.ts
+
+      - name: Failure notification
+        if: failure()
+        run: echo "AeroAPI smoke test failed"
