@@ -1,5 +1,12 @@
 import axios, {AxiosInstance} from 'axios';
-import {AircraftTimeWindow, BoundingBox, FlightTimeWindow, OpenSkyFlight, OpenSkyStateVectorsResponse} from './types';
+import {
+    AircraftTimeWindow,
+    BoundingBox,
+    FlightTimeWindow,
+    OpenSkyFlight,
+    OpenSkyStateVectorsResponse,
+    OpenSkyTrackResponse
+} from './types';
 
 
 export class OpenSkyClient {
@@ -133,5 +140,12 @@ export class OpenSkyClient {
             begin: params.begin,
             end: params.end
         });
+    }
+
+    public async getFlightTrajectory(icao24: string, time: number) : Promise<OpenSkyTrackResponse> {
+        return this.request<OpenSkyTrackResponse>('/tracks', {
+            icao24: icao24.toLowerCase(),
+            time: time
+        })
     }
 }

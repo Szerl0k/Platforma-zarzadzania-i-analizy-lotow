@@ -38,9 +38,25 @@ export type StateVectorTuple = [
     number              // 17: category (int 0 to 20)
 ]
 
+export type TrackPathTuple = [
+    number,             // 0: time
+    number | null,      // 1: latitude
+    number | null,      // 2: longitude
+    number | null,      // 3: baro_altitude
+    number | null,      // 4: true_track
+    boolean             // 5: on_ground
+]
 export interface OpenSkyStateVectorsResponse {
     time: number;
     states: StateVectorTuple[] | null;
+}
+
+export interface OpenSkyTrackResponse {
+    icao24: string;
+    callsign: string | null;
+    startTime: number;
+    endTime: number;
+    path: TrackPathTuple[];
 }
 
 export interface OpenSkyFlight {

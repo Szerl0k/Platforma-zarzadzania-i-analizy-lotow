@@ -7,4 +7,4 @@ ENV POSTGRES_PASSWORD=postgres
 
 EXPOSE 5432
 
-COPY init.sql /docker-entrypoint-initdb.d/10-init.sql
+#COPY init.sql /docker-entrypoint-initdb.d/10-init.sql

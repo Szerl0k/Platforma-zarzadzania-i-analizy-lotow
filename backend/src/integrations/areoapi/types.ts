@@ -15,6 +15,13 @@ export interface AeroAPIFlightsBetweenParams extends AeroAPIQueryParams {
     connection?: 'nonstop' | 'onestop';
 }
 
+export interface AeroAPISchedulesParams extends AeroAPIQueryParams {
+    origin?: string;
+    destination?: string;
+    airline?: string;
+    flight_number?: string;
+}
+
 export interface AeroAPIFlightDetails {
     ident: string;
     ident_icao: string;
@@ -79,12 +86,24 @@ export interface AeroAPIAirportInfo {
     wiki_url?: string;
 }
 
-export interface AeroAPIRoute {
-    route: string;
-    count: number;
-    filed_altitude_min: number;
-    filed_altitude_max: number;
-    last_departure_time: string;
+export interface AeroAPISchedule {
+    ident: string;
+    ident_icao?: string;
+    ident_iata?: string;
+    fa_flight_id?: string;
+    operator?: string;
+    operator_icao?: string;
+    operator_iata?: string;
+    flight_number?: string;
+    origin?: AeroAPILocation;
+    destination?: AeroAPILocation;
+    scheduled_out: string;
+    scheduled_in: string;
+    aircraft_type?: string;
+    route_distance?: number;
+    seats_cabin_business?: number;
+    seats_cabin_coach?: number;
+    seats_cabin_first?: number;
 }
 
 export interface AeroAPIPaginatedResponse {
@@ -106,6 +125,6 @@ export interface AeroAPISegmentedFlightsResponse extends AeroAPIPaginatedRespons
     flights: AeroAPISegmentedFlight[];
 }
 
-export interface AeroAPIRoutesResponse extends AeroAPIPaginatedResponse {
-    routes: AeroAPIRoute[];
+export interface AeroAPISchedulesResponse extends AeroAPIPaginatedResponse {
+    schedules: AeroAPISchedule[];
 }

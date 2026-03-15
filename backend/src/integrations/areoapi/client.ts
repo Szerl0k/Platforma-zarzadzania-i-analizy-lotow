@@ -8,8 +8,7 @@ import {
     AeroAPIFlightDetails,
     AeroAPIStandardFlightsResponse,
     AeroAPILocation,
-    AeroAPIRoute,
-    AeroAPIRoutesResponse, AeroAPIFlightsBetweenParams, AeroAPISegmentedFlightsResponse
+    AeroAPIFlightsBetweenParams, AeroAPISegmentedFlightsResponse, AeroAPISchedulesParams, AeroAPISchedulesResponse
 } from './types'
 
 export class AeroAPIClient {
@@ -74,11 +73,16 @@ export class AeroAPIClient {
         return this.request<AeroAPISegmentedFlightsResponse>(`/airports/${origin}/flights/to/${destination}`, params)
     }
 
-    public async getRoutesBetweenTwoAirports(origin: string, destination: string, params?: AeroAPIQueryParams) : Promise<AeroAPIRoutesResponse> {
-        return this.request<AeroAPIRoutesResponse>(`/airports/${origin}/routes/${destination}`, params)
-    }
-
     public async getAirportInfo(airportId: string) : Promise<AeroAPIAirportInfo> {
         return this.request<AeroAPIAirportInfo>(`/airports/${airportId}`);
     }
+
+    public async getScheduledFlights(
+        dateStart: string,
+        dateEnd: string,
+        params?: AeroAPISchedulesParams
+    ) : Promise<AeroAPISchedulesResponse> {
+        return this.request<AeroAPISchedulesResponse>(`/schedules/${dateStart}/${dateEnd}`, params);
+    }
+
 }
