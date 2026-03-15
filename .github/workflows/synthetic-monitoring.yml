@@ -1,4 +1,4 @@
-name: AeroAPI Synthetic Monitoring
+name: Synthetic Monitoring
 
 on:
   schedule:
