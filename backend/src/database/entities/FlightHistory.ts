@@ -22,7 +22,6 @@ export class FlightHistory {
     @Column({ type: 'varchar', length: 20, nullable: true, name: 'booking_reference' })
     bookingReference!: string | null;
 
-    // 1=Economy, 2=Premium Economy, 3=Business, 4=First
     @Column({ type: 'int', nullable: true, name: 'cabin_class' })
     cabinClass!: number | null;
 
