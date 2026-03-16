@@ -1,7 +1,14 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { AppDataSource } from './database/data-source';
+import { authenticate, authorize } from './middleware/auth';
+import { errorHandler } from './middleware/errorHandler';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import preferencesRoutes from './routes/preferences';
+import roleRoutes from './routes/roles';
+import permissionRoutes from './routes/permissions';
 
 dotenv.config();
 
@@ -11,39 +18,31 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'postgres',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'flight_management',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+app.get('/api/health', (_req, res) => {
+    res.json({ status: 'OK', message: 'Backend is running' });
 });
 
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('Database connection error:', err);
-  } else {
-    console.log('Database connected successfully:', res.rows[0]);
-  }
-});
+// Public routes
+app.use('/api/auth', authRoutes);
 
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'OK', message: 'Backend is running' });
-});
+// Protected routes
+app.use('/api/users/me/preferences', authenticate, preferencesRoutes);
+app.use('/api/users', authenticate, userRoutes);
 
-app.get('/api/welcome', async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query('SELECT version()');
-    res.json({
-      message: 'Witaj w Platformie zarządzania i analizy lotów!',
-      database: 'PostgreSQL connected',
-      version: result.rows[0].version
+// Admin routes
+app.use('/api/roles', authenticate, authorize('users:write'), roleRoutes);
+app.use('/api/permissions', authenticate, authorize('users:write'), permissionRoutes);
+
+app.use(errorHandler);
+
+AppDataSource.initialize()
+    .then(() => {
+        console.log('Database connected successfully via TypeORM');
+        app.listen(port, () => {
+            console.log(`Backend server running on port ${port}`);
+        });
+    })
+    .catch((err) => {
+        console.error('Database connection error:', err);
+        process.exit(1);
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Database error' });
-  }
-});
-
-app.listen(port, () => {
-  console.log(`Backend server running on port ${port}`);
-});

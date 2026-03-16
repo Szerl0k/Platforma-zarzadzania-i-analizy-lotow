@@ -9,6 +9,11 @@ import {FlightStatus} from "./entities/FlightStatus";
 import {Flight} from "./entities/Flight";
 import {FlightCodeshare} from "./entities/FlightCodeshare";
 import {FlightTelemetry} from "./entities/FlightTelemetry";
+import {Role} from "./entities/Role";
+import {Permission} from "./entities/Permission";
+import {RolePermission} from "./entities/RolePermission";
+import {User} from "./entities/User";
+import {UserPreferences} from "./entities/UserPreferences";
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -27,7 +32,12 @@ export const AppDataSource = new DataSource({
         FlightStatus,
         Flight,
         FlightCodeshare,
-        FlightTelemetry
+        FlightTelemetry,
+        Role,
+        Permission,
+        RolePermission,
+        User,
+        UserPreferences
     ],
     migrations: ['src/database/migrations/**/*.ts'],
     subscribers: [],

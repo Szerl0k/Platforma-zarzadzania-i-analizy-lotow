@@ -33,6 +33,8 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - PORT=5001
+      - JWT_SECRET=flight-mgmt-jwt-secret-change-in-production
+      - JWT_EXPIRES_IN=7d
     depends_on:
       postgres:
         condition: service_healthy
