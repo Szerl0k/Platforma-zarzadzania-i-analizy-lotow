@@ -14,6 +14,15 @@ import {Permission} from "./entities/Permission";
 import {RolePermission} from "./entities/RolePermission";
 import {User} from "./entities/User";
 import {UserPreferences} from "./entities/UserPreferences";
+import {FlightHistory} from "./entities/FlightHistory";
+import {FavouriteDestination} from "./entities/FavouriteDestination";
+import {SimulationStatus} from "./entities/SimulationStatus";
+import {CustomFlightSimulation} from "./entities/CustomFlightSimulation";
+import {TrackingStatus} from "./entities/TrackingStatus";
+import {TrackingSource} from "./entities/TrackingSource";
+import {TrackedFlight} from "./entities/TrackedFlight";
+import {FlightChangeType} from "./entities/FlightChangeType";
+import {FlightStatusChange} from "./entities/FlightStatusChange";
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -37,7 +46,16 @@ export const AppDataSource = new DataSource({
         Permission,
         RolePermission,
         User,
-        UserPreferences
+        UserPreferences,
+        FlightHistory,
+        FavouriteDestination,
+        SimulationStatus,
+        CustomFlightSimulation,
+        TrackingStatus,
+        TrackingSource,
+        TrackedFlight,
+        FlightChangeType,
+        FlightStatusChange,
     ],
     migrations: ['src/database/migrations/**/*.ts'],
     subscribers: [],
