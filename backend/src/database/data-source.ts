@@ -15,6 +15,7 @@ import {RolePermission} from "./entities/RolePermission";
 import {User} from "./entities/User";
 import {UserPreferences} from "./entities/UserPreferences";
 import {FlightHistory} from "./entities/FlightHistory";
+import {FavouriteDestination} from "./entities/FavouriteDestination";
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -40,6 +41,7 @@ export const AppDataSource = new DataSource({
         User,
         UserPreferences,
         FlightHistory,
+        FavouriteDestination,
     ],
     migrations: ['src/database/migrations/**/*.ts'],
     subscribers: [],
