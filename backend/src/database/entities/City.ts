@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index} from 'typeorm';
 import {Country} from './Country'
 import {Airport} from './Airport'
 
@@ -8,6 +8,7 @@ export class City {
     @PrimaryGeneratedColumn('increment')
     id!: number;
 
+    @Index()
     @Column({ type: 'varchar', length: 2, name: 'country_code'})
     countryCode!: string;
 

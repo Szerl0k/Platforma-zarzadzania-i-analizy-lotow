@@ -22,93 +22,116 @@ export interface AeroAPISchedulesParams extends AeroAPIQueryParams {
     flight_number?: string;
 }
 
+export interface AeroAPIAirportRef {
+    code: string;
+    code_icao: string | null;
+    code_iata: string | null;
+    code_lid: string | null;
+    timezone: string | null;
+    name: string | null;
+    city: string | null;
+    airport_info_url: string | null;
+}
 export interface AeroAPIFlightDetails {
     ident: string;
-    ident_icao: string;
-    ident_iata: string;
-    actual_ident?: string;
-    actual_ident_icao?: string;
-    actual_ident_iata?: string;
+    ident_icao: string | null;
+    ident_iata: string | null;
     fa_flight_id: string;
-    operator?: string;
-    operator_icao?: string;
-    operator_iata?: string;
-    flight_number?: string;
-    registration?: string;
-    origin?: AeroAPILocation;
-    destination?: AeroAPILocation;
-    departure_delay?: number;
-    arrival_delay?: number;
-    scheduled_out?: string;
-    estimated_out?: string;
-    actual_out?: string;
-    scheduled_off?: string;
-    estimated_off?: string;
-    actual_off?: string;
-    scheduled_on?: string;
-    estimated_on?: string;
-    actual_on?: string;
-    scheduled_in?: string;
-    estimated_in?: string;
-    actual_in?: string;
-    progress_percent?: number;
+    operator: string | null;
+    operator_icao: string | null;
+    operator_iata: string | null;
+    flight_number: string | null;
+    registration: string | null;
+    atc_ident: string | null;
+    inbound_fa_flight_id: string | null;
+    codeshares: string[] | null;
+    codeshares_iata: string[] | null;
+    blocked: boolean;
+    diverted: boolean;
+    cancelled: boolean;
+    position_only: boolean;
+    origin: AeroAPIAirportRef | null;
+    destination: AeroAPIAirportRef | null;
+    departure_delay: number | null;
+    arrival_delay: number | null;
+    filed_ete: number | null;
+    progress_percent: number | null;
     status: string;
-    aircraft_type?: string;
-    route_distance?: number;
-    gate_origin?: string;
-    gate_destination?: string;
-    terminal_origin?: string;
-    terminal_destination?: string;
+    aircraft_type: string | null;
+    route_distance: number | null;
+    filed_airspeed: number | null;
+    filed_altitude: number | null;
+    route: string | null;
+    baggage_claim: string | null;
+    seats_cabin_business: number | null;
+    seats_cabin_coach: number | null;
+    seats_cabin_first: number | null;
+    gate_origin: string | null;
+    gate_destination: string | null;
+    terminal_origin: string | null;
+    terminal_destination: string | null;
     type: string;
+    scheduled_out: string | null;
+    estimated_out: string | null;
+    actual_out: string | null;
+    scheduled_off: string | null;
+    estimated_off: string | null;
+    actual_off: string | null;
+    scheduled_on: string | null;
+    estimated_on: string | null;
+    actual_on: string | null;
+    scheduled_in: string | null;
+    estimated_in: string | null;
+    actual_in: string | null;
 }
 
 export interface AeroAPILocation {
     code: string;
-    code_icao?: string;
-    code_iata?: string;
-    timezone?: string;
-    name?: string;
-    city?: string;
-    airport_info_url?: string;
+    code_icao?: string | null;
+    code_iata?: string | null;
+    timezone?: string | null;
+    name?: string | null;
+    city?: string | null;
+    airport_info_url?: string | null;
 }
 
 export interface AeroAPIAirportInfo {
     airport_code: string;
-    alternate_ident?: string;
+    alternate_ident?: string | null;
     name: string;
-    elevation?: number;
+    elevation?: number | null;
     city: string;
-    state?: string;
+    state?: string | null;
     longitude: number;
     latitude: number;
     timezone: string;
     country_code: string;
-    wiki_url?: string;
+    wiki_url?: string | null;
 }
 
 export interface AeroAPISchedule {
     ident: string;
-    ident_icao?: string;
-    ident_iata?: string;
-    fa_flight_id?: string;
-    operator?: string;
-    operator_icao?: string;
-    operator_iata?: string;
-    flight_number?: string;
-    origin?: AeroAPILocation;
-    destination?: AeroAPILocation;
+    ident_icao?: string | null;
+    ident_iata?: string | null;
+    fa_flight_id?: string | null;
+    operator?: string | null;
+    operator_icao?: string | null;
+    operator_iata?: string | null;
+    flight_number?: string | null;
+    origin?: AeroAPILocation | null;
+    destination?: AeroAPILocation | null;
     scheduled_out: string;
     scheduled_in: string;
-    aircraft_type?: string;
-    route_distance?: number;
-    seats_cabin_business?: number;
-    seats_cabin_coach?: number;
-    seats_cabin_first?: number;
+    aircraft_type?: string | null;
+    route_distance?: number | null;
+    seats_cabin_business?: number | null;
+    seats_cabin_coach?: number | null;
+    seats_cabin_first?: number | null;
 }
 
 export interface AeroAPIPaginatedResponse {
     links?: {
-        next?: string;
+        next?: string | null;
     };
     num_pages?: number;
 }

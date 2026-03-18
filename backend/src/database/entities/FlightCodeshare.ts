@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique, Index} from 'typeorm';
 import { Flight } from './Flight';
 import { Airline } from './Airline';
 
@@ -15,6 +15,7 @@ export class FlightCodeshare {
     @JoinColumn({ name: 'flight_id' })
     flight!: Flight;
 
+    @Index()
     @Column({ type: 'varchar', length: 3, nullable: true, name: 'marketing_airline_icao' })
     marketingAirlineIcao!: string | null;
 
