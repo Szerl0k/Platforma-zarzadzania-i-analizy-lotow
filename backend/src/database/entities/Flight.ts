@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index} from 'typeorm';
 import { Airline } from './Airline';
 import { Airport } from './Airport';
 import { FlightStatus } from './FlightStatus';
@@ -10,39 +10,44 @@ export class Flight {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
+    // Nullable false, przechowywane będą wyłącznie loty komercyjne, które muszą miec ICAO
+    // TODO: w Serwisach zaimplementować odrzucanie wyników z AeroAPI, które nie posiadają ident_icao lub atc_ident
+    @Index()
     @Column({ type: 'varchar', nullable: false, name: 'ident_icao' })
     identIcao!: string;
 
     @Column({ type: 'varchar', nullable: true, name: 'ident_iata' })
     identIata!: string | null;
 
-    @Column({ type: 'varchar', length: 3, name: 'operating_airline_icao' })
-    operatingAirlineIcao!: string;
+    @Column({ type: 'varchar', length: 3, nullable: true, name: 'operating_airline_icao' })
+    operatingAirlineIcao!: string | null;
 
     @ManyToOne(() => Airline)
     @JoinColumn({ name: 'operating_airline_icao' })
-    operatingAirline!: Airline;
+    operatingAirline!: Airline | null;
 
     // W OpenSky Network API: pole 'callsign'
     // W AeroAPI: pole 'atc_ident'
     // Jesli AeroAPI zwraca null, to należy tutaj przekazać identIcao
+    @Index()
     @Column({ type: 'varchar', nullable: false, name: 'callsign' })
-    callsign!: string | null;
+    callsign!: string;
 
-    @Column({ type: 'varchar', length: 4, name: 'origin_icao' })
-    originIcao!: string;
+    @Column({ type: 'varchar', length: 4, nullable: true, name: 'origin_icao' })
+    originIcao!: string | null;
 
     @ManyToOne(() => Airport)
     @JoinColumn({ name: 'origin_icao' })
-    origin!: Airport;
+    origin!: Airport | null;
 
-    @Column({ type: 'varchar', length: 4, name: 'destination_icao' })
-    destinationIcao!: string;
+    @Column({ type: 'varchar', length: 4, nullable: true, name: 'destination_icao' })
+    destinationIcao!: string | null;
 
     @ManyToOne(() => Airport)
     @JoinColumn({ name: 'destination_icao' })
-    destination!: Airport;
+    destination!: Airport | null;
 
+    @Index()
     @Column({ type: 'int', name: 'status_id' })
     statusId!: number;
 
@@ -68,8 +73,9 @@ export class Flight {
     @Column({ type: 'int', nullable: true, name: 'arrival_delay' })
     arrivalDelay!: number | null;
 
-    @Column({ type: 'timestamptz', nullable: false, name: 'scheduled_out' })
-    scheduledOut!: Date;
+    @Index()
+    @Column({ type: 'timestamptz', nullable: true, name: 'scheduled_out' })
+    scheduledOut!: Date | null;
 
     @Column({ type: 'timestamptz', nullable: true, name: 'estimated_out' })
     estimatedOut!: Date | null;
@@ -77,8 +83,8 @@ export class Flight {
     @Column({ type: 'timestamptz', nullable: true, name: 'actual_out' })
     actualOut!: Date | null;
 
-    @Column({ type: 'timestamptz', nullable: false, name: 'scheduled_in' })
-    scheduledIn!: Date;
+    @Column({ type: 'timestamptz', nullable: true, name: 'scheduled_in' })
+    scheduledIn!: Date | null;
 
     @Column({ type: 'timestamptz', nullable: true, name: 'estimated_in' })
     estimatedIn!: Date | null;

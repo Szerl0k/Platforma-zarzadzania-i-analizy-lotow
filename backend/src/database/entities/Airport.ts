@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {Entity, PrimaryColumn, Column, ManyToOne, JoinColumn, Index} from 'typeorm';
 import {Point} from 'geojson';
 import {City} from './City';
 
@@ -14,6 +14,7 @@ export class Airport {
     @Column({ type: 'varchar', nullable: false})
     name!: string;
 
+    @Index()
     @Column({type: 'int', name: 'city_id'})
     cityId!: number;
 
@@ -21,6 +22,7 @@ export class Airport {
     @JoinColumn({name: 'city_id'})
     city!: City;
 
+    @Index({ spatial: true}) // GiST
     @Column({
         type: 'geometry',
         spatialFeatureType: 'Point',

@@ -18,6 +18,7 @@ export class FlightTelemetry {
     @Column({ type: 'timestamptz', nullable: false })
     timestamp!: Date;
 
+    @Index()
     @Column({
         type: 'geometry',
         spatialFeatureType: 'Point',
