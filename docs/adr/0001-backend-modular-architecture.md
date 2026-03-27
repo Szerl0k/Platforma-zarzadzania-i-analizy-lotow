@@ -32,7 +32,25 @@ Obecna struktura jest **horyzontalna** — wszystkie route handlery w `routes/`,
 
 ## Wynik decyzji
 
-Wybrana opcja: **„Vertical Slice Architecture"**, ponieważ zapewnia optymalną równowagę między modularnością a pragmatyzmem. Katalogi najwyższego poziomu odpowiadają domenom biznesowym, a wewnętrznie każdy moduł zawiera własne warstwy (routes, controllers, services, entities).
+Wybrana opcja: **„Vertical Slice Architecture"**, ponieważ zapewnia optymalną równowagę między modularnością a pragmatyzmem. Katalogi najwyższego poziomu odpowiadają domenom biznesowym, a wewnętrznie każdy moduł zawiera warstwy adekwatne do swojej złożoności — duże moduły mają pełną strukturę (routes/controllers/services/entities), małe mogą być uproszczone.
+
+### Zasady zależności między modułami
+
+Przy TypeORM z jedną współdzieloną bazą danych, relacje takie jak `@ManyToOne(() => Airport)` na encji `Flight` wymagają bezpośredniego dostępu do klasy encji z innego modułu. Jest to ograniczenie ORM, nie błąd architektury. Przyjęta zasada:
+
+* **Dozwolone**: import **encji** między modułami (np. `flights/` importuje `Airport` z `geo/entities/`)
+* **Zabronione**: import **serwisów i kontrolerów** między modułami — jeśli moduł potrzebuje logiki z innego modułu, komunikacja odbywa się przez wydzielony serwis w `common/` lub przez bezpośrednie zapytania do repozytorium encji
+
+Dzięki temu relacje bazodanowe (`@ManyToOne`, `@ManyToMany`) działają prawidłowo, a logika biznesowa pozostaje zamknięta w granicach swojego modułu.
+
+### Elastyczność struktury wewnętrznej modułów
+
+Nie każdy moduł wymaga pełnej struktury routes/controllers/services/entities. Struktura wewnętrzna powinna być proporcjonalna do złożoności domeny:
+
+* **Duży moduł** (np. `users/`) — pełna struktura z osobnymi katalogami na routes, controllers, services, entities
+* **Średni moduł** (np. `flights/`) — pełna struktura lub uproszczona w zależności od liczby endpointów
+* **Mały moduł** (np. `geo/`) — uproszczony układ: encje + pojedynczy plik routingu i serwisu
+* **Moduł bez warstwy HTTP** (np. `integrations/`) — tylko klienty API i typy, bez routes/controllers
 
 ### Docelowa struktura
 
@@ -43,20 +61,24 @@ backend/src/
 │   ├── middleware/        (auth.ts, errorHandler.ts)
 │   ├── database/          (data-source.ts, migrations/)
 │   └── types/
-├── users/
+├── users/                         # duży moduł — pełna struktura
 │   ├── routes/            (auth.routes.ts, users.routes.ts, roles.routes.ts,
 │   │                       permissions.routes.ts, preferences.routes.ts)
 │   ├── controllers/
 │   ├── services/
 │   ├── entities/          (User, Role, Permission, RolePermission, UserPreferences)
 │   └── types/
-├── flights/
-│   ├── routes/controllers/services/types/
-│   └── entities/          (Flight, FlightStatus, FlightCodeshare, FlightTelemetry)
-├── geo/
-│   ├── routes/controllers/services/types/
-│   └── entities/          (Airport, City, Country, Airline)
-└── integrations/
+├── flights/                       # średni moduł — pełna struktura
+│   ├── routes/
+│   ├── controllers/
+│   ├── services/
+│   ├── entities/          (Flight, FlightStatus, FlightCodeshare, FlightTelemetry)
+│   └── types/
+├── geo/                           # mały moduł — uproszczony układ
+│   ├── entities/          (Airport, City, Country, Airline)
+│   ├── geo.routes.ts
+│   └── geo.service.ts
+└── integrations/                  # brak warstwy HTTP — tylko klienty API
     ├── opensky/           (client.ts, types.ts)
     └── areoapi/           (client.ts, types.ts)
 ```
@@ -66,8 +88,9 @@ backend/src/
 * Pozytywne: każdy moduł domenowy jest samodzielny — praca nad lotami odbywa się wyłącznie w `flights/`
 * Pozytywne: jawne zależności między modułami zamiast niejawnego sąsiedztwa plików
 * Pozytywne: minimalne konflikty merge przy pracy równoległej nad różnymi domenami
-* Negatywne: małe moduły (np. `geo/`) mają proporcjonalnie więcej narzutu strukturalnego
-* Negatywne: referencje między domenami (np. `Flight` → `Airport`) wymagają importów między modułami
+* Pozytywne: małe moduły nie niosą nieproporcjonalnego narzutu katalogowego
+* Pozytywne: zasada importów (encje tak, serwisy nie) daje jasną regułę odsprzęgania modułów
+* Negatywne: referencje encji między modułami (np. `Flight` → `Airport`) tworzą powiązanie na poziomie danych, które wymaga świadomego zarządzania
 
 ## Zalety i wady opcji
 
@@ -89,7 +112,8 @@ Kod organizowany według domeny biznesowej, z wewnętrznymi warstwami techniczny
 * Zaleta: spełnia Common Closure Principle — kod zmieniany z jednego powodu biznesowego żyje w jednym module
 * Zaleta: wysoka kohezja wewnątrz modułów, niskie sprzężenie między nimi (Yourdon & Constantine, 1979)
 * Zaleta: zgodne z wzorcem Modular Monolith, rekomendowanym przez Fowlera (2015) jako punkt wyjścia
-* Wada: dodatkowy narzut katalogowy dla małych modułów
+* Zaleta: elastyczna struktura wewnętrzna — każdy moduł ma tyle warstw, ile potrzebuje
+* Wada: import encji między modułami tworzy powiązanie na poziomie danych, które wymaga jasnych zasad
 
 ### Ścisłe Bounded Contexts (DDD)
 
@@ -112,5 +136,3 @@ Formalne konteksty ograniczone z barrel exports, kontraktami międzykontekstowym
 ## Powiązane ADR
 
 * [ADR-0002](0002-backend-request-handling-layers.md) — warstwy wewnętrzne modułów
-* [ADR-0004](0004-database-schema-spatial-orm-strategy.md) — rozmieszczenie encji i migracji
-* [ADR-0005](0005-external-api-integration-architecture.md) — struktura modułu `integrations/`
