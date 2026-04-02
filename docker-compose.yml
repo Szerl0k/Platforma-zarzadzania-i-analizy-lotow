@@ -4,6 +4,7 @@ services:
   postgres:
     build:
       context: ./database
+    platform: linux/amd64
     container_name: flight_management_db
     environment:
       POSTGRES_DB: flight_management
@@ -35,6 +36,7 @@ services:
       - PORT=5001
       - JWT_SECRET=flight-mgmt-jwt-secret-change-in-production
       - JWT_EXPIRES_IN=7d
+      - CORS_ORIGIN=http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { AppDataSource } from '../database/data-source';
-import { UserPreferences } from '../database/entities/UserPreferences';
+import { AppDataSource } from '../../common/database/data-source';
+import { UserPreferences } from '../entities/UserPreferences';
 
 const router = Router();
 
