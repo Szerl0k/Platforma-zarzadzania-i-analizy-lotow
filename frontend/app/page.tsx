@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-interface WelcomeData {
+interface HealthData {
+  status: string;
   message: string;
-  database: string;
-  version?: string;
 }
 
 export default function Home() {
-  const [data, setData] = useState<WelcomeData | null>(null);
+  const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,8 +17,8 @@ export default function Home() {
     const fetchData = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-        const response = await axios.get<WelcomeData>(
-          `${apiUrl}/welcome`
+        const response = await axios.get<HealthData>(
+          `${apiUrl}/health`
         );
         setData(response.data);
       } catch (err) {
@@ -70,7 +69,7 @@ export default function Home() {
                     ✅ {data.message}
                   </p>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-600 font-medium mb-1">
@@ -78,22 +77,12 @@ export default function Home() {
                     </p>
                     <p className="text-blue-900">Next.js + React + Tailwind</p>
                   </div>
-                  
+
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                     <p className="text-sm text-purple-600 font-medium mb-1">
                       Backend
                     </p>
                     <p className="text-purple-900">TypeScript + Express</p>
-                  </div>
-                  
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 md:col-span-2">
-                    <p className="text-sm text-indigo-600 font-medium mb-1">
-                      Baza danych
-                    </p>
-                    <p className="text-indigo-900 text-sm break-all">
-                      {data.database}
-                      {data.version && ` - ${data.version.substring(0, 50)}...`}
-                    </p>
                   </div>
                 </div>
               </div>

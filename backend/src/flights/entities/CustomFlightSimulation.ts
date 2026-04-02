@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from './User';
-import { Airport } from './Airport';
+import { User } from '../../users/entities/User';
+import { Airport } from '../../geo/entities/Airport';
 import { SimulationStatus } from './SimulationStatus';
 
 @Entity('custom_flight_simulations')

@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { AppDataSource } from '../database/data-source';
-import { Role } from '../database/entities/Role';
-import { RolePermission } from '../database/entities/RolePermission';
-import { Permission } from '../database/entities/Permission';
+import { AppDataSource } from '../../common/database/data-source';
+import { Role } from '../entities/Role';
+import { RolePermission } from '../entities/RolePermission';
+import { Permission } from '../entities/Permission';
 
 const router = Router();
 

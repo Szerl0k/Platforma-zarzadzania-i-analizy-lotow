@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { AppDataSource } from '../database/data-source';
-import { User } from '../database/entities/User';
-import { authorize } from '../middleware/auth';
+import { AppDataSource } from '../../common/database/data-source';
+import { User } from '../entities/User';
+import { authorize } from '../../common/middleware/auth';
 
 const router = Router();
 

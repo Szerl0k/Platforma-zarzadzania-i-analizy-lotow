@@ -50,7 +50,14 @@ Nie każdy moduł wymaga pełnej struktury routes/controllers/services/entities.
 * **Duży moduł** (np. `users/`) — pełna struktura z osobnymi katalogami na routes, controllers, services, entities
 * **Średni moduł** (np. `flights/`) — pełna struktura lub uproszczona w zależności od liczby endpointów
 * **Mały moduł** (np. `geo/`) — uproszczony układ: encje + pojedynczy plik routingu i serwisu
-* **Moduł bez warstwy HTTP** (np. `integrations/`) — tylko klienty API i typy, bez routes/controllers
+
+### Zasada spłaszczania jednoelementowych katalogów
+
+Jeśli podkatalog w module zawierałby tylko jeden plik, nie tworzymy katalogu — używamy pojedynczego pliku bezpośrednio w module. Przykład: jeśli `users/controllers/` miałby tylko jeden kontroler, zamiast katalogu stosujemy `users/users.controller.ts`. Katalogi tworzymy dopiero gdy zawierają więcej niż jeden plik.
+
+### Integracje jako część common
+
+Klienty zewnętrznych API (OpenSky Network, AeroAPI) są współdzieloną infrastrukturą — nie stanowią osobnej domeny biznesowej. Dlatego umieszczamy je w `common/integrations/`, analogicznie do middleware czy konfiguracji bazy danych.
 
 ### Docelowa struktura
 
@@ -59,28 +66,22 @@ backend/src/
 ├── index.ts
 ├── common/
 │   ├── middleware/        (auth.ts, errorHandler.ts)
-│   ├── database/          (data-source.ts, migrations/)
-│   └── types/
+│   ├── database/          (data-source.ts, migrations/, seeds/)
+│   ├── integrations/      (opensky/, areoapi/)
+│   └── types/             (express.d.ts)
 ├── users/                         # duży moduł — pełna struktura
 │   ├── routes/            (auth.routes.ts, users.routes.ts, roles.routes.ts,
 │   │                       permissions.routes.ts, preferences.routes.ts)
-│   ├── controllers/
-│   ├── services/
-│   ├── entities/          (User, Role, Permission, RolePermission, UserPreferences)
-│   └── types/
-├── flights/                       # średni moduł — pełna struktura
-│   ├── routes/
-│   ├── controllers/
-│   ├── services/
-│   ├── entities/          (Flight, FlightStatus, FlightCodeshare, FlightTelemetry)
-│   └── types/
-├── geo/                           # mały moduł — uproszczony układ
-│   ├── entities/          (Airport, City, Country, Airline)
-│   ├── geo.routes.ts
-│   └── geo.service.ts
-└── integrations/                  # brak warstwy HTTP — tylko klienty API
-    ├── opensky/           (client.ts, types.ts)
-    └── areoapi/           (client.ts, types.ts)
+│   └── entities/          (User, Role, Permission, RolePermission,
+│                           RefreshToken, UserPreferences)
+├── flights/                       # średni moduł
+│   └── entities/          (Flight, FlightStatus, FlightCodeshare, FlightTelemetry,
+│                           FlightHistory, FlightStatusChange, FlightChangeType,
+│                           TrackedFlight, TrackingStatus, TrackingSource,
+│                           CustomFlightSimulation, SimulationStatus,
+│                           FavouriteDestination)
+└── geo/                           # mały moduł — uproszczony układ
+    └── entities/          (Airport, City, Country, Airline)
 ```
 
 ### Konsekwencje

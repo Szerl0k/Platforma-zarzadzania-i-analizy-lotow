@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { AppDataSource } from '../database/data-source';
-import { Permission } from '../database/entities/Permission';
+import { AppDataSource } from '../../common/database/data-source';
+import { Permission } from '../entities/Permission';
 
 const router = Router();
 

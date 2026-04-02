@@ -8,10 +8,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
-    "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
-    "db:setup": "ts-node src/database/seeds/init-seed.ts"
+    "migration:generate": "npm run typeorm -- migration:generate -d src/common/database/data-source.ts",
+    "migration:run": "npm run typeorm -- migration:run -d src/common/database/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/common/database/data-source.ts",
+    "db:setup": "ts-node src/common/database/seeds/init-seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +19,7 @@
   "dependencies": {
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/geojson": "^7946.0.16",

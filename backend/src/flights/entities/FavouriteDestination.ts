@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from './User';
-import { Airport } from './Airport';
+import { User } from '../../users/entities/User';
+import { Airport } from '../../geo/entities/Airport';
 
 @Entity('favorite_destinations')
 export class FavouriteDestination {

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../database/data-source';
-import { RolePermission } from '../database/entities/RolePermission';
+import { RolePermission } from '../../users/entities/RolePermission';
 
 interface JwtPayload {
     userId: string;
@@ -9,13 +9,20 @@ interface JwtPayload {
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
-    const header = req.headers.authorization;
-    if (!header || !header.startsWith('Bearer ')) {
+    let token = req.cookies?.access_token;
+
+    if (!token) {
+        const header = req.headers.authorization;
+        if (header?.startsWith('Bearer ')) {
+            token = header.slice(7);
+        }
+    }
+
+    if (!token) {
         res.status(401).json({ error: 'Authentication required' });
         return;
     }
 
-    const token = header.slice(7);
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
         req.userId = decoded.userId;

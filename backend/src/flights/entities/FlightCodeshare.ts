@@ -1,6 +1,6 @@
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique, Index} from 'typeorm';
 import { Flight } from './Flight';
-import { Airline } from './Airline';
+import { Airline } from '../../geo/entities/Airline';
 
 @Entity('flight_codeshares')
 @Unique(['flightId', 'marketingIdentIata'])

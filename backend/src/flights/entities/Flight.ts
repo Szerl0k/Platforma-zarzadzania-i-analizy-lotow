@@ -1,6 +1,6 @@
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index} from 'typeorm';
-import { Airline } from './Airline';
-import { Airport } from './Airport';
+import { Airline } from '../../geo/entities/Airline';
+import { Airport } from '../../geo/entities/Airport';
 import { FlightStatus } from './FlightStatus';
 import { FlightCodeshare } from './FlightCodeshare';
 import { FlightTelemetry } from './FlightTelemetry';

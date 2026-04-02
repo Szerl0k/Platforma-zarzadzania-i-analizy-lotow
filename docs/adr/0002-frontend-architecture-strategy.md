@@ -24,13 +24,21 @@ Backend stosuje vertical slices ([ADR-0001](0001-backend-modular-architecture.md
 
 ## Rozważane opcje
 
-1. **Konwencje Next.js App Router** z katalogami `components/` i `lib/`
+1. **Konwencje Next.js App Router** z katalogiem `common/` dla współdzielonego kodu
 2. **Moduły domenowe** (odzwierciedlenie backendu) — `features/users/`, `features/flights/`
 3. **Atomic Design** — atoms, molecules, organisms
 
 ## Wynik decyzji
 
 Wybrana opcja: **„Konwencje Next.js App Router"**, ponieważ routing plikowy App Routera już zapewnia naturalne grupowanie domenowe. Katalog `app/flights/` zawiera strony związane z lotami, `app/airports/` ze stronami lotnisk — struktura routingu jest z natury wyrównana z domenami bez dodatkowej warstwy organizacyjnej.
+
+### Zasada kolokacji: common tylko dla współdzielonego kodu
+
+Katalog `common/` (spójne nazewnictwo z backendem) zawiera wyłącznie kod używany przez więcej niż jeden moduł/stronę. Komponenty, hooki i utility specyficzne dla jednego modułu żyją w katalogu tego modułu (np. w `app/flights/`), nie w `common/`. Przeniesienie do `common/` następuje dopiero gdy drugi moduł potrzebuje tego samego kodu.
+
+### Zasada spłaszczania jednoelementowych katalogów
+
+Jeśli podkatalog zawierałby tylko jeden plik, nie tworzymy katalogu — używamy pojedynczego pliku. Przykład: jeśli `common/hooks/` miałby tylko jeden hook, stosujemy `common/useAuth.tsx`. Katalog tworzymy dopiero gdy zawiera więcej niż jeden plik.
 
 ### Docelowa struktura
 
@@ -45,7 +53,8 @@ frontend/
 │   │   └── register/page.tsx
 │   ├── flights/
 │   │   ├── page.tsx               # Wyszukiwanie i lista lotów
-│   │   └── [id]/page.tsx          # Szczegóły lotu z telemetrią
+│   │   ├── [id]/page.tsx          # Szczegóły lotu z telemetrią
+│   │   └── components/            # FlightCard, FlightTable — kolokacja
 │   ├── airports/
 │   │   ├── page.tsx               # Przeglądarka lotnisk
 │   │   └── [icao]/page.tsx        # Szczegóły lotniska
@@ -55,14 +64,10 @@ frontend/
 │       ├── layout.tsx             # Layout admina z guardem ról
 │       ├── users/page.tsx
 │       └── roles/page.tsx
-├── components/
-│   ├── ui/                        # Prymitywy UI (Button, Input, Card, Modal)
-│   ├── layout/                    # Header, Footer, Sidebar, Navigation
-│   ├── flights/                   # FlightCard, FlightTable, FlightStatusBadge
-│   └── map/                       # MapView, FlightMarker, TrajectoryLine
-├── lib/
+├── common/                         # tylko kod współdzielony przez >1 moduł
 │   ├── api/                       # Typowane funkcje klienta API
-│   ├── hooks/                     # useAuth, useFlights, useDebounce
+│   ├── hooks/                     # useAuth, useDebounce (współdzielone hooki)
+│   ├── components/                # Button, Input, Card (współdzielone prymitywy UI)
 │   ├── utils/                     # Formattery, walidatory, stałe
 │   └── types/                     # Współdzielone definicje typów TypeScript
 └── public/
@@ -73,7 +78,8 @@ frontend/
 * Pozytywne: struktura zgodna z oficjalną dokumentacją Next.js
 * Pozytywne: Server Components, streaming i inne funkcje App Router działają bez obejść
 * Pozytywne: routing plikowy zapewnia grupowanie domenowe widoczne w kodzie i URL
-* Negatywne: `components/` może rosnąć wraz z aplikacją i wymagać reorganizacji
+* Pozytywne: `common/` nie rośnie niekontrolowanie — kod trafia tam tylko gdy jest naprawdę współdzielony
+* Pozytywne: spójne nazewnictwo `common/` z backendem ułatwia nawigację między projektami
 
 ## Zalety i wady opcji
 
