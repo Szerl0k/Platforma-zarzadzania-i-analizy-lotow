@@ -53,7 +53,7 @@ jobs:
       - name: Terraform Init, Plan and Apply
         working-directory: ./infrastructure/terraform/azure
         run: |
-          terraform init
+          terraform init -upgrade
           terraform apply -auto-approve
 
       - name: Get DB VM IP

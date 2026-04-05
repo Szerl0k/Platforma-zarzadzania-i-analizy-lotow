@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0.2"
+      version = "~> 3.100.0"
     }
   }
 
@@ -13,6 +13,7 @@ terraform {
     storage_account_name = "inzterraform9218219sa"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
+    use_oidc             = true
   }
 }
 
