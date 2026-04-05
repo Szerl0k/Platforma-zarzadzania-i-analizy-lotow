@@ -60,6 +60,7 @@ jobs:
 
       - name: Get DB VM IP
         id: get_ip
+        working-directory: ./infrastructure/terraform/azure
         run: echo "vm_ip=$(terraform output -raw database_public_ip)" >> $GITHUB_OUTPUT
       
 
