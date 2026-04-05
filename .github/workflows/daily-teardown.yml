@@ -1,8 +1,11 @@
 name: daily-teardown.yml
 on:
-  schedule:
+  #schedule:
     # 1:00 AM CET
-    - cron: '0 0 * * *'
+    #- cron: '0 0 * * *'
+  push:
+    branches:
+      - "feature/cicd"
   workflow_dispatch:
 
 permissions:
