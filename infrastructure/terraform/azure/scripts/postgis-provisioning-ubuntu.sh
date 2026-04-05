@@ -3,7 +3,7 @@
 # Stop in case of error
 set -e
 
-DB_PASSWORD="kyNx11B3JW24z957Os4A"
+DB_PASSWORD=kyNx11B3JW24z957Os4A
 DB_NAME="flight_db"
 DATA_DISK="/dev/nvme0n1"
 PARTITION="${DATA_DISK}p1"

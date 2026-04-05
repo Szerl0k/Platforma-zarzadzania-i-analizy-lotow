@@ -166,7 +166,7 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+            ${{ env.BACKEND_DOCKER_IMAGE }}:${{ github.sha }}
             ${{ github.ref == 'refs/heads/master' && format('{0}:latest', env.BACKEND_DOCKER_IMAGE) || '' }}
 
       - name: Azure Login
