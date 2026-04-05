@@ -164,7 +164,9 @@ if [ "$IS_NEW_DATABASE" = true ]; then
 else
     echo "Bypassing schema initialization. Existing data preserved."
     sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${DB_PASSWORD}';"
-fi 
+fi
+
+systemctl restart postgresql
 
 echo "=========================================="
 echo "SUCCESSFULLY PROVISIONED!"
