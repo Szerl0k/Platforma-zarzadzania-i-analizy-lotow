@@ -1,5 +1,10 @@
 name: master-deployment.yml
 on:
+  workflow_call:
+    outputs:
+      vm_ip:
+        description: "The Public IP of the database VM"
+        value: ${{ jobs.infrastructure.outputs.vm_ip }}
   push:
     branches:
       - master
