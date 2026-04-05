@@ -26,6 +26,8 @@ env:
   FRONTEND_APP_NAME: "dev-inz-frontend-app"
   BACKEND_DOCKER_IMAGE: "szerlok/flightanalytics-backend"
   FRONTEND_DOCKER_IMAGE: "szerlok/flightanalytics-frontend"
+
+  TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 jobs:
   # IAC
 

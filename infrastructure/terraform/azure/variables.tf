@@ -75,3 +75,8 @@ variable "postgis_provisioning_script_path" {
   description = "Path to the PostGIS provisioning script"
   default     = "./scripts/postgis-provisioning-ubuntu.sh"
 }
+
+variable "ssh_public_key" {
+  type = string
+  description = "The raw SSH public key string for the VM"
+}
