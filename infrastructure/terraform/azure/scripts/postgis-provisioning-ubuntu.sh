@@ -104,7 +104,7 @@ sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" $CONF_FILE
 
 # Add 0.0.0.0/0 listening to pg_hba.conf
 if ! grep -q "0.0.0.0/0" "$HBA_FILE"; then
-    echo "host    all             all             0.0.0.0/0               scram-sha-256" >> $HBA_FILE
+    echo "host    all             all             0.0.0.0/0               md5" >> $HBA_FILE
 fi
 
 # 6. PARAMETER TUNING
