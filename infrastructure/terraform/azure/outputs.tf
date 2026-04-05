@@ -20,11 +20,11 @@ output "database_private_ip" {
 
 output "frontend_url" {
   description = "The default hostname of the frontend App Service"
-  value = azurerm_linux_web_app.frontend.default_hostname
+  value       = azurerm_linux_web_app.frontend.default_hostname
 }
 
 output "backend_url" {
   description = "The default hostname of the backend App Service"
-  value = azurerm_linux_web_app.backend.default_hostname
+  value       = azurerm_linux_web_app.backend.default_hostname
 }
 

@@ -58,11 +58,11 @@ resource "azurerm_virtual_machine_data_disk_attachment" "data_disk_attach" {
 
 # WEB APPS
 resource "azurerm_service_plan" "app_plan" {
-  name = "dev-inz-app-plan"
+  name                = "dev-inz-app-plan"
   resource_group_name = azurerm_resource_group.rg.name
-  location = azurerm_resource_group.rg.location
-  os_type = "Linux"
-  sku_name = "B1"
+  location            = azurerm_resource_group.rg.location
+  os_type             = "Linux"
+  sku_name            = "B1"
 }
 
 # BACKEND
@@ -78,7 +78,7 @@ resource "azurerm_linux_web_app" "backend" {
     application_stack {
 
       # Initial placeholder
-      docker_image_name = "nginx:alpine"
+      docker_image_name   = "nginx:alpine"
       docker_registry_url = "https://index.docker.io/v1/"
     }
 
@@ -107,11 +107,11 @@ resource "azurerm_linux_web_app" "frontend" {
   name                = "dev-inz-frontend-app"
   resource_group_name = azurerm_resource_group.rg.name
 
-  service_plan_id     = azurerm_service_plan.app_plan.id
+  service_plan_id = azurerm_service_plan.app_plan.id
 
   site_config {
     application_stack {
-      docker_image_name = "nginx:alpine"
+      docker_image_name   = "nginx:alpine"
       docker_registry_url = "https://index.docker.io/v1/"
     }
   }
@@ -119,7 +119,7 @@ resource "azurerm_linux_web_app" "frontend" {
   app_settings = {
     # Injects the backend URL into Next.js container at runtime for the proxy
     "INTERNAL_API_URL" = "https://${azurerm_linux_web_app.backend.default_hostname}"
-    "WEBSITES_PORT" = "3000"
+    "WEBSITES_PORT"    = "3000"
 
     "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
   }
