@@ -179,7 +179,7 @@ jobs:
       - name: Update Azure App Service Container Image
         run: |
           az webapp config container set \
-          --name ${{ env.APP_SERVICE_NAME }} \
+          --name ${{ env.BACKEND_APP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
-          --docker-custom-image-name ${{ env.DOCKER_IMAGE }}:${{ github.sha }} \
+          --docker-custom-image-name ${{ env.BACKEND_DOCKER_IMAGE }}:${{ github.sha }} \
           --docker-registry-server-url https://index.docker.io/v1/
