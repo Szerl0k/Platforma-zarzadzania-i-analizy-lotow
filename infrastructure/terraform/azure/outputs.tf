@@ -17,3 +17,14 @@ output "database_private_ip" {
   description = "The private IP address of the postgres vm"
   value       = azurerm_network_interface.postgis-nic.private_ip_address
 }
+
+output "frontend_url" {
+  description = "The default hostname of the frontend App Service"
+  value = azurerm_linux_web_app.frontend.default_hostname
+}
+
+output "backend_url" {
+  description = "The default hostname of the backend App Service"
+  value = azurerm_linux_web_app.backend.default_hostname
+}
+

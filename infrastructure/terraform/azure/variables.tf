@@ -16,10 +16,16 @@ variable "vnet_address_space" {
   default     = ["10.1.0.0/16"]
 }
 
-variable "subnet_address_prefix" {
+variable "data_subnet_address_prefix" {
   type        = list(string)
   description = "Address prefix for the subnet"
   default     = ["10.1.0.0/24"]
+}
+
+variable "app_service_subnet_address_prefix" {
+  type        = list(string)
+  description = "Address prefix for the subnet"
+  default     = ["10.1.1.0/24"]
 }
 
 variable "vm_name" {

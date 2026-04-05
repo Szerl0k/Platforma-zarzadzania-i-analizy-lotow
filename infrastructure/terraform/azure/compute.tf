@@ -1,3 +1,4 @@
+# DATABASE VM
 resource "azurerm_linux_virtual_machine" "vm" {
   name                            = var.vm_name
   resource_group_name             = azurerm_resource_group.rg.name
@@ -52,4 +53,75 @@ resource "azurerm_virtual_machine_data_disk_attachment" "data_disk_attach" {
   virtual_machine_id = azurerm_linux_virtual_machine.vm.id
   lun                = 0
   caching            = "ReadOnly"
+}
+
+
+# WEB APPS
+resource "azurerm_service_plan" "app_plan" {
+  name = "dev-inz-app-plan"
+  resource_group_name = azurerm_resource_group.rg.name
+  location = azurerm_resource_group.rg.location
+  os_type = "Linux"
+  sku_name = "B1"
+}
+
+# BACKEND
+resource "azurerm_linux_web_app" "backend" {
+  location            = azurerm_resource_group.rg.location
+  name                = "dev-inz-backend-api"
+  resource_group_name = azurerm_resource_group.rg.name
+  service_plan_id     = azurerm_service_plan.app_plan.id
+
+  virtual_network_subnet_id = azurerm_subnet.app_service_subnet.id
+
+  site_config {
+    application_stack {
+
+      # Initial placeholder
+      docker_image_name = "nginx:alpine"
+      docker_registry_url = "https://index.docker.io/v1/"
+    }
+
+    vnet_route_all_enabled = true
+
+  }
+
+  app_settings = {
+    # Prevents the container from attempting to map the default Azure file share
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
+
+    # Expose internal db IP to the container app
+    "DB_HOST" = azurerm_network_interface.postgis-nic.private_ip_address
+
+    "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
+  }
+
+}
+
+# FRONTEND
+# Due to region limitations for Azure for Students account, we can't deploy
+# an Azure Static Web Apps resource.
+
+resource "azurerm_linux_web_app" "frontend" {
+  location            = azurerm_resource_group.rg.location
+  name                = "dev-inz-frontend-app"
+  resource_group_name = azurerm_resource_group.rg.name
+
+  service_plan_id     = azurerm_service_plan.app_plan.id
+
+  site_config {
+    application_stack {
+      docker_image_name = "nginx:alpine"
+      docker_registry_url = "https://index.docker.io/v1/"
+    }
+  }
+
+  app_settings = {
+    # Injects the backend URL into Next.js container at runtime for the proxy
+    "INTERNAL_API_URL" = "https://${azurerm_linux_web_app.backend.default_hostname}"
+    "WEBSITES_PORT" = "3000"
+
+    "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
+  }
+
 }
