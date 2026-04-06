@@ -4,7 +4,9 @@ on:
     # 9:00 AM CET
     - cron: '0 9 * * *'
   workflow_dispatch:
-
+  push:
+    branches:
+      - "feature/*"
 jobs:
   call-deployment-engine:
     uses: ./.github/workflows/master-deployment.yml
