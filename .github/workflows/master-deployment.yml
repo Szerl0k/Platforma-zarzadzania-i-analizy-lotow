@@ -188,3 +188,36 @@ jobs:
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --docker-custom-image-name ${{ env.BACKEND_DOCKER_IMAGE }}:${{ github.sha }} \
           --docker-registry-server-url https://index.docker.io/v1/
+
+      - name: Inject Application Secrets
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'dev-inz-backend-api'
+          app-settings-json: |
+            [
+              {
+                "name": "DB_PASSWORD",
+                "value": "${{ secrets.DB_PASSWORD }}",
+                "slotSetting": false
+              },
+              {
+                "name": "JWT_SECRET",
+                "value": "${{ secrets.JWT_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name": "AEROAPI_KEY",
+                "value": "${{ secrets.AEROAPI_KEY }}",
+                "slotSetting": false
+              },
+              {
+                "name": "OPENSKY_CLIENT_ID",
+                "value": "${{ secrets.OPENSKY_CLIENT_ID }}",
+                "slotSetting": false
+              },
+              {
+                "name": "OPENSKY_CLIENT_SECRET",
+                "value": "${{ secrets.OPENSKY_CLIENT_SECRET }}",
+                "slotSetting": false
+              }
+            ]

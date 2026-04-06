@@ -90,7 +90,13 @@ resource "azurerm_linux_web_app" "backend" {
     # Prevents the container from attempting to map the default Azure file share
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
 
+    "WEBSITES_PORT" = "3000"
+
     # Expose internal db IP to the container app
+    "NODE_ENV" = "production"
+    "DB_PORT" = "5432"
+    "DB_USER" = "postgres"
+    "DB_NAME" = "flight_db"
     "DB_HOST" = azurerm_network_interface.postgis-nic.private_ip_address
 
     "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
