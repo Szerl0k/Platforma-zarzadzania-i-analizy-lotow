@@ -22,6 +22,19 @@ async function runDatabaseSetup() : Promise<void> {
             console.log('Database is up to date. No new migrations to rnu')
         }
 
+        console.log('Verifying baseline data state')
+        try {
+            const existingRecords = await AppDataSource.query('SELECT 1 FROM airlines LIMIT 1');
+
+            if (existingRecords && existingRecords.length > 0) {
+                console.log('Baseline data detected in the airlines table. Skipping seeding')
+                return
+            }
+        } catch (error) {
+            console.error('Failed to verify table state. Ensure migrations accurately construct the airlines table before seeding.')
+            throw error
+        }
+
         const sqlFilePath = path.join(__dirname, 'seed.sql');
 
         if (!fs.existsSync(sqlFilePath)) {

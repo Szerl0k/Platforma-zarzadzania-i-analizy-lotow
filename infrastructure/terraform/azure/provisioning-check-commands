@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Verify disk mount and fstab
+df -h /datadisk
+
+cat /etc/fstab | grep datadisk
+
+
+# Verify postgres
+systemctl status postgresql --no-pager
+
+
+
+# Verify data location and networking
+sudo -u postgres psql -c 'SHOW data_directory;'
+
+sudo -u postgres psql -c 'SHOW listen_addresses;'
+
+# Verify postgis installation
+sudo -u postgres psql -d flight_db -c '\dx'
+
+# Verify tuned params
+
+sudo -u postgres psql -c "
+SELECT name, setting, unit 
+FROM pg_settings 
+WHERE name IN (
+  'max_connections', 
+  'shared_buffers', 
+  'effective_cache_size', 
+  'maintenance_work_mem', 
+  'checkpoint_completion_target', 
+  'wal_buffers', 
+  'default_statistics_target', 
+  'random_page_cost', 
+  'work_mem', 
+  'huge_pages', 
+  'max_wal_size', 
+  'min_wal_size'
+);"
+

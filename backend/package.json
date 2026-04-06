@@ -11,7 +11,9 @@
     "migration:generate": "npm run typeorm -- migration:generate -d src/common/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/common/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/common/database/data-source.ts",
-    "db:setup": "ts-node src/common/database/seeds/init-seed.ts"
+    "db:setup": "ts-node src/common/database/seeds/init-seed.ts",
+
+    "ci:migrate-and-seed": "npm run migration:run && npm run db:setup"
   },
   "keywords": [],
   "author": "",
