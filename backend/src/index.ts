@@ -10,6 +10,7 @@ import userRoutes from './users/routes/users.routes';
 import preferencesRoutes from './users/routes/preferences.routes';
 import roleRoutes from './users/routes/roles.routes';
 import permissionRoutes from './users/routes/permissions.routes';
+import geoRoutes from './geo/geo.routes';
 
 dotenv.config();
 
@@ -29,6 +30,9 @@ app.get('/api/health', (_req, res) => {
 
 // Public routes
 app.use('/api/auth', authRoutes);
+
+// Geo routes
+app.use('/api', geoRoutes);
 
 // Protected routes
 app.use('/api/users/me/preferences', authenticate, preferencesRoutes);

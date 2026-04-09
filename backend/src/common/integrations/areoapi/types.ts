@@ -109,6 +109,20 @@ export interface AeroAPIAirportInfo {
     wiki_url?: string | null;
 }
 
+export interface AeroAPIOperatorInfo {
+    icao: string;
+    iata?: string | null;
+    callsign?: string | null;
+    name: string;
+    country?: string | null;
+    location?: string | null;
+    phone?: string | null;
+    shortname?: string | null;
+    url?: string | null;
+    wiki_url?: string | null;
+    alternatives?: string[] | null;
+}
+
 export interface AeroAPISchedule {
     ident: string;
     ident_icao?: string | null;
