@@ -1,15 +1,27 @@
 import axios, {AxiosInstance} from 'axios';
 
 import {
-    AeroAPIPaginatedResponse,
     AeroAPIQueryParams,
     AeroAPIAirportFlightParams,
     AeroAPIAirportInfo,
-    AeroAPIFlightDetails,
     AeroAPIStandardFlightsResponse,
-    AeroAPILocation,
-    AeroAPIFlightsBetweenParams, AeroAPISegmentedFlightsResponse, AeroAPISchedulesParams, AeroAPISchedulesResponse
+    AeroAPIFlightsBetweenParams, AeroAPISegmentedFlightsResponse, AeroAPISchedulesParams, AeroAPISchedulesResponse,
+    AeroAPIOperatorInfo
 } from './types'
+
+export class AeroAPIError extends Error {
+    public readonly status: number | null;
+    public readonly endpoint: string;
+    public readonly responseBody: unknown;
+
+    constructor(message: string, endpoint: string, status: number | null, responseBody: unknown) {
+        super(message);
+        this.name = 'AeroAPIError';
+        this.endpoint = endpoint;
+        this.status = status;
+        this.responseBody = responseBody;
+    }
+}
 
 export class AeroAPIClient {
     private readonly apiUrl = "https://aeroapi.flightaware.com/aeroapi";
@@ -37,17 +49,23 @@ export class AeroAPIClient {
             const res = await this.httpClient.get<T>(endpoint, {params});
             return res.data;
         } catch (error) {
-            this.handleAxiosError(error, `AreoAPI request failed for endpoint: ${endpoint}`);
+            this.handleAxiosError(error, endpoint);
         }
     }
 
-    private handleAxiosError(error: unknown, customMessage: string): never {
+    private handleAxiosError(error: unknown, endpoint: string): never {
         if (axios.isAxiosError(error)) {
-            const statusCode = error.response?.status || 'Unknown Status';
-            const responseData = JSON.stringify(error.response?.data || {}, null, 2);
-            throw new Error(`${customMessage} | Status: ${statusCode} | Details: ${responseData} | Message: ${error.message}`);
+            const status = error.response?.status ?? null;
+            const responseBody = error.response?.data ?? null;
+            const message = `AeroAPI request failed for ${endpoint} | Status: ${status ?? 'unknown'} | ${error.message}`;
+            throw new AeroAPIError(message, endpoint, status, responseBody);
         }
-        throw new Error(`${customMessage} | Unexpected error: ${String(error)}`)
+        throw new AeroAPIError(
+            `AeroAPI request failed for ${endpoint} | Unexpected error: ${String(error)}`,
+            endpoint,
+            null,
+            null,
+        );
     }
 
     public async getFlightInfo(ident: string, params?: AeroAPIQueryParams) : Promise<AeroAPIStandardFlightsResponse> {
@@ -75,6 +93,10 @@ export class AeroAPIClient {
 
     public async getAirportInfo(airportId: string) : Promise<AeroAPIAirportInfo> {
         return this.request<AeroAPIAirportInfo>(`/airports/${airportId}`);
+    }
+
+    public async getOperatorInfo(operatorId: string) : Promise<AeroAPIOperatorInfo> {
+        return this.request<AeroAPIOperatorInfo>(`/operators/${operatorId}`);
     }
 
     public async getScheduledFlights(
