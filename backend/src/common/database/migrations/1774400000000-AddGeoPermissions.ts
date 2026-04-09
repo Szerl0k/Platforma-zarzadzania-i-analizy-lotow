@@ -11,7 +11,6 @@ export class AddGeoPermissions1774400000000 implements MigrationInterface {
             ('geo:delete', 'geo', 'delete', 'Delete airports and airlines')
         `);
 
-        // Grant all geo permissions to admin
         await queryRunner.query(`
             INSERT INTO "role_permissions" ("role_id", "permission_id", "granted_at")
             SELECT r.id, p.id, NOW()
@@ -20,7 +19,6 @@ export class AddGeoPermissions1774400000000 implements MigrationInterface {
               AND p.name IN ('geo:read', 'geo:write', 'geo:delete')
         `);
 
-        // Grant only geo:read to regular users
         await queryRunner.query(`
             INSERT INTO "role_permissions" ("role_id", "permission_id", "granted_at")
             SELECT r.id, p.id, NOW()
