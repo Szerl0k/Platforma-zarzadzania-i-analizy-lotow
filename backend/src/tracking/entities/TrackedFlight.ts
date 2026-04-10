@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { User } from '../../users/entities/User';
-import { Flight } from './Flight';
+import { Flight } from '../../flights/entities/Flight';
 import { TrackingStatus } from './TrackingStatus';
 import { TrackingSource } from './TrackingSource';
 

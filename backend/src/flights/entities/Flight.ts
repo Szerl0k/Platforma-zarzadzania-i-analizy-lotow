@@ -3,7 +3,7 @@ import { Airline } from '../../geo/entities/Airline';
 import { Airport } from '../../geo/entities/Airport';
 import { FlightStatus } from './FlightStatus';
 import { FlightCodeshare } from './FlightCodeshare';
-import { FlightTelemetry } from './FlightTelemetry';
+import { FlightTelemetry } from '../../telemetry/entities/FlightTelemetry';
 
 @Entity('flights')
 export class Flight {

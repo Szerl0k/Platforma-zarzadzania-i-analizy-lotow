@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Point } from 'geojson';
-import { Flight } from './Flight';
+import { Flight } from '../../flights/entities/Flight';
 
 @Entity('flight_telemetry')
 @Index(['flightId', 'timestamp'])

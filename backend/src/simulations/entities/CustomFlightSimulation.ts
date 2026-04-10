@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/User';
 import { Airport } from '../../geo/entities/Airport';
-import { SimulationStatus } from './SimulationStatus';
+import { SimulationStatus } from '../../flights/entities/SimulationStatus';
 
 @Entity('custom_flight_simulations')
 export class CustomFlightSimulation {
