@@ -10,14 +10,13 @@ import {Airline} from "../../geo/entities/Airline";
 import {FlightStatus} from "../../flights/entities/FlightStatus";
 import {Flight} from "../../flights/entities/Flight";
 import {FlightCodeshare} from "../../flights/entities/FlightCodeshare";
-import {FlightTelemetry} from "../../flights/entities/FlightTelemetry";
-import {FlightHistory} from "../../flights/entities/FlightHistory";
-import {FavouriteDestination} from "../../flights/entities/FavouriteDestination";
+import {FlightHistory} from "../../user-preferences/entities/FlightHistory";
+import {FavouriteDestination} from "../../user-preferences/entities/FavouriteDestination";
 import {SimulationStatus} from "../../flights/entities/SimulationStatus";
-import {CustomFlightSimulation} from "../../flights/entities/CustomFlightSimulation";
-import {TrackingStatus} from "../../flights/entities/TrackingStatus";
-import {TrackingSource} from "../../flights/entities/TrackingSource";
-import {TrackedFlight} from "../../flights/entities/TrackedFlight";
+import {CustomFlightSimulation} from "../../simulations/entities/CustomFlightSimulation";
+import {TrackingStatus} from "../../tracking/entities/TrackingStatus";
+import {TrackingSource} from "../../tracking/entities/TrackingSource";
+import {TrackedFlight} from "../../user-preferences/entities/TrackedFlight";
 import {FlightChangeType} from "../../flights/entities/FlightChangeType";
 import {FlightStatusChange} from "../../flights/entities/FlightStatusChange";
 // User entities
@@ -27,6 +26,9 @@ import {RolePermission} from "../../users/entities/RolePermission";
 import {User} from "../../users/entities/User";
 import {UserPreferences} from "../../users/entities/UserPreferences";
 import {RefreshToken} from "../../users/entities/RefreshToken";
+// Telemetry entities
+import {FlightTelemetry} from "../../telemetry/entities/FlightTelemetry";
+
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
