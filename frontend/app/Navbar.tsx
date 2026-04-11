@@ -1,25 +1,47 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/common/hooks/useAuth';
+import { APP_NAME } from '@/common/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-    const { user, loading, logout } = useAuth();
+    const { user, logout } = useAuth();
     const [open, setOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const [coords, setCoords] = useState<{ top: number; right: number } | null>(null);
+    const [mounted, setMounted] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!open) return;
         function handleClickOutside(e: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
+            const target = e.target as Node;
+            if (buttonRef.current?.contains(target)) return;
+            if (dropdownRef.current?.contains(target)) return;
+            setOpen(false);
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [open]);
+
+    function toggleOpen() {
+        if (!open && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setCoords({
+                top: rect.bottom + 8,
+                right: window.innerWidth - rect.right,
+            });
+        }
+        setOpen((prev) => !prev);
+    }
 
     async function handleLogout() {
         setOpen(false);
@@ -32,39 +54,71 @@ export default function Navbar() {
         : '';
 
     return (
-        <nav className="flex items-center justify-end px-6 py-3">
-            {loading ? (
-                <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse" />
-            ) : user ? (
-                <div className="relative" ref={menuRef}>
+        <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14 border-b-2 border-ink bg-[var(--color-bg)]">
+            <Link
+                href="/"
+                className="group flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-ink"
+            >
+                <span className="w-5 h-5 border-2 border-ink bg-navy shadow-brut-sm group-hover:-translate-x-[1px] group-hover:-translate-y-[1px] transition-transform duration-[120ms] ease-out" />
+                <span className="group-hover:bg-[var(--color-lime)] px-1 py-0.5">{APP_NAME}</span>
+            </Link>
+
+            {user ? (
+                <>
                     <button
-                        onClick={() => setOpen(!open)}
-                        className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold hover:bg-indigo-700 transition cursor-pointer"
+                        ref={buttonRef}
+                        onClick={toggleOpen}
+                        aria-haspopup="menu"
+                        aria-expanded={open}
+                        className={
+                            'w-9 h-9 border-2 border-ink bg-navy text-white ' +
+                            'flex items-center justify-center font-mono text-xs uppercase ' +
+                            'shadow-brut-sm hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-brut ' +
+                            'active:translate-x-0 active:translate-y-0 active:shadow-none ' +
+                            'transition-[transform,box-shadow] duration-[120ms] ease-out cursor-pointer'
+                        }
                     >
                         {initial}
                     </button>
 
-                    {open && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                            <div className="px-4 py-2 border-b border-gray-100">
+                    {mounted && open && coords && createPortal(
+                        <div
+                            ref={dropdownRef}
+                            role="menu"
+                            style={{
+                                position: 'fixed',
+                                top: coords.top,
+                                right: coords.right,
+                                zIndex: 9999,
+                            }}
+                            className="w-60 bg-surface border-2 border-ink shadow-brut"
+                        >
+                            <div className="px-4 py-3 border-b-2 border-ink">
                                 {user.nickname && (
-                                    <p className="text-sm font-medium text-gray-800">{user.nickname}</p>
+                                    <p className="font-sans text-sm text-ink mb-0.5">{user.nickname}</p>
                                 )}
-                                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                <p className="font-mono text-[10px] uppercase tracking-widest text-ink-muted truncate">
+                                    {user.email}
+                                </p>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                className={
+                                    'block w-full text-left px-4 py-3 ' +
+                                    'font-mono text-xs uppercase tracking-widest text-[var(--color-danger)] ' +
+                                    'hover:bg-[var(--color-danger-bg)] cursor-pointer'
+                                }
                             >
                                 Wyloguj
                             </button>
-                        </div>
+                        </div>,
+                        document.body
                     )}
-                </div>
+                </>
             ) : (
                 <Link
                     href="/login"
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition"
+                    className="font-mono text-xs uppercase tracking-[0.25em] text-ink hover:bg-[var(--color-lime)] px-1 py-0.5"
                 >
                     Zaloguj sie
                 </Link>

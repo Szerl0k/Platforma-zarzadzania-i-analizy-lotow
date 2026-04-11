@@ -2,8 +2,17 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { useAuth } from '@/common/hooks/useAuth';
+import { APP_NAME } from '@/common/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+    Alert,
+    Button,
+    Card,
+    FormField,
+    Input,
+    PageShell,
+} from '@/common/components';
 
 export default function RegisterPage() {
     const { register, user, loading: authLoading } = useAuth();
@@ -41,99 +50,102 @@ export default function RegisterPage() {
         try {
             await register(email, password, nickname || undefined);
             router.push('/');
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Nie udalo sie utworzyc konta');
+        } catch (err: unknown) {
+            const message =
+                (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+                ?? 'Nie udalo sie utworzyc konta';
+            setError(message);
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
-            <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-                <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-                    Zarejestruj sie
+        <PageShell maxWidth="md" center>
+            <div className="mb-6">
+                <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink-muted mb-2">
+                    {APP_NAME} · Nowe konto
+                </p>
+                <h1 className="text-5xl font-black tracking-tighter leading-[0.95] text-ink">
+                    Zaloz konto.
                 </h1>
+                <div className="mt-3 h-[3px] w-16 bg-ink" />
+            </div>
 
+            <Card variant="elevated" padding="lg">
                 {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                        <p className="text-red-800 text-sm">{error}</p>
+                    <div className="mb-5">
+                        <Alert variant="error">{error}</Alert>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                            E-mail
-                        </label>
-                        <input
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <FormField label="E-mail" htmlFor="email">
+                        <Input
                             id="email"
                             type="email"
                             required
+                            autoComplete="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                             placeholder="twoj@email.com"
                         />
-                    </div>
+                    </FormField>
 
-                    <div>
-                        <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
-                            Nazwa uzytkownika <span className="text-gray-400">(opcjonalnie)</span>
-                        </label>
-                        <input
+                    <FormField label="Nazwa uzytkownika" htmlFor="nickname" optional>
+                        <Input
                             id="nickname"
                             type="text"
+                            autoComplete="nickname"
                             value={nickname}
                             onChange={(e) => setNickname(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                         />
-                    </div>
+                    </FormField>
 
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                            Haslo
-                        </label>
-                        <input
+                    <FormField label="Haslo" htmlFor="password" hint="Min. 6 znakow">
+                        <Input
                             id="password"
                             type="password"
                             required
+                            autoComplete="new-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                         />
-                    </div>
+                    </FormField>
 
-                    <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                            Powtorz haslo
-                        </label>
-                        <input
+                    <FormField label="Powtorz haslo" htmlFor="confirmPassword">
+                        <Input
                             id="confirmPassword"
                             type="password"
                             required
+                            autoComplete="new-password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                         />
-                    </div>
+                    </FormField>
 
-                    <button
+                    <Button
                         type="submit"
-                        disabled={loading}
-                        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                        variant="primary"
+                        size="lg"
+                        loading={loading}
+                        className="w-full"
+                        rightIcon={<span aria-hidden>&rarr;</span>}
                     >
-                        {loading ? 'Rejestracja...' : 'Zarejestruj sie'}
-                    </button>
+                        {loading ? 'Rejestracja' : 'Zaloz konto'}
+                    </Button>
                 </form>
+            </Card>
 
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    Masz juz konto?{' '}
-                    <Link href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
-                        Zaloguj sie
-                    </Link>
-                </p>
-            </div>
-        </main>
+            <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-muted text-center">
+                Masz juz konto?{' '}
+                <Link
+                    href="/login"
+                    className="text-ink underline decoration-2 underline-offset-4 hover:bg-[var(--color-lime)] px-1"
+                >
+                    Zaloguj sie
+                </Link>
+            </p>
+        </PageShell>
     );
 }
