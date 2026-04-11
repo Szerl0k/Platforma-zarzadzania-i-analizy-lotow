@@ -35,8 +35,8 @@ app.use('/api/users/me/preferences', authenticate, preferencesRoutes);
 app.use('/api/users', authenticate, userRoutes);
 
 // Admin routes
-app.use('/api/roles', authenticate, authorize('users:write'), roleRoutes);
-app.use('/api/permissions', authenticate, authorize('users:write'), permissionRoutes);
+app.use('/api/roles', authenticate, authorize('roles:write'), roleRoutes);
+app.use('/api/permissions', authenticate, authorize('permissions:write'), permissionRoutes);
 
 app.use(errorHandler);
 

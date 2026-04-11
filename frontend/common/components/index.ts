@@ -8,3 +8,5 @@ export { Alert } from './Alert';
 export { Spinner } from './Spinner';
 export { Badge } from './Badge';
 export { PageShell } from './PageShell';
+export { Modal } from './Modal';
+export { ConfirmDialog } from './ConfirmDialog';
