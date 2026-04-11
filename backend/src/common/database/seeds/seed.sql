@@ -15576,20 +15576,21 @@ INSERT INTO public.airports VALUES ('SBNT', NULL, 'Augusto Severo Airport', 1610
 --
 -- RBAC seed: permissions not created by the AddAuthEntities migration.
 -- Idempotent so re-running db:setup is safe.
+-- Note: pg_dump sets search_path to '' above, so table names must be schema-qualified.
 --
 
-INSERT INTO "permissions" ("name", "resource", "action", "description") VALUES
+INSERT INTO public.permissions ("name", "resource", "action", "description") VALUES
     ('roles:write', 'roles', 'write', 'Manage roles and role permissions'),
     ('permissions:write', 'permissions', 'write', 'Manage permissions')
 ON CONFLICT ("name") DO NOTHING;
 
-INSERT INTO "role_permissions" ("role_id", "permission_id", "granted_at")
+INSERT INTO public.role_permissions ("role_id", "permission_id", "granted_at")
 SELECT r.id, p.id, NOW()
-FROM "roles" r, "permissions" p
+FROM public.roles r, public.permissions p
 WHERE r.name = 'admin'
   AND p.name IN ('roles:write', 'permissions:write')
   AND NOT EXISTS (
-      SELECT 1 FROM "role_permissions" rp
+      SELECT 1 FROM public.role_permissions rp
       WHERE rp.role_id = r.id AND rp.permission_id = p.id
   );
 
