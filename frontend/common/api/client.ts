@@ -48,7 +48,12 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError);
-                if (typeof window !== 'undefined' && !['/login', '/register'].includes(window.location.pathname)) {
+                const isAuthProbe = originalRequest.url?.includes('/users/me');
+                if (
+                    !isAuthProbe &&
+                    typeof window !== 'undefined' &&
+                    !['/login', '/register'].includes(window.location.pathname)
+                ) {
                     window.location.href = '/login';
                 }
                 return Promise.reject(refreshError);

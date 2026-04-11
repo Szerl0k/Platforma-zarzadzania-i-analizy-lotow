@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --ink: #0A0A0A;
+  --ink-muted: #525252;
+  --ink-subtle: #A3A3A3;
+  --border-subtle: #E5E5E5;
+  --navy: #1E3A8A;
+  --navy-hover: #0F1E4A;
+  --lime: #BEF264;
+  --danger: #DC2626;
+  --danger-bg: #FEE2E2;
+  --success: #15803D;
+  --success-bg: #DCFCE7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-border-subtle: var(--border-subtle);
+  --color-navy: var(--navy);
+  --color-navy-hover: var(--navy-hover);
+  --color-lime: var(--lime);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@utility shadow-brut-sm {
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+
+@utility shadow-brut {
+  box-shadow: 6px 6px 0 0 var(--ink);
+}
+
+@utility shadow-brut-lg {
+  box-shadow: 8px 8px 0 0 var(--ink);
+}
+
+@utility shadow-brut-danger {
+  box-shadow: 4px 4px 0 0 var(--danger);
+}
+
+@utility shadow-brut-success {
+  box-shadow: 4px 4px 0 0 var(--success);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.05;
+  background-image: radial-gradient(circle, var(--ink) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Kill WebKit autofill yellow — force surface bg */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  caret-color: var(--ink);
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--ink);
 }
