@@ -7,6 +7,7 @@ import { User } from '../entities/User';
 import { Role } from '../entities/Role';
 import { UserPreferences } from '../entities/UserPreferences';
 import { RefreshToken } from '../entities/RefreshToken';
+import { RolePermission } from '../entities/RolePermission';
 
 const router = Router();
 
@@ -61,7 +62,16 @@ function signAccessToken(userId: string, roleId: number): string {
     );
 }
 
-function userResponse(user: User) {
+async function userResponse(user: User) {
+    const roleRepo = AppDataSource.getRepository(Role);
+    const rpRepo = AppDataSource.getRepository(RolePermission);
+
+    const role = await roleRepo.findOne({ where: { id: user.roleId } });
+    const rolePermissions = await rpRepo.find({
+        where: { roleId: user.roleId },
+        relations: ['permission'],
+    });
+
     return {
         id: user.id,
         email: user.email,
@@ -69,6 +79,15 @@ function userResponse(user: User) {
         emailVerified: user.emailVerified,
         profilePublic: user.profilePublic,
         roleId: user.roleId,
+        role: role
+            ? {
+                id: role.id,
+                name: role.name,
+                description: role.description,
+                isSystem: role.isSystem,
+            }
+            : null,
+        permissions: rolePermissions.map(rp => rp.permission.name),
         createdAt: user.createdAt,
     };
 }
@@ -144,7 +163,7 @@ router.post('/register', async (req: Request, res: Response) => {
     const refreshToken = await createRefreshToken(user.id);
     setAuthCookies(res, accessToken, refreshToken);
 
-    res.status(201).json({ user: userResponse(user) });
+    res.status(201).json({ user: await userResponse(user) });
 });
 
 router.post('/login', async (req: Request, res: Response) => {
@@ -176,7 +195,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const refreshToken = await createRefreshToken(user.id);
     setAuthCookies(res, accessToken, refreshToken);
 
-    res.json({ user: userResponse(user) });
+    res.json({ user: await userResponse(user) });
 });
 
 router.post('/refresh', async (req: Request, res: Response) => {
@@ -211,7 +230,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
     const newRefreshToken = await createRefreshToken(user.id);
     setAuthCookies(res, accessToken, newRefreshToken);
 
-    res.json({ user: userResponse(user) });
+    res.json({ user: await userResponse(user) });
 });
 
 router.post('/logout', async (req: Request, res: Response) => {

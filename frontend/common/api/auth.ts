@@ -1,5 +1,12 @@
 import { apiClient } from './client';
 
+export interface AuthRole {
+    id: number;
+    name: string;
+    description: string | null;
+    isSystem: boolean;
+}
+
 export interface AuthUser {
     id: string;
     email: string;
@@ -7,6 +14,8 @@ export interface AuthUser {
     emailVerified: boolean;
     profilePublic: boolean;
     roleId: number;
+    role: AuthRole | null;
+    permissions: string[];
     createdAt: string;
 }
 

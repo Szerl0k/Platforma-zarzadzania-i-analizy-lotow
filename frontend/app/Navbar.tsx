@@ -2,10 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useAuth } from '@/common/hooks/useAuth';
+import { useAuth, hasAnyPermission } from '@/common/hooks/useAuth';
 import { APP_NAME } from '@/common/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+const ADMIN_PERMS = ['users:write', 'roles:write', 'permissions:write'];
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -101,6 +103,19 @@ export default function Navbar() {
                                     {user.email}
                                 </p>
                             </div>
+                            {hasAnyPermission(user, ADMIN_PERMS) && (
+                                <Link
+                                    href="/admin"
+                                    onClick={() => setOpen(false)}
+                                    className={
+                                        'block w-full text-left px-4 py-3 border-b-2 border-ink ' +
+                                        'font-mono text-xs uppercase tracking-widest text-ink ' +
+                                        'hover:bg-[var(--color-lime)] cursor-pointer'
+                                    }
+                                >
+                                    Panel admina
+                                </Link>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 className={

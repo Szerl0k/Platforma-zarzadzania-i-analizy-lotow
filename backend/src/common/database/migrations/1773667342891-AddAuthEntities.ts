@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddAuthEntities1773600000000 implements MigrationInterface {
-    name = 'AddAuthEntities1773600000000'
+export class AddAuthEntities1773667342891 implements MigrationInterface {
+    name = 'AddAuthEntities1773667342891'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Create roles table

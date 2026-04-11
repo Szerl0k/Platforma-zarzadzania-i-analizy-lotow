@@ -15572,4 +15572,25 @@ INSERT INTO public.airports VALUES ('SBNT', NULL, 'Augusto Severo Airport', 1610
 --
 -- PostgreSQL database dump complete
 --
+
+--
+-- RBAC seed: permissions not created by the AddAuthEntities migration.
+-- Idempotent so re-running db:setup is safe.
+--
+
+INSERT INTO "permissions" ("name", "resource", "action", "description") VALUES
+    ('roles:write', 'roles', 'write', 'Manage roles and role permissions'),
+    ('permissions:write', 'permissions', 'write', 'Manage permissions')
+ON CONFLICT ("name") DO NOTHING;
+
+INSERT INTO "role_permissions" ("role_id", "permission_id", "granted_at")
+SELECT r.id, p.id, NOW()
+FROM "roles" r, "permissions" p
+WHERE r.name = 'admin'
+  AND p.name IN ('roles:write', 'permissions:write')
+  AND NOT EXISTS (
+      SELECT 1 FROM "role_permissions" rp
+      WHERE rp.role_id = r.id AND rp.permission_id = p.id
+  );
+
 COMMIT;
