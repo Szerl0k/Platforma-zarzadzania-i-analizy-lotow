@@ -25,3 +25,5 @@ postgres_data/
 .vscode/
 .idea/
 
+.adr-dir
+
