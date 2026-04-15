@@ -1,12 +1,20 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Point } from 'geojson';
 import { Flight } from '../../flights/entities/Flight';
+import {HexIcao24AddressTransformer} from "../../common/utils/HexTransformer";
 
 @Entity('flight_telemetry')
 @Index(['flightId', 'timestamp'])
 export class FlightTelemetry {
     @PrimaryGeneratedColumn('increment', { type: 'bigint' })
     id!: string;
+
+    @Column({
+        type: 'integer',
+        name: 'icao24',
+        transformer: HexIcao24AddressTransformer
+    })
+    icao24!: string;
 
     @Column({ type: 'uuid', name: 'flight_id' })
     flightId!: string;

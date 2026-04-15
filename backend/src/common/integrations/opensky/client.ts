@@ -8,7 +8,19 @@ import {
     OpenSkyTrackResponse
 } from './types';
 
+export class OpenSkyError extends Error {
+    public readonly status: number | string | null;
+    public readonly message: string;
+    public readonly responseData: unknown;
 
+    constructor(message: string, status: number | null | string, responseData: unknown) {
+        super(message);
+        this.name = 'OpenSkyError'
+        this.message = message;
+        this.status = status;
+        this.responseData = responseData;
+    }
+}
 export class OpenSkyClient {
     private readonly authUrl = "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
     private readonly apiUrl = "https://opensky-network.org/api";
@@ -90,9 +102,14 @@ export class OpenSkyClient {
         if (axios.isAxiosError(error)) {
             const statusCode = error.response?.status || 'Unknown Status';
             const responseData = JSON.stringify(error.response?.data || {});
-            throw new Error(`${customMessage} | Status: ${statusCode} | Details: ${responseData} | Message: ${error.message}`)
+            const message = `${customMessage} | Error: ${error.message}`
+            throw new OpenSkyError(message, statusCode, responseData);
         }
-        throw new Error(`${customMessage} | Unexpected error: ${String(error)}`);
+        throw new OpenSkyError(
+            `${customMessage} | Unexpected error: ${String(error)}`,
+            null,
+            null
+        );
     }
 
     public async getAllStateVectors(bbox?: BoundingBox, icao24?: string | string[]) : Promise<OpenSkyStateVectorsResponse> {

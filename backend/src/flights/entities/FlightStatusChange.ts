@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { TrackedFlight } from '../../user-preferences/entities/TrackedFlight';
+import { TrackedFlight } from '../../tracking/entities/TrackedFlight';
 import { FlightChangeType } from './FlightChangeType';
 
 @Entity('flight_status_changes')

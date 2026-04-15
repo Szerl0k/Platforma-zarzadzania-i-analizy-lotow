@@ -6,7 +6,7 @@ import {
     AeroAPIAirportInfo,
     AeroAPIStandardFlightsResponse,
     AeroAPIFlightsBetweenParams, AeroAPISegmentedFlightsResponse, AeroAPISchedulesParams, AeroAPISchedulesResponse,
-    AeroAPIOperatorInfo
+    AeroAPIOperatorInfo, AeroAPIFlightPositionResponse
 } from './types'
 
 export class AeroAPIError extends Error {
@@ -105,6 +105,10 @@ export class AeroAPIClient {
         params?: AeroAPISchedulesParams
     ) : Promise<AeroAPISchedulesResponse> {
         return this.request<AeroAPISchedulesResponse>(`/schedules/${dateStart}/${dateEnd}`, params);
+    }
+
+    public async getFlightPosition(faFlightId: string): Promise<AeroAPIFlightPositionResponse> {
+        return this.request<AeroAPIFlightPositionResponse>(`/flights/${faFlightId}/position`);
     }
 
 }

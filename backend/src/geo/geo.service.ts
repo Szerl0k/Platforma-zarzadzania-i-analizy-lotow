@@ -10,7 +10,7 @@ import {
     AeroAPIError,
     AeroAPIAirportInfo,
     AeroAPIOperatorInfo,
-} from '../common/integrations/areoapi';
+} from '../common/integrations/aeroapi';
 
 export interface AirportDTO {
     icaoCode: string;

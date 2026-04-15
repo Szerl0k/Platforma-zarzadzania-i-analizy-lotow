@@ -33,6 +33,14 @@ export class Flight {
     @Column({ type: 'varchar', nullable: false, name: 'callsign' })
     callsign!: string;
 
+    @Index({unique: true})
+    @Column({
+        type: 'varchar',
+        nullable: true,
+        name: 'fa_flight_id'
+    })
+    faFlightId!: string | null;
+
     @Column({ type: 'varchar', length: 4, nullable: true, name: 'origin_icao' })
     originIcao!: string | null;
 
