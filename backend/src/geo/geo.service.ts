@@ -256,7 +256,6 @@ export async function searchAirports(q: string, limit = 20): Promise<Airport[]> 
     if (!term) return [];
     const normalized = normalizeIcao(term);
     const like = `%${term}%`;
-
     return airportRepo().find({
         where: [
             { icaoCode: normalized },

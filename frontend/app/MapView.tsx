@@ -10,7 +10,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // OpenFreeMap Liberty: free, keyless vector tiles built on the OpenMapTiles
 // schema. Unlike OSM raster tiles (where labels are baked into pixels), a
 // vector style lets us override label text per layer at runtime.
-const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
 
 // Force Polish labels everywhere; fall back to romanised name, then the
 // regional default if no Polish name exists.

@@ -28,7 +28,7 @@ export class RateLimitExceededError extends Error {
 export class DataStaleError extends Error {
     public readonly statusCode: number = 409
 
-    constructor(message: string = 'Recieved telemetry data is stale.') {
+    constructor(message: string = 'Received telemetry data is stale.') {
         super(message);
         this.name = 'DataStaleError';
         if (Error.captureStackTrace) Error.captureStackTrace(this, DataStaleError);

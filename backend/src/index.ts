@@ -3,15 +3,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { AppDataSource } from './common/database/data-source';
-import { authenticate, authorize } from './common/middleware/auth';
 import { globalErrorHandler } from './common/middleware/errorHandler';
-import authRoutes from './users/routes/auth.routes';
-import userRoutes from './users/routes/users.routes';
-import preferencesRoutes from './users/routes/preferences.routes';
-import roleRoutes from './users/routes/roles.routes';
-import permissionRoutes from './users/routes/permissions.routes';
-import geoRoutes from './geo/geo.routes';
-import telemetryRoutes from "./telemetry/telemetry.routes";
+import apiRouter from "./common/routes";
 
 
 dotenv.config();
@@ -26,25 +19,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/api/health', (_req, res) => {
-    res.json({ status: 'OK', message: 'Backend is running' });
-});
 
-
-// Public routes
-app.use('/api/auth', authRoutes);
-
-// Geo routes
-app.use('/api', geoRoutes);
-app.use('/api/telemetry', telemetryRoutes)
-
-// Protected routes
-app.use('/api/users/me/preferences', authenticate, preferencesRoutes);
-app.use('/api/users', authenticate, userRoutes);
-
-// Admin routes
-app.use('/api/roles', authenticate, authorize('roles:write'), roleRoutes);
-app.use('/api/permissions', authenticate, authorize('permissions:write'), permissionRoutes);
+app.use('/api/v1', apiRouter);
 
 app.use(globalErrorHandler);
 

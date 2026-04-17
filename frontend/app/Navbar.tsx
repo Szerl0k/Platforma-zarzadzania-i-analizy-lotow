@@ -57,13 +57,24 @@ export default function Navbar() {
 
     return (
         <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14 border-b-2 border-ink bg-[var(--color-bg)]">
-            <Link
-                href="/"
-                className="group flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-ink"
-            >
-                <span className="w-5 h-5 border-2 border-ink bg-navy shadow-brut-sm group-hover:-translate-x-[1px] group-hover:-translate-y-[1px] transition-transform duration-[120ms] ease-out" />
-                <span className="group-hover:bg-[var(--color-lime)] px-1 py-0.5">{APP_NAME}</span>
-            </Link>
+            <div className="flex items-center gap-6">
+                <Link
+                    href="/"
+                    className="group flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-ink"
+                >
+                    <span className="w-5 h-5 border-2 border-ink bg-navy shadow-brut-sm group-hover:-translate-x-[1px] group-hover:-translate-y-[1px] transition-transform duration-[120ms] ease-out" />
+                    <span className="group-hover:bg-[var(--color-lime)] px-1 py-0.5">{APP_NAME}</span>
+                </Link>
+                
+                <div className="hidden sm:block w-px h-6 bg-ink opacity-20" />
+
+                <Link 
+                    href="/telemetry" 
+                    className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
+                >
+                    Telemetria
+                </Link>
+            </div>
 
             {user ? (
                 <>

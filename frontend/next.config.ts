@@ -6,7 +6,7 @@ const nextConfig = {
         source: '/api/:path*',
         // When running in Docker, this uses the internal docker name "backend"
         // When running locally without docker, it falls back to localhost
-        destination: `${process.env.INTERNAL_API_URL || 'http://localhost:5001'}/api/:path*`,
+        destination: `${process.env.INTERNAL_API_URL || 'http://localhost:5001'}/api/v1/:path*`,
       },
     ]
   },

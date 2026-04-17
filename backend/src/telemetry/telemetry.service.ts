@@ -86,7 +86,7 @@ export class TelemetryService {
         const areaSqDegrees = latRange * lonRange;
 
         if (areaSqDegrees > TelemetryService.MAX_AREA_SQ_DEGREES) {
-            throw new Error(`Requested map area (${areaSqDegrees.toFixed(2)}) sq° exceeded allowed limit ${TelemetryService.MAX_AREA_SQ_DEGREES} sq°`)
+            throw new BoundingBoxLimitError(`Requested map area (${areaSqDegrees.toFixed(2)}) sq° exceeded allowed limit ${TelemetryService.MAX_AREA_SQ_DEGREES} sq°`)
         }
 
         const bbox: BoundingBox = {
