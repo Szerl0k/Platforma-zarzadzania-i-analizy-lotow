@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import type { BoundingBoxDTO } from './telemetry';
 
 export interface AirportCity {
     id: number;
@@ -43,6 +44,11 @@ export interface AirportUpdateInput {
     timezone?: string;
     countryCode?: string;
     cityName?: string;
+}
+
+export async function getAirportsInArea(bbox: BoundingBoxDTO): Promise<Airport[]> {
+    const { data } = await apiClient.get<Airport[]>('/airports/area', { params: bbox });
+    return data;
 }
 
 export async function searchAirports(q: string, limit = 20): Promise<Airport[]> {

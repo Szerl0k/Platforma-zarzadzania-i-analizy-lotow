@@ -1,5 +1,6 @@
 import type { ExpressionSpecification } from 'maplibre-gl';
 import {FlightPositionDTO} from "@/common/api/telemetry";
+import type { Airport } from '@/common/api/airports';
 
 
 export const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
@@ -10,6 +11,27 @@ export const POLISH_TEXT_FIELD: ExpressionSpecification = [
     ['get', 'name:latin'],
     ['get', 'name'],
 ];
+
+export function mapAirportsToGeoJson(airports: Airport[]): GeoJSON.FeatureCollection {
+    return {
+        type: 'FeatureCollection',
+        features: airports.map((a) => ({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [a.longitude, a.latitude],
+            },
+            properties: {
+                icaoCode: a.icaoCode,
+                iataCode: a.iataCode,
+                name: a.name,
+                cityName: a.city?.name ?? null,
+                countryName: a.city?.countryName ?? null,
+                timezone: a.timezone,
+            },
+        })),
+    };
+}
 
 export function mapFlightsToGeoJson(flights: FlightPositionDTO[]): GeoJSON.FeatureCollection {
     return {

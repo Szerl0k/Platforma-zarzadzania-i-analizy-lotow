@@ -9,6 +9,7 @@ import {
     getOrFetchAirport,
     listAirlines,
     listAirports,
+    listAirportsInArea,
     searchAirlines,
     searchAirports,
     serializeAirline,
@@ -35,6 +36,25 @@ function parseOffset(value: unknown): number {
     const parsed = parseInt(String(value ?? ''), 10);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
+
+router.get(
+    '/airports/area',
+    asyncHandler(async (req, res) => {
+        const lomin = parseFloat(String(req.query.lomin ?? ''));
+        const lamin = parseFloat(String(req.query.lamin ?? ''));
+        const lomax = parseFloat(String(req.query.lomax ?? ''));
+        const lamax = parseFloat(String(req.query.lamax ?? ''));
+
+        if ([lomin, lamin, lomax, lamax].some((v) => !Number.isFinite(v))) {
+            res.status(400).json({ error: 'lomin, lamin, lomax, lamax are required finite numbers' });
+            return;
+        }
+
+        const limit = parseLimit(req.query.limit, 300);
+        const airports = await listAirportsInArea(lomin, lamin, lomax, lamax, limit);
+        res.json(airports.map(serializeAirport));
+    }),
+);
 
 router.get(
     '/airports/search',

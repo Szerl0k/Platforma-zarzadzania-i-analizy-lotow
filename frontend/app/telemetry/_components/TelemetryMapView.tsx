@@ -7,19 +7,24 @@ import type {
     MapLayerMouseEvent
 } from 'maplibre-gl';
 import { useTelemetry } from '@/common/hooks/useTelemetry';
+import { useAirports } from '@/common/hooks/useAirports';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {FlightDetails} from "@/common/components/Map/FlightDetails";
+import {AirportDetails} from "@/common/components/Map/AirportDetails";
 import {MapOverlay} from "@/common/components/Map/TelemetryOverlay";
-import {MAP_STYLE_URL, mapFlightsToGeoJson, POLISH_TEXT_FIELD} from "@/app/telemetry/_utils/telemetryMapHelpers";
+import {MAP_STYLE_URL, mapAirportsToGeoJson, mapFlightsToGeoJson, POLISH_TEXT_FIELD} from "@/app/telemetry/_utils/telemetryMapHelpers";
 
 export default function TelemetryMapView() {
     const mapRef = useRef<MapRef>(null);
-    const { flights, error, loading, setBounds } = useTelemetry(10000);
+    const { flights, error, loading, setBounds: setFlightBounds } = useTelemetry(10000);
+    const { airports, setBounds: setAirportBounds } = useAirports();
 
     const [selectedFlight, setSelectedFlight] = useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
+    const [selectedAirport, setSelectedAirport] = useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
     const [cursor, setCursor] = useState<string>('');
 
     const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
+    const airportsGeoJson = useMemo(() => mapAirportsToGeoJson(airports), [airports]);
 
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -41,15 +46,17 @@ export default function TelemetryMapView() {
             const quantizeMin = (val: number) => Math.floor(val / GRID_SIZE) * GRID_SIZE;
             const quantizeMax = (val: number) => Math.ceil(val / GRID_SIZE) * GRID_SIZE;
 
-            setBounds({
+            const bbox = {
                 lomin: quantizeMin(b.getWest()),
                 lamin: quantizeMin(b.getSouth()),
                 lomax: quantizeMax(b.getEast()),
                 lamax: quantizeMax(b.getNorth()),
-            });
+            };
+            setFlightBounds(bbox);
+            setAirportBounds(bbox);
 
         }, 500) // 500ms debounce przed wykonaniem faktycznej aktualizacji stanu
-    }, [setBounds]);
+    }, [setFlightBounds, setAirportBounds]);
 
 
     useEffect(() => {
@@ -85,18 +92,39 @@ export default function TelemetryMapView() {
                     console.error('Error loading icon: ', error);
                 })
         }
+
+        if (!map.hasImage('airport-icon')) {
+            map.loadImage('/airport.png').then(r => {
+                const src = r.data as HTMLImageElement;
+                const canvas = document.createElement('canvas');
+                canvas.width = src.width;
+                canvas.height = src.height;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(src, 0, 0);
+                ctx.globalCompositeOperation = 'source-in';
+                ctx.fillStyle = '#1E3A8A';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                map.addImage('airport-icon', ctx.getImageData(0, 0, canvas.width, canvas.height));
+            });
+        }
     }, [updateBoundingBox]);
 
     const handleMapClick = useCallback((e: MapLayerMouseEvent) => {
-        // All objects that we've clicked
         const feature = e.features?.[0];
 
-        if (feature) {
-            setSelectedFlight(feature as GeoJSON.Feature<GeoJSON.Point>);
-        } else {
+        if (!feature) {
             setSelectedFlight(null);
+            setSelectedAirport(null);
+            return;
         }
 
+        if (feature.layer?.id === 'airports-points') {
+            setSelectedAirport(feature as GeoJSON.Feature<GeoJSON.Point>);
+            setSelectedFlight(null);
+        } else {
+            setSelectedFlight(feature as GeoJSON.Feature<GeoJSON.Point>);
+            setSelectedAirport(null);
+        }
     }, []);
 
     const onMouseEnter = useCallback(() => setCursor('pointer'), []);
@@ -117,13 +145,26 @@ export default function TelemetryMapView() {
                 onMoveEnd={updateBoundingBox}
 
                 // Mouse clicking interaction
-                interactiveLayerIds={['flights-points']}
+                interactiveLayerIds={['flights-points', 'airports-points']}
                 onClick={handleMapClick}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
                 cursor={cursor}
             >
                 <NavigationControl position="bottom-right" showCompass={false} />
+
+                <Source id="airports-source" type="geojson" data={airportsGeoJson}>
+                    <Layer
+                        id="airports-points"
+                        type="symbol"
+                        minzoom={5}
+                        layout={{
+                            'icon-image': 'airport-icon',
+                            'icon-allow-overlap': true,
+                            'icon-size': 0.015,
+                        }}
+                    />
+                </Source>
 
                 <Source id="flights-source" type="geojson" data={geoJsonData}>
                     <Layer
@@ -143,12 +184,26 @@ export default function TelemetryMapView() {
                     />
                 </Source>
 
+                {selectedAirport && (
+                    <Popup
+                        longitude={selectedAirport.geometry.coordinates[0]}
+                        latitude={selectedAirport.geometry.coordinates[1]}
+                        anchor="bottom"
+                        offset={15}
+                        onClose={() => setSelectedAirport(null)}
+                        closeOnClick={false}
+                        className="custom-popup"
+                    >
+                        <AirportDetails properties={selectedAirport.properties as any} />
+                    </Popup>
+                )}
+
                 {selectedFlight && (
                     <Popup
                         longitude={selectedFlight.geometry.coordinates[0]}
                         latitude={selectedFlight.geometry.coordinates[1]}
                         anchor="bottom"
-                        offset={15} // Odsunięcie od środka ikony, by jej nie zasłaniać
+                        offset={15}
                         onClose={() => setSelectedFlight(null)}
                         closeOnClick={false}
                         className="custom-popup"

@@ -278,6 +278,25 @@ export async function listAirports(limit = 50, offset = 0): Promise<{ items: Air
     return { items, total };
 }
 
+export async function listAirportsInArea(
+    lomin: number,
+    lamin: number,
+    lomax: number,
+    lamax: number,
+    limit = 300,
+): Promise<Airport[]> {
+    return airportRepo()
+        .createQueryBuilder('airport')
+        .leftJoinAndSelect('airport.city', 'city')
+        .leftJoinAndSelect('city.country', 'country')
+        .where(
+            'ST_Within(airport.location, ST_MakeEnvelope(:lomin, :lamin, :lomax, :lamax, 4326))',
+            { lomin, lamin, lomax, lamax },
+        )
+        .take(Math.min(Math.max(limit, 1), 500))
+        .getMany();
+}
+
 export async function createAirport(input: AirportCreateInput): Promise<Airport> {
     const icao = normalizeIcao(input.icaoCode);
     if (!icao || icao.length < 3 || icao.length > 4) {
