@@ -12,7 +12,6 @@
     "migration:run": "npm run typeorm -- migration:run -d src/common/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/common/database/data-source.ts",
     "db:setup": "ts-node src/common/database/seeds/init-seed.ts",
-
     "ci:migrate-and-seed": "npm run migration:run && npm run db:setup"
   },
   "keywords": [],
@@ -25,10 +24,13 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
     "geojson": "^0.5.0",
     "jsonwebtoken": "^9.0.3",
+    "node-cache": "^5.1.2",
     "pg": "^8.20.0",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

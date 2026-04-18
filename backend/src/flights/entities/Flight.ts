@@ -3,7 +3,7 @@ import { Airline } from '../../geo/entities/Airline';
 import { Airport } from '../../geo/entities/Airport';
 import { FlightStatus } from './FlightStatus';
 import { FlightCodeshare } from './FlightCodeshare';
-import { FlightTelemetry } from './FlightTelemetry';
+import { FlightTelemetry } from '../../telemetry/entities/FlightTelemetry';
 
 @Entity('flights')
 export class Flight {
@@ -32,6 +32,14 @@ export class Flight {
     @Index()
     @Column({ type: 'varchar', nullable: false, name: 'callsign' })
     callsign!: string;
+
+    @Index({unique: true})
+    @Column({
+        type: 'varchar',
+        nullable: true,
+        name: 'fa_flight_id'
+    })
+    faFlightId!: string | null;
 
     @Column({ type: 'varchar', length: 4, nullable: true, name: 'origin_icao' })
     originIcao!: string | null;

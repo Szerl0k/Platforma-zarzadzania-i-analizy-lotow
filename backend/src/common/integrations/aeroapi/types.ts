@@ -143,6 +143,28 @@ export interface AeroAPISchedule {
     seats_cabin_first?: number | null;
 }
 
+export interface AeroAPILastPosition {
+    fa_flight_id: string;
+    altitude: number | null;
+    altitude_change?: string;
+    groundspeed?: number;
+    heading?: number;
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+    update_type?: string;
+}
+
+export interface AeroAPIFlightPositionResponse {
+    ident: string;
+    ident_icao: string | null;
+    ident_iata: string | null;
+    atc_ident: string | null;
+    fa_flight_id: string;
+    last_position: AeroAPILastPosition | null;
+    bounding_box?: number[];
+}
+
 export interface AeroAPIPaginatedResponse {
     links?: {
         next?: string | null;
