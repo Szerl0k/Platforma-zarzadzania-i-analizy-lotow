@@ -1,32 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../users/entities/User';
-import { Airport } from '../../geo/entities/Airport';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { User } from "../../users/entities/User";
+import { Airport } from "../../geo/entities/Airport";
 
-@Entity('favorite_destinations')
+@Entity("favorite_destinations")
 export class FavouriteDestination {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
-    @Column({ type: 'uuid', name: 'user_id' })
-    userId!: string;
+  @Column({ type: "uuid", name: "user_id" })
+  userId!: string;
 
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'user_id' })
-    user!: User;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "user_id" })
+  user!: User;
 
-    @Column({ type: 'varchar', length: 4, name: 'airport_icao' })
-    airportIcao!: string;
+  @Column({ type: "varchar", length: 4, name: "airport_icao" })
+  airportIcao!: string;
 
-    @ManyToOne(() => Airport)
-    @JoinColumn({ name: 'airport_icao', referencedColumnName: 'icaoCode' })
-    airport!: Airport;
+  @ManyToOne(() => Airport)
+  @JoinColumn({ name: "airport_icao", referencedColumnName: "icaoCode" })
+  airport!: Airport;
 
-    @Column({ type: 'text', nullable: true })
-    notes!: string | null;
+  @Column({ type: "text", nullable: true })
+  notes!: string | null;
 
-    @Column({ type: 'timestamp', precision: 0, name: 'created_at' })
-    createdAt!: Date;
+  @Column({ type: "timestamp", precision: 0, name: "created_at" })
+  createdAt!: Date;
 
-    @Column({ type: 'timestamp', precision: 0, name: 'updated_at' })
-    updatedAt!: Date;
+  @Column({ type: "timestamp", precision: 0, name: "updated_at" })
+  updatedAt!: Date;
 }

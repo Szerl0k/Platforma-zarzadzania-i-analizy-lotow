@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
-@Entity('simulation_statuses')
+@Entity("simulation_statuses")
 export class SimulationStatus {
-    @PrimaryGeneratedColumn('increment')
-    id!: number;
+  @PrimaryGeneratedColumn("increment")
+  id!: number;
 
-    @Column({ type: 'varchar', length: 50, unique: true, nullable: false })
-    name!: string;
+  @Column({ type: "varchar", length: 50, unique: true, nullable: false })
+  name!: string;
 }

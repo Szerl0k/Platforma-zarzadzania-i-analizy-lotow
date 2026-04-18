@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "format": "prettier --write '**/*.{ts,tsx,css,json}'",
+    "format:check": "prettier --check '**/*.{ts,tsx,css,json}'"
   },
   "dependencies": {
     "axios": "^1.13.5",
     "maplibre-gl": "^5.22.0",
-    "next": "16.1.6",
+    "next": "^16.2.4",
+    "prettier": "^3.8.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-map-gl": "^8.1.1",

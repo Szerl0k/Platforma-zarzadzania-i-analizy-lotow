@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddTrackedFlightsEntity1773687649880 implements MigrationInterface {
-    name = 'AddTrackedFlightsEntity1773687649880'
+  name = "AddTrackedFlightsEntity1773687649880";
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "tracking_statuses" (
                 "id"   serial      NOT NULL,
                 "name" varchar(50) NOT NULL,
@@ -13,14 +13,14 @@ export class AddTrackedFlightsEntity1773687649880 implements MigrationInterface 
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             INSERT INTO "tracking_statuses" ("name") VALUES
                 ('active'),
                 ('stopped'),
                 ('completed')
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "tracking_sources" (
                 "id"   serial      NOT NULL,
                 "name" varchar(50) NOT NULL,
@@ -29,14 +29,14 @@ export class AddTrackedFlightsEntity1773687649880 implements MigrationInterface 
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             INSERT INTO "tracking_sources" ("name") VALUES
                 ('manual'),
                 ('opensky'),
                 ('aeroapi')
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "tracked_flights" (
                 "id"                  uuid         NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id"             uuid         NOT NULL,
@@ -52,42 +52,50 @@ export class AddTrackedFlightsEntity1773687649880 implements MigrationInterface 
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "tracked_flights"
             ADD CONSTRAINT "tracked_flights_user_id_foreign"
             FOREIGN KEY ("user_id") REFERENCES "users"("id")
             ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "tracked_flights"
             ADD CONSTRAINT "tracked_flights_flight_id_foreign"
             FOREIGN KEY ("flight_id") REFERENCES "flights"("id")
             ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "tracked_flights"
             ADD CONSTRAINT "tracked_flights_tracking_status_id_foreign"
             FOREIGN KEY ("tracking_status_id") REFERENCES "tracking_statuses"("id")
             ON DELETE RESTRICT ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "tracked_flights"
             ADD CONSTRAINT "tracked_flights_source_id_foreign"
             FOREIGN KEY ("source_id") REFERENCES "tracking_sources"("id")
             ON DELETE RESTRICT ON UPDATE NO ACTION
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_source_id_foreign"`);
-        await queryRunner.query(`ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_tracking_status_id_foreign"`);
-        await queryRunner.query(`ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_flight_id_foreign"`);
-        await queryRunner.query(`ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_user_id_foreign"`);
-        await queryRunner.query(`DROP TABLE "tracked_flights"`);
-        await queryRunner.query(`DROP TABLE "tracking_sources"`);
-        await queryRunner.query(`DROP TABLE "tracking_statuses"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_source_id_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_tracking_status_id_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_flight_id_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tracked_flights" DROP CONSTRAINT "tracked_flights_user_id_foreign"`,
+    );
+    await queryRunner.query(`DROP TABLE "tracked_flights"`);
+    await queryRunner.query(`DROP TABLE "tracking_sources"`);
+    await queryRunner.query(`DROP TABLE "tracking_statuses"`);
+  }
 }
