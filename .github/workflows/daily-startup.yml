@@ -11,4 +11,6 @@ permissions:
 jobs:
   call-deployment-engine:
     uses: ./.github/workflows/master-deployment.yml
+    with:
+      skip_docker_build: true
     secrets: inherit
