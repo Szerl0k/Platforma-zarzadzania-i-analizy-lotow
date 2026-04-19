@@ -192,6 +192,8 @@ if [ "$IS_NEW_DATABASE" = true ]; then
     sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION postgis;"
 else
     echo "Bypassing schema initialization. Existing data preserved."
+    echo "$DB_PASSWORD"
+    echo "${db_password}"
     sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$${DB_PASSWORD}';"
 fi
 
