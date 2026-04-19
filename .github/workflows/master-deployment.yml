@@ -110,7 +110,7 @@ jobs:
           push: true
           target: prod
           build-args:
-            INTERNAL_API_URL=${{ needs.infrastructure.outputs.backend_url }}
+            INTERNAL_API_URL=https://${{ needs.infrastructure.outputs.backend_url }}
           tags: |
             ${{ env.FRONTEND_DOCKER_IMAGE }}:${{ github.sha }}
             ${{ github.ref == 'refs/heads/master' && format('{0}:latest', env.FRONTEND_DOCKER_IMAGE) || '' }}

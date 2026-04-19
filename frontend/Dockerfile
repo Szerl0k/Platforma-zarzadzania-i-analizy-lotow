@@ -21,7 +21,7 @@ ENV INTERNAL_API_URL=$INTERNAL_API_URL
 RUN npm run build
 
 # Prod stage
-FROM base as prod
+FROM base AS prod
 ENV NODE_ENV=prod
 ENV NEXT_TELEMETRY_DISABLED=1
 
