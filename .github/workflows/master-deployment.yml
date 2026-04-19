@@ -45,8 +45,11 @@ jobs:
     name: Provision Infrastructure
     runs-on: ubuntu-22.04
     outputs:
-      name: "The FQDN of the database VM"
-      vm_host: ${{ steps.get_host.outputs.vm_host }}
+      name: "The FQDN of the database VM and backend URL"
+      vm_host: ${{ steps.get_outputs.outputs.vm_host }}
+      backend_url: ${{ steps.get_outputs.outputs.backend_url }}
+
+
     env:
       # Terraform can read it automatically
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
@@ -72,10 +75,12 @@ jobs:
           terraform init -upgrade
           terraform apply -auto-approve
 
-      - name: Get DB VM FQDN
-        id: get_host
+      - name: Get Terraform Outputs
+        id: get_outputs
         working-directory: ./infrastructure/terraform/azure
-        run: echo "vm_host=$(terraform output -raw database_fqdn)" >> $GITHUB_OUTPUT
+        run: |
+          echo "vm_host=$(terraform output -raw database_fqdn)" >> $GITHUB_OUTPUT
+          echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
       
 
   # Frontend
@@ -104,6 +109,8 @@ jobs:
           context: ./frontend
           push: true
           target: prod
+          build-args:
+            INTERNAL_API_URL=https://${{ needs.infrastructure.outputs.backend_url }}
           tags: |
             ${{ env.FRONTEND_DOCKER_IMAGE }}:${{ github.sha }}
             ${{ github.ref == 'refs/heads/master' && format('{0}:latest', env.FRONTEND_DOCKER_IMAGE) || '' }}
