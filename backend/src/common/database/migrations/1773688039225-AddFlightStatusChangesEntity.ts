@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddFlightStatusChangesEntity1773688039225 implements MigrationInterface {
-    name = 'AddFlightStatusChangesEntity1773688039225'
+  name = "AddFlightStatusChangesEntity1773688039225";
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "flight_change_types" (
                 "id"   serial      NOT NULL,
                 "name" varchar(50) NOT NULL,
@@ -13,7 +13,7 @@ export class AddFlightStatusChangesEntity1773688039225 implements MigrationInter
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             INSERT INTO "flight_change_types" ("name") VALUES
                 ('status_change'),
                 ('delay_update'),
@@ -23,7 +23,7 @@ export class AddFlightStatusChangesEntity1773688039225 implements MigrationInter
                 ('diversion')
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "flight_status_changes" (
                 "id"                uuid         NOT NULL DEFAULT uuid_generate_v4(),
                 "tracked_flight_id" uuid         NOT NULL,
@@ -38,31 +38,37 @@ export class AddFlightStatusChangesEntity1773688039225 implements MigrationInter
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX "IDX_flight_status_changes_tracked_flight_id_occurred_at"
             ON "flight_status_changes" ("tracked_flight_id", "occurred_at" DESC)
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "flight_status_changes"
             ADD CONSTRAINT "flight_status_changes_tracked_flight_id_foreign"
             FOREIGN KEY ("tracked_flight_id") REFERENCES "tracked_flights"("id")
             ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "flight_status_changes"
             ADD CONSTRAINT "flight_status_changes_change_type_id_foreign"
             FOREIGN KEY ("change_type_id") REFERENCES "flight_change_types"("id")
             ON DELETE RESTRICT ON UPDATE NO ACTION
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "flight_status_changes" DROP CONSTRAINT "flight_status_changes_change_type_id_foreign"`);
-        await queryRunner.query(`ALTER TABLE "flight_status_changes" DROP CONSTRAINT "flight_status_changes_tracked_flight_id_foreign"`);
-        await queryRunner.query(`DROP INDEX "IDX_flight_status_changes_tracked_flight_id_occurred_at"`);
-        await queryRunner.query(`DROP TABLE "flight_status_changes"`);
-        await queryRunner.query(`DROP TABLE "flight_change_types"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "flight_status_changes" DROP CONSTRAINT "flight_status_changes_change_type_id_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "flight_status_changes" DROP CONSTRAINT "flight_status_changes_tracked_flight_id_foreign"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "IDX_flight_status_changes_tracked_flight_id_occurred_at"`,
+    );
+    await queryRunner.query(`DROP TABLE "flight_status_changes"`);
+    await queryRunner.query(`DROP TABLE "flight_change_types"`);
+  }
 }

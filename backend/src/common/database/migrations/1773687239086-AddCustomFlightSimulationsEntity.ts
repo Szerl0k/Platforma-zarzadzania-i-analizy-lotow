@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddCustomFlightSimulationsEntity1773687239086 implements MigrationInterface {
-    name = 'AddCustomFlightSimulationsEntity1773687239086'
+  name = "AddCustomFlightSimulationsEntity1773687239086";
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "simulation_statuses" (
                 "id"   serial       NOT NULL,
                 "name" varchar(50)  NOT NULL,
@@ -13,7 +13,7 @@ export class AddCustomFlightSimulationsEntity1773687239086 implements MigrationI
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             INSERT INTO "simulation_statuses" ("name") VALUES
                 ('draft'),
                 ('running'),
@@ -21,7 +21,7 @@ export class AddCustomFlightSimulationsEntity1773687239086 implements MigrationI
                 ('cancelled')
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "custom_flight_simulations" (
                 "id"                     uuid          NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id"                uuid          NOT NULL,
@@ -46,41 +46,49 @@ export class AddCustomFlightSimulationsEntity1773687239086 implements MigrationI
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "custom_flight_simulations"
             ADD CONSTRAINT "custom_flight_simulations_user_id_foreign"
             FOREIGN KEY ("user_id") REFERENCES "users"("id")
             ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "custom_flight_simulations"
             ADD CONSTRAINT "custom_flight_simulations_departure_airport_icao_foreign"
             FOREIGN KEY ("departure_airport_icao") REFERENCES "airports"("icao_code")
             ON DELETE RESTRICT ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "custom_flight_simulations"
             ADD CONSTRAINT "custom_flight_simulations_arrival_airport_icao_foreign"
             FOREIGN KEY ("arrival_airport_icao") REFERENCES "airports"("icao_code")
             ON DELETE RESTRICT ON UPDATE NO ACTION
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "custom_flight_simulations"
             ADD CONSTRAINT "custom_flight_simulations_status_id_foreign"
             FOREIGN KEY ("status_id") REFERENCES "simulation_statuses"("id")
             ON DELETE RESTRICT ON UPDATE NO ACTION
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_status_id_foreign"`);
-        await queryRunner.query(`ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_arrival_airport_icao_foreign"`);
-        await queryRunner.query(`ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_departure_airport_icao_foreign"`);
-        await queryRunner.query(`ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_user_id_foreign"`);
-        await queryRunner.query(`DROP TABLE "custom_flight_simulations"`);
-        await queryRunner.query(`DROP TABLE "simulation_statuses"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_status_id_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_arrival_airport_icao_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_departure_airport_icao_foreign"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "custom_flight_simulations" DROP CONSTRAINT "custom_flight_simulations_user_id_foreign"`,
+    );
+    await queryRunner.query(`DROP TABLE "custom_flight_simulations"`);
+    await queryRunner.query(`DROP TABLE "simulation_statuses"`);
+  }
 }

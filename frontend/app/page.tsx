@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { Spinner } from '@/common/components';
+import dynamic from "next/dynamic";
+import { Spinner } from "@/common/components";
 
-const MapView = dynamic(() => import('./MapView'), {
+const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
   loading: () => (
     <div className="h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink flex items-center justify-center">

@@ -37,13 +37,19 @@ variable "vm_name" {
 variable "vm_size" {
   type        = string
   description = "Size of the virtual machine"
-  default     = "Standard_D2as_v4"
+  default     = "Standard_B2ats_v2"
 }
 
 variable "admin_username" {
   type        = string
   description = "Username for the virtual machine"
   default     = "azureuser"
+}
+
+variable "db_password" {
+  description = "The password for postgres user"
+  type = string
+  sensitive = true
 }
 
 variable "ssh_public_key_path" {
@@ -61,7 +67,7 @@ variable "data_resource_group" {
 variable "data_disk_name" {
   type        = string
   description = "Name of the existing managed disk to attach"
-  default     = "inz-data-disk-postgis-01"
+  default     = "inz-data-disk-postgis-02"
 }
 
 variable "alert_email" {
@@ -77,6 +83,7 @@ variable "postgis_provisioning_script_path" {
 }
 
 variable "ssh_public_key" {
-  type = string
+  type        = string
   description = "The raw SSH public key string for the VM"
+  default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIHH2UZrqGrLmGndgtzrAvSFPPIFswh1k4/8xd0ygjsOzlejzwPkkV3Bgc9/l1aG6dWuCguFxWB6Ysh+7y3gTFt3IxhpFgfas8jxuUuVd/6OX6EfKzu4Qmei1ufc451XwCCS5ECZ2N221Oo8SN5UW3Ae1LCTxqOFMYDNSZCgeWIP+c0MkOwF8CqrSsMjOKvqGFVYthsQurtU9agBzyLVWriXD2oobohv95a/b95Q98hyxZfsR1uV+aed6ZyJzbMFwzljXUlmi9niiuVEJtFcV+L6kMQUOw7xGCP4vxRnjonxRqyQVpYWeF5Slwvfzv6SNq2SOuTxBmZFSJsQ7PmEEQNQqTVL4sv2ftRegMCeic5zoG+gG/REotpzSXnjXm3sRxhAg3vbC6AIVOicliOztUa9FbfAuSpWFGgg0OUKNdQaEQdISUJPVssDOf5JVUwpZZVYkVQ5rIrSjFh4DxQJUCaD7NpbWXHWevozMVU8qCHbbZ4CIitCzvy7rets+ianU= mmiik@DESKTOP-MJ"
 }
