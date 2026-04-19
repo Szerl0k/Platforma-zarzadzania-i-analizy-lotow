@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    allowedDevOrigins: ['dev-inz-frontend-app.azurewebsites.net'],
+    serverActions: {
+      allowedOrigins: ['dev-inz-frontend-app.azurewebsites.net'],
+    },
   },
   async rewrites() {
     return [
