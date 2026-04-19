@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['dev-inz-frontend-app.azurewebsites.net'],
-    },
-  },
   async rewrites() {
     return [
       {
