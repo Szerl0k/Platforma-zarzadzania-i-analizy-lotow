@@ -187,12 +187,12 @@ systemctl start postgresql
 
 if [ "$IS_NEW_DATABASE" = true ]; then
     echo "Initializing new database schema and user credentials..."
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$${DB_PASSWORD}';"
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${db_password}';"
     sudo -u postgres psql -c "CREATE DATABASE $DB_NAME;"
     sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION postgis;"
 else
     echo "Bypassing schema initialization. Existing data preserved."
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$${DB_PASSWORD}';"
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${db_password}';"
 fi
 
 systemctl restart postgresql
