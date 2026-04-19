@@ -13,6 +13,11 @@ CMD ["npm", "run", "dev"]
 FROM base AS builder
 RUN npm install
 COPY . .
+
+ARG INTERNAL_API_URL
+
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
+
 RUN npm run build
 
 # Prod stage
