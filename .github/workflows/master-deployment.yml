@@ -47,7 +47,7 @@ jobs:
     outputs:
       name: "The FQDN of the database VM and backend URL"
       vm_host: ${{ steps.get_outputs.outputs.vm_host }}
-      backend_url: $ {{ steps.getoutputs.outputs.backend_url }}
+      backend_url: ${{ steps.get_outputs.outputs.backend_url }}
 
 
     env:
