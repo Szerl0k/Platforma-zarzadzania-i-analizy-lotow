@@ -9,6 +9,7 @@
   --border-subtle: #E5E5E5;
   --navy: #1E3A8A;
   --navy-hover: #0F1E4A;
+  --gold: #F59E0B;
   --lime: #BEF264;
   --danger: #DC2626;
   --danger-bg: #FEE2E2;
@@ -25,6 +26,7 @@
   --color-border-subtle: var(--border-subtle);
   --color-navy: var(--navy);
   --color-navy-hover: var(--navy-hover);
+  --color-gold: var(--gold);
   --color-lime: var(--lime);
   --color-danger: var(--danger);
   --color-danger-bg: var(--danger-bg);

@@ -5,6 +5,7 @@ import {
     createAirport,
     deleteAirline,
     deleteAirport,
+    getAirportRoutes,
     getOrFetchAirline,
     getOrFetchAirport,
     listAirlines,
@@ -82,6 +83,19 @@ router.get(
             limit,
             offset,
         });
+    }),
+);
+
+router.get(
+    '/airports/:code/routes',
+    asyncHandler(async (req, res) => {
+        const code = String(req.params.code ?? '').trim();
+        if (!code) {
+            res.status(400).json({ error: 'Airport code is required' });
+            return;
+        }
+        const routes = await getAirportRoutes(code);
+        res.json(routes);
     }),
 );
 

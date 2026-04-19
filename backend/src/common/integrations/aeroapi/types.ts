@@ -127,17 +127,22 @@ export interface AeroAPISchedule {
     ident: string;
     ident_icao?: string | null;
     ident_iata?: string | null;
+    actual_ident?: string | null;
+    actual_ident_icao?: string | null;
+    actual_ident_iata?: string | null;
     fa_flight_id?: string | null;
-    operator?: string | null;
-    operator_icao?: string | null;
-    operator_iata?: string | null;
-    flight_number?: string | null;
-    origin?: AeroAPILocation | null;
-    destination?: AeroAPILocation | null;
+    aircraft_type?: string | null;
     scheduled_out: string;
     scheduled_in: string;
-    aircraft_type?: string | null;
-    route_distance?: number | null;
+    origin?: string | null;
+    origin_icao?: string | null;
+    origin_iata?: string | null;
+    origin_lid?: string | null;
+    destination?: string | null;
+    destination_icao?: string | null;
+    destination_iata?: string | null;
+    destination_lid?: string | null;
+    meal_service?: string | null;
     seats_cabin_business?: number | null;
     seats_cabin_coach?: number | null;
     seats_cabin_first?: number | null;
@@ -185,5 +190,5 @@ export interface AeroAPISegmentedFlightsResponse extends AeroAPIPaginatedRespons
 }
 
 export interface AeroAPISchedulesResponse extends AeroAPIPaginatedResponse {
-    schedules: AeroAPISchedule[];
+    scheduled: AeroAPISchedule[];
 }

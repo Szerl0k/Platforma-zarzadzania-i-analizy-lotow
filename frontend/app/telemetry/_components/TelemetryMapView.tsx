@@ -1,18 +1,45 @@
 'use client';
 
-import {useCallback, useRef, useMemo, useState, useEffect} from 'react';
+import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import { Map, NavigationControl, Source, Layer, MapEvent, Popup } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
-import type {
-    MapLayerMouseEvent
-} from 'maplibre-gl';
+import type { MapLayerMouseEvent } from 'maplibre-gl';
 import { useTelemetry } from '@/common/hooks/useTelemetry';
 import { useAirports } from '@/common/hooks/useAirports';
+import { useRouteAnimation } from '@/common/hooks/useRouteAnimation';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import {FlightDetails} from "@/common/components/Map/FlightDetails";
-import {AirportDetails} from "@/common/components/Map/AirportDetails";
-import {MapOverlay} from "@/common/components/Map/TelemetryOverlay";
-import {MAP_STYLE_URL, mapAirportsToGeoJson, mapFlightsToGeoJson, POLISH_TEXT_FIELD} from "@/app/telemetry/_utils/telemetryMapHelpers";
+import { FlightDetails } from '@/common/components/Map/FlightDetails';
+import { AirportPanel } from '@/common/components/Map/AirportPanel';
+import { MapOverlay } from '@/common/components/Map/TelemetryOverlay';
+import {
+    MAP_STYLE_URL,
+    mapAirportsToGeoJson,
+    mapFlightsToGeoJson,
+    mapRoutesToGeoJson,
+    tintMapImage,
+    POLISH_TEXT_FIELD,
+} from '@/app/telemetry/_utils/telemetryMapHelpers';
+import type { Airport } from '@/common/api/airports';
+
+const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
+
+interface AirportFeatureProperties {
+    icaoCode: string;
+    iataCode: string | null;
+    name: string;
+    cityName: string | null;
+    countryName: string | null;
+    timezone: string;
+}
+
+interface FlightFeatureProperties {
+    icao24: string;
+    callsign?: string;
+    altitude?: number | null;
+    velocity?: number | null;
+    heading?: number | null;
+    onGround?: boolean;
+}
 
 export default function TelemetryMapView() {
     const mapRef = useRef<MapRef>(null);
@@ -20,7 +47,9 @@ export default function TelemetryMapView() {
     const { airports, setBounds: setAirportBounds } = useAirports();
 
     const [selectedFlight, setSelectedFlight] = useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
-    const [selectedAirport, setSelectedAirport] = useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
+    const [selectedAirportData, setSelectedAirportData] = useState<Airport | null>(null);
+    const [selectedAirlineIcao, setSelectedAirlineIcao] = useState<string | null>(null);
+    const [routesGeoJson, setRoutesGeoJson] = useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
     const [cursor, setCursor] = useState<string>('');
 
     const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
@@ -28,14 +57,12 @@ export default function TelemetryMapView() {
 
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const updateBoundingBox = useCallback(() => {
+    useRouteAnimation(mapRef, routesGeoJson);
 
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
+    const updateBoundingBox = useCallback(() => {
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
         debounceTimerRef.current = setTimeout(() => {
-
             const map = mapRef.current?.getMap();
             if (!map) return;
             const b = map.getBounds();
@@ -54,25 +81,18 @@ export default function TelemetryMapView() {
             };
             setFlightBounds(bbox);
             setAirportBounds(bbox);
-
-        }, 500) // 500ms debounce przed wykonaniem faktycznej aktualizacji stanu
+        }, 500);
     }, [setFlightBounds, setAirportBounds]);
-
 
     useEffect(() => {
         return () => {
-            if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-            }
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         };
     }, []);
 
-
     const handleMapLoad = useCallback((e: MapEvent) => {
-
         const map = e.target;
 
-        // Force polish labels
         const layers = map.getStyle().layers ?? [];
         for (const layer of layers) {
             if (layer.type !== 'symbol') continue;
@@ -82,30 +102,20 @@ export default function TelemetryMapView() {
         }
         updateBoundingBox();
 
-        // Load airplane icon
         if (!map.hasImage('airplane-icon')) {
             map.loadImage('/airplane.png')
-                .then((response) => {
-                    map.addImage('airplane-icon', response.data);
-                })
-                .catch((error) => {
-                    console.error('Error loading icon: ', error);
-                })
+                .then((response) => { map.addImage('airplane-icon', response.data); })
+                .catch((err) => { console.error('Error loading airplane icon:', err); });
+        }
+
+        if (!map.hasImage('airplane-icon-navy')) {
+            tintMapImage(map, 'airplane-icon-navy', '/airplane.png', '#1E3A8A')
+                .catch((err) => { console.error('Error loading airplane-icon-navy:', err); });
         }
 
         if (!map.hasImage('airport-icon')) {
-            map.loadImage('/airport.png').then(r => {
-                const src = r.data as HTMLImageElement;
-                const canvas = document.createElement('canvas');
-                canvas.width = src.width;
-                canvas.height = src.height;
-                const ctx = canvas.getContext('2d')!;
-                ctx.drawImage(src, 0, 0);
-                ctx.globalCompositeOperation = 'source-in';
-                ctx.fillStyle = '#1E3A8A';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                map.addImage('airport-icon', ctx.getImageData(0, 0, canvas.width, canvas.height));
-            });
+            tintMapImage(map, 'airport-icon', '/airport.png', '#1E3A8A')
+                .catch((err) => { console.error('Error loading airport-icon:', err); });
         }
     }, [updateBoundingBox]);
 
@@ -114,109 +124,163 @@ export default function TelemetryMapView() {
 
         if (!feature) {
             setSelectedFlight(null);
-            setSelectedAirport(null);
             return;
         }
 
         if (feature.layer?.id === 'airports-points') {
-            setSelectedAirport(feature as GeoJSON.Feature<GeoJSON.Point>);
+            const props = feature.properties as AirportFeatureProperties;
+            const coords = (feature as GeoJSON.Feature<GeoJSON.Point>).geometry.coordinates;
+            setSelectedAirportData({
+                icaoCode: props.icaoCode,
+                iataCode: props.iataCode ?? null,
+                name: props.name,
+                latitude: coords[1],
+                longitude: coords[0],
+                timezone: props.timezone,
+                city: props.cityName
+                    ? { id: 0, name: props.cityName, countryCode: '', countryName: props.countryName ?? null }
+                    : null,
+            });
+            setSelectedAirlineIcao(null);
+            setRoutesGeoJson(EMPTY_GEOJSON);
             setSelectedFlight(null);
-        } else {
+        } else if (feature.layer?.id === 'flights-points') {
             setSelectedFlight(feature as GeoJSON.Feature<GeoJSON.Point>);
-            setSelectedAirport(null);
         }
     }, []);
+
+    const handlePanelClose = useCallback(() => {
+        setSelectedAirportData(null);
+        setSelectedAirlineIcao(null);
+        setRoutesGeoJson(EMPTY_GEOJSON);
+    }, []);
+
+    const handleAirlineSelect = useCallback((airlineIcao: string, destinations: Airport[]) => {
+        if (selectedAirlineIcao === airlineIcao) {
+            setSelectedAirlineIcao(null);
+            setRoutesGeoJson(EMPTY_GEOJSON);
+        } else {
+            setSelectedAirlineIcao(airlineIcao);
+            setRoutesGeoJson(
+                selectedAirportData
+                    ? mapRoutesToGeoJson(selectedAirportData, destinations)
+                    : EMPTY_GEOJSON,
+            );
+        }
+    }, [selectedAirlineIcao, selectedAirportData]);
 
     const onMouseEnter = useCallback(() => setCursor('pointer'), []);
     const onMouseLeave = useCallback(() => setCursor(''), []);
 
     return (
-        <div className="relative h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink bg-[var(--color-bg)]">
-            <Map
-                ref={mapRef}
-                initialViewState={{
-                    longitude: 19.0,
-                    latitude: 52.0,
-                    zoom: 5,
-                }}
-                mapStyle={MAP_STYLE_URL}
-                style={{ width: '100%', height: '100%' }}
-                onLoad={handleMapLoad}
-                onMoveEnd={updateBoundingBox}
+        <div className="flex h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink">
 
-                // Mouse clicking interaction
-                interactiveLayerIds={['flights-points', 'airports-points']}
-                onClick={handleMapClick}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                cursor={cursor}
-            >
-                <NavigationControl position="bottom-right" showCompass={false} />
+            {/* Side panel */}
+            <div className={`shrink-0 overflow-hidden transition-[width] duration-300 ${selectedAirportData ? 'w-80' : 'w-0'}`}>
+                <div className="w-80 h-full">
+                    {selectedAirportData && (
+                        <AirportPanel
+                            key={selectedAirportData.icaoCode}
+                            airport={selectedAirportData}
+                            selectedAirlineIcao={selectedAirlineIcao}
+                            onClose={handlePanelClose}
+                            onAirlineSelect={handleAirlineSelect}
+                        />
+                    )}
+                </div>
+            </div>
 
-                <Source id="airports-source" type="geojson" data={airportsGeoJson}>
-                    <Layer
-                        id="airports-points"
-                        type="symbol"
-                        minzoom={5}
-                        layout={{
-                            'icon-image': 'airport-icon',
-                            'icon-allow-overlap': true,
-                            'icon-size': 0.015,
-                        }}
-                    />
-                </Source>
+            {/* Map */}
+            <div className="relative flex-1 bg-[var(--color-bg)]">
+                <Map
+                    ref={mapRef}
+                    initialViewState={{ longitude: 19.0, latitude: 52.0, zoom: 5 }}
+                    mapStyle={MAP_STYLE_URL}
+                    style={{ width: '100%', height: '100%' }}
+                    onLoad={handleMapLoad}
+                    onMoveEnd={updateBoundingBox}
+                    interactiveLayerIds={['flights-points', 'airports-points']}
+                    onClick={handleMapClick}
+                    onMouseEnter={onMouseEnter}
+                    onMouseLeave={onMouseLeave}
+                    cursor={cursor}
+                >
+                    <NavigationControl position="bottom-right" showCompass={false} />
 
-                <Source id="flights-source" type="geojson" data={geoJsonData}>
-                    <Layer
-                        id="flights-points"
-                        type="symbol"
-                        layout={{
-                            'icon-image': 'airplane-icon',
+                    {/* Route lines */}
+                    <Source id="routes-source" type="geojson" data={routesGeoJson}>
+                        <Layer
+                            id="routes-lines"
+                            type="line"
+                            paint={{
+                                'line-color': '#F59E0B',
+                                'line-width': 2,
+                                'line-dasharray': [3, 2],
+                            }}
+                        />
+                    </Source>
 
-                            'icon-rotate': ['get', 'heading'],
+                    {/* Airport markers */}
+                    <Source id="airports-source" type="geojson" data={airportsGeoJson}>
+                        <Layer
+                            id="airports-points"
+                            type="symbol"
+                            minzoom={5}
+                            layout={{
+                                'icon-image': 'airport-icon',
+                                'icon-allow-overlap': true,
+                                'icon-size': 0.015,
+                            }}
+                        />
+                    </Source>
 
-                            'icon-rotation-alignment': 'map',
+                    {/* Flight markers */}
+                    <Source id="flights-source" type="geojson" data={geoJsonData}>
+                        <Layer
+                            id="flights-points"
+                            type="symbol"
+                            layout={{
+                                'icon-image': 'airplane-icon',
+                                'icon-rotate': ['get', 'heading'],
+                                'icon-rotation-alignment': 'map',
+                                'icon-allow-overlap': true,
+                                'icon-size': 0.5,
+                            }}
+                        />
+                    </Source>
 
-                            'icon-allow-overlap': true,
+                    {/* Animated airplanes */}
+                    <Source id="animated-planes" type="geojson" data={EMPTY_GEOJSON}>
+                        <Layer
+                            id="animated-planes-layer"
+                            type="symbol"
+                            layout={{
+                                'icon-image': 'airplane-icon-navy',
+                                'icon-rotate': ['get', 'heading'],
+                                'icon-rotation-alignment': 'map',
+                                'icon-allow-overlap': true,
+                                'icon-size': 0.4,
+                            }}
+                        />
+                    </Source>
 
-                            'icon-size': 0.5
-                        }}
-                    />
-                </Source>
+                    {selectedFlight && (
+                        <Popup
+                            longitude={selectedFlight.geometry.coordinates[0]}
+                            latitude={selectedFlight.geometry.coordinates[1]}
+                            anchor="bottom"
+                            offset={15}
+                            onClose={() => setSelectedFlight(null)}
+                            closeOnClick={false}
+                            className="custom-popup"
+                        >
+                            <FlightDetails properties={selectedFlight.properties as FlightFeatureProperties} />
+                        </Popup>
+                    )}
+                </Map>
 
-                {selectedAirport && (
-                    <Popup
-                        longitude={selectedAirport.geometry.coordinates[0]}
-                        latitude={selectedAirport.geometry.coordinates[1]}
-                        anchor="bottom"
-                        offset={15}
-                        onClose={() => setSelectedAirport(null)}
-                        closeOnClick={false}
-                        className="custom-popup"
-                    >
-                        <AirportDetails properties={selectedAirport.properties as any} />
-                    </Popup>
-                )}
-
-                {selectedFlight && (
-                    <Popup
-                        longitude={selectedFlight.geometry.coordinates[0]}
-                        latitude={selectedFlight.geometry.coordinates[1]}
-                        anchor="bottom"
-                        offset={15}
-                        onClose={() => setSelectedFlight(null)}
-                        closeOnClick={false}
-                        className="custom-popup"
-                    >
-                        <FlightDetails properties={selectedFlight.properties as any} />
-                    </Popup>
-                )}
-
-            </Map>
-            <MapOverlay
-                flightsCount={flights.length}
-                loading={loading} 
-                error={error}/>
+                <MapOverlay flightsCount={flights.length} loading={loading} error={error} />
+            </div>
         </div>
     );
 }
