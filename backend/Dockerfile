@@ -1,4 +1,4 @@
-FROM node:20-apline AS base
+FROM node:20-alpine AS base
 WORKDIR /app
 COPY package*.json ./
 
