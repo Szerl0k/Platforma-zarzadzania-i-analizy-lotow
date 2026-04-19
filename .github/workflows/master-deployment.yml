@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       name: "The FQDN of the database VM"
-      vm_host: ${{ steps.get_ip.outputs.vm_host }}
+      vm_host: ${{ steps.get_host.outputs.vm_host }}
     env:
       # Terraform can read it automatically
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
@@ -147,7 +147,7 @@ jobs:
         env:
           VM_HOST: ${{ needs.infrastructure.outputs.vm_host }}
         run: |
-          timeout 300s bash -c 'until printf "" 2>>/dev/null >/dev/tcp/VM_HOST/5432; do sleep 2; done'
+          timeout 300s bash -c 'until printf "" 2>>/dev/null >/dev/tcp/$VM_HOST/5432; do sleep 2; done'
       - name: Run Migrations and Seeding
         working-directory: ./backend
         env:
