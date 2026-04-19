@@ -6,7 +6,7 @@ set -e
 DB_PASSWORD="${db_password}"
 DB_NAME="flight_db"
 DATA_DISK="/dev/nvme0n1"
-PARTITION="${DATA_DISK}p1"
+PARTITION="$${DATA_DISK}p1"
 MOUNT_POINT="/datadisk"
 DATA_DIR="$MOUNT_POINT/postgresql/data"
 LUN_SYMLINK="/dev/disk/azure/scsi1/lun0"
@@ -26,9 +26,9 @@ DATA_DISK=$(readlink -f "$LUN_SYMLINK")
 echo "Data disk physically mapped to: $DATA_DISK"
 
 if [[ "$DATA_DISK" == *"nvme"* ]]; then
-    PARTITION="${DATA_DISK}p1" # NVMe convention (e.g., /dev/nvme0n1p1)
+    PARTITION="$${DATA_DISK}p1" # NVMe convention (e.g., /dev/nvme0n1p1)
 else
-    PARTITION="${DATA_DISK}1"  # SCSI convention (e.g., /dev/sdc1)
+    PARTITION="$${DATA_DISK}1"  # SCSI convention (e.g., /dev/sdc1)
 fi
 
 echo "Target partition mapped to: $PARTITION"
@@ -111,7 +111,7 @@ fi
 echo "Applying postgres performance parameters"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-cp "$CONF_FILE" "${CONF_FILE}.${TIMESTAMP}.bak"
+cp "$CONF_FILE" "$${CONF_FILE}.$${TIMESTAMP}.bak"
 
 update_param()
 {
@@ -119,10 +119,10 @@ update_param()
         local value=$2
 
         # Check if param exists (even if commented out) and change it to new value
-        if grep -qE "^#?${param}[[:space:]]*=" "$CONF_FILE"; then
-                sed -i "s|^#\?${param}[[:space:]]*=.*|${param} = ${value}|" "$CONF_FILE"
+        if grep -qE "^#?$${param}[[:space:]]*=" "$CONF_FILE"; then
+                sed -i "s|^#\?$${param}[[:space:]]*=.*|$${param} = $${value}|" "$CONF_FILE"
         else
-                echo "${param} = ${value}" >> "CONF_FILE"
+                echo "$${param} = $${value}" >> "CONF_FILE"
         fi
 }
 
@@ -187,12 +187,12 @@ systemctl start postgresql
 
 if [ "$IS_NEW_DATABASE" = true ]; then
     echo "Initializing new database schema and user credentials..."
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${DB_PASSWORD}';"
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$${DB_PASSWORD}';"
     sudo -u postgres psql -c "CREATE DATABASE $DB_NAME;"
     sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION postgis;"
 else
     echo "Bypassing schema initialization. Existing data preserved."
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${DB_PASSWORD}';"
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$${DB_PASSWORD}';"
 fi
 
 systemctl restart postgresql

@@ -9,7 +9,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   network_interface_ids           = [azurerm_network_interface.postgis-nic.id]
   zone                            = "1"
 
-  custom_data = base64decode(templatefile(
+  custom_data = base64encode(templatefile(
     "${path.module}/${var.postgis_provisioning_script_path}",
     {
       db_password = var.db_password
