@@ -8,9 +8,9 @@ output "vm_name" {
   value       = azurerm_linux_virtual_machine.vm.name
 }
 
-output "database_public_ip" {
-  description = "The public IP address of the postgres vm"
-  value       = azurerm_public_ip.pip.ip_address
+output "database_fqdn" {
+  description = "The FQDN of the postgres vm"
+  value       = azurerm_public_ip.pip.fqdn
 }
 
 output "database_private_ip" {

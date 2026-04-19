@@ -8,9 +8,9 @@ on:
         type: boolean
         default: false
     outputs:
-      vm_ip:
-        description: "The Public IP of the database VM"
-        value: ${{ jobs.infrastructure.outputs.vm_ip }}
+      vm_host:
+        description: "The FQDN of the database VM"
+        value: ${{ jobs.infrastructure.outputs.vm_host }}
   push:
     branches:
       - master
@@ -45,7 +45,11 @@ jobs:
     name: Provision Infrastructure
     runs-on: ubuntu-22.04
     outputs:
-      vm_ip: ${{ steps.get_ip.outputs.vm_ip }}
+      name: "The FQDN of the database VM"
+      vm_host: ${{ steps.get_ip.outputs.vm_host }}
+    env:
+      # Terraform can read it automatically
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -68,10 +72,10 @@ jobs:
           terraform init -upgrade
           terraform apply -auto-approve
 
-      - name: Get DB VM IP
-        id: get_ip
+      - name: Get DB VM FQDN
+        id: get_host
         working-directory: ./infrastructure/terraform/azure
-        run: echo "vm_ip=$(terraform output -raw database_public_ip)" >> $GITHUB_OUTPUT
+        run: echo "vm_host=$(terraform output -raw database_fqdn)" >> $GITHUB_OUTPUT
       
 
   # Frontend
@@ -134,20 +138,20 @@ jobs:
 
       - name: Install Dependencies
         working-directory: ./backend
-        run: npm install
+        run: npm ci
 
       # Add SSH tunnel later on, to avoid db public ip exposure
 
 
       - name: Wait for DB port
         env:
-          VM_IP: ${{ needs.infrastructure.outputs.vm_ip }}
+          VM_HOST: ${{ needs.infrastructure.outputs.vm_host }}
         run: |
-          timeout 300s bash -c 'until printf "" 2>>/dev/null >/dev/tcp/$VM_IP/5432; do sleep 2; done'
+          timeout 300s bash -c 'until printf "" 2>>/dev/null >/dev/tcp/VM_HOST/5432; do sleep 2; done'
       - name: Run Migrations and Seeding
         working-directory: ./backend
         env:
-          DB_HOST: ${{ needs.infrastructure.outputs.vm_ip }}
+          DB_HOST: ${{ needs.infrastructure.outputs.vm_host }}
           DB_PORT: 5432
           DB_USERNAME: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}

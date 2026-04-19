@@ -1,7 +1,7 @@
 name: daily-startup.yml
 on:
   schedule:
-    # 9:00 AM CET
+    # 10:00 AM CET
     - cron: '0 9 * * *'
   workflow_dispatch:
 permissions:
