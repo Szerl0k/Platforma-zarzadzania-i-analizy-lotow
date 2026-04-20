@@ -98,6 +98,12 @@ jobs:
         working-directory: ./backend
         run: npm run format:check
 
+      - name: Format Failure Message
+        if: failure()
+        run: |
+          echo "::error title=Formatting Check Failed:: run 'npm run format' and update the PR."
+          exit 1
+
 
   frontend-ci:
     name: Frontend CI
@@ -124,6 +130,12 @@ jobs:
       - name: Formatting check
         working-directory: ./frontend
         run: npm run format:check
+
+      - name: Format Failure Message
+        if: failure()
+        run: |
+          echo "::error title=Formatting Check Failed:: run 'npm run format' and update the PR."
+          exit 1
 
       - name: Next.js Build (validation)
         working-directory: ./frontend

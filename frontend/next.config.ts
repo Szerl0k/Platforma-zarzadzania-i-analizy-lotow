@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+
+  ...(process.env.NODE_ENV === "development" && {
+    allowedDevOrigins: ["localhost", "192.168.0.182", "10.10.10.10"],
+  }),
+
   async rewrites() {
     return [
       {

@@ -11,6 +11,10 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5001;
 
+// Trust the first hop (Azure Load Balancer / Reverse Proxy)
+// Required for express-rate-limit to accurately identify client IPs.
+app.set("trust proxy", 1);
+
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
