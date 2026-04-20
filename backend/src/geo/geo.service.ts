@@ -434,6 +434,8 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
     const dateStart = today.toISOString().slice(0, 10);
     const dateEnd = end.toISOString().slice(0, 10);
 
+    console.log(`[routes:${icao}] START fetch ${dateStart}→${dateEnd}`);
+
     let rawSchedules: { actual_ident_icao?: string | null; destination_icao?: string | null; destination?: string | null }[] = [];
     try {
         const response = await getAeroApiClient().getScheduledFlights(dateStart, dateEnd, {
@@ -441,20 +443,23 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
             max_pages: 10,
         });
         rawSchedules = (response.scheduled ?? []) as typeof rawSchedules;
+        console.log(`[routes:${icao}] schedules=${rawSchedules.length}`);
     } catch (err) {
         if (err instanceof AeroAPIError && err.status === 404) {
             routesCache.set(icao, { data: [], expiresAt: Date.now() + ROUTES_CACHE_TTL_MS });
+            console.log(`[routes:${icao}] 404 → cached empty`);
             return [];
         }
         if (err instanceof AeroAPIError && err.status === 429) {
+            console.warn(`[routes:${icao}] 429 rate limit`);
             throw new UpstreamError('Przekroczono limit zapytań AeroAPI. Spróbuj ponownie za chwilę.');
         }
+        console.error(`[routes:${icao}] AeroAPI error status=${err instanceof AeroAPIError ? err.status : 'n/a'}`, err);
         throw err;
     }
 
     const routeMap = new Map<string, Set<string>>();
     for (const s of rawSchedules) {
-        // Operator ICAO is the 3-letter prefix of actual_ident_icao (e.g. "KLM1310" → "KLM")
         const opIcao = s.actual_ident_icao?.match(/^([A-Z]{3})/)?.[1];
         const destCode = (s.destination_icao ?? s.destination)?.trim().toUpperCase();
         if (!opIcao || !destCode || destCode === icao) continue;
@@ -476,6 +481,7 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
 
     const missingAirlines = allOpIcaos.filter((c) => !airlineMap.has(c));
     const missingAirports = allDestCodes.filter((c) => !airportMap.has(c));
+    console.log(`[routes:${icao}] DB: ${dbAirlines.length}/${allOpIcaos.length} airlines, ${dbAirports.length}/${allDestCodes.length} airports | missing: ${missingAirlines.length}+${missingAirports.length}`);
 
     await runConcurrent([
         ...missingAirlines.map((c) => () =>
@@ -506,6 +512,7 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
 
     result.sort((a, b) => a.airline.name.localeCompare(b.airline.name));
     routesCache.set(icao, { data: result, expiresAt: Date.now() + ROUTES_CACHE_TTL_MS });
+    console.log(`[routes:${icao}] DONE: ${result.length} airlines`);
     return result;
 }
 

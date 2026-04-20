@@ -213,7 +213,7 @@ export default function TelemetryMapView() {
                             id="routes-lines"
                             type="line"
                             paint={{
-                                'line-color': '#F59E0B',
+                                'line-color': '#BEF264',
                                 'line-width': 2,
                                 'line-dasharray': [3, 2],
                             }}
