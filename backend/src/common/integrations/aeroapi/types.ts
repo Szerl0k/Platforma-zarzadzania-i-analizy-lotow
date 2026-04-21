@@ -133,11 +133,11 @@ export interface AeroAPISchedule {
   fa_flight_id?: string | null;
   aircraft_type?: string | null;
   scheduled_out: string;
-    scheduled_in: string;
-    origin?: string | null;
-    origin_icao?: string | null;
-    origin_iata?: string | null;
-    origin_lid?: string | null;
+  scheduled_in: string;
+  origin?: string | null;
+  origin_icao?: string | null;
+  origin_iata?: string | null;
+  origin_lid?: string | null;
   destination?: string | null;
   destination_icao?: string | null;
   destination_iata?: string | null;
