@@ -5,10 +5,12 @@ import {
   createAirport,
   deleteAirline,
   deleteAirport,
+  getAirportRoutes,
   getOrFetchAirline,
   getOrFetchAirport,
   listAirlines,
   listAirports,
+  listAirportsInArea,
   searchAirlines,
   searchAirports,
   serializeAirline,
@@ -37,6 +39,33 @@ function parseOffset(value: unknown): number {
 }
 
 router.get(
+  "/airports/area",
+  asyncHandler(async (req, res) => {
+    const lomin = parseFloat(String(req.query.lomin ?? ""));
+    const lamin = parseFloat(String(req.query.lamin ?? ""));
+    const lomax = parseFloat(String(req.query.lomax ?? ""));
+    const lamax = parseFloat(String(req.query.lamax ?? ""));
+
+    if ([lomin, lamin, lomax, lamax].some((v) => !Number.isFinite(v))) {
+      res.status(400).json({
+        error: "lomin, lamin, lomax, lamax are required finite numbers",
+      });
+      return;
+    }
+
+    const limit = parseLimit(req.query.limit, 300);
+    const airports = await listAirportsInArea(
+      lomin,
+      lamin,
+      lomax,
+      lamax,
+      limit,
+    );
+    res.json(airports.map(serializeAirport));
+  }),
+);
+
+router.get(
   "/airports/search",
   asyncHandler(async (req, res) => {
     const q = String(req.query.q ?? "").trim();
@@ -62,6 +91,19 @@ router.get(
       limit,
       offset,
     });
+  }),
+);
+
+router.get(
+  "/airports/:code/routes",
+  asyncHandler(async (req, res) => {
+    const code = String(req.params.code ?? "").trim();
+    if (!code) {
+      res.status(400).json({ error: "Airport code is required" });
+      return;
+    }
+    const routes = await getAirportRoutes(code);
+    res.json(routes);
   }),
 );
 

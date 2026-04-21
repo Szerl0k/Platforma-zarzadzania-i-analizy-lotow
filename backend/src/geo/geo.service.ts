@@ -1,4 +1,4 @@
-import { Repository, ILike } from "typeorm";
+import { Repository, ILike, In } from "typeorm";
 import { Point } from "geojson";
 import { AppDataSource } from "../common/database/data-source";
 import { Airport } from "./entities/Airport";
@@ -11,6 +11,11 @@ import {
   AeroAPIAirportInfo,
   AeroAPIOperatorInfo,
 } from "../common/integrations/aeroapi";
+
+export interface RouteEntry {
+  airline: AirlineDTO;
+  destinations: AirportDTO[];
+}
 
 export interface AirportDTO {
   icaoCode: string;
@@ -268,16 +273,17 @@ export async function searchAirports(
   if (!term) return [];
   const normalized = normalizeIcao(term);
   const like = `%${term}%`;
-  return airportRepo().find({
-    where: [
-      { icaoCode: normalized },
-      { iataCode: normalized },
-      { name: ILike(like) },
-    ],
-    relations: ["city", "city.country"],
-    take: Math.min(Math.max(limit, 1), 100),
-    order: { name: "ASC" },
-  });
+  return airportRepo()
+    .createQueryBuilder("airport")
+    .leftJoinAndSelect("airport.city", "city")
+    .leftJoinAndSelect("city.country", "country")
+    .where("airport.icao_code = :normalized", { normalized })
+    .orWhere("airport.iata_code = :normalized", { normalized })
+    .orWhere("airport.name ILIKE :like", { like })
+    .orWhere("city.name ILIKE :like", { like })
+    .orderBy("airport.name", "ASC")
+    .take(Math.min(Math.max(limit, 1), 100))
+    .getMany();
 }
 
 export async function listAirports(
@@ -291,6 +297,25 @@ export async function listAirports(
     order: { icaoCode: "ASC" },
   });
   return { items, total };
+}
+
+export async function listAirportsInArea(
+  lomin: number,
+  lamin: number,
+  lomax: number,
+  lamax: number,
+  limit = 300,
+): Promise<Airport[]> {
+  return airportRepo()
+    .createQueryBuilder("airport")
+    .leftJoinAndSelect("airport.city", "city")
+    .leftJoinAndSelect("city.country", "country")
+    .where(
+      "ST_Within(airport.location, ST_MakeEnvelope(:lomin, :lamin, :lomax, :lamax, 4326))",
+      { lomin, lamin, lomax, lamax },
+    )
+    .take(Math.min(Math.max(limit, 1), 500))
+    .getMany();
 }
 
 export async function createAirport(
@@ -387,6 +412,162 @@ export async function deleteAirport(code: string): Promise<void> {
   if (!result.affected) {
     throw new NotFoundError(`Airport ${icao} not found`);
   }
+}
+
+async function runConcurrent<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number,
+): Promise<void> {
+  let i = 0;
+  async function worker() {
+    while (i < tasks.length) {
+      const task = tasks[i++];
+      await task().catch(() => {});
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, tasks.length) }, worker),
+  );
+}
+
+const routesCache = new Map<
+  string,
+  { data: RouteEntry[]; expiresAt: number }
+>();
+const routesInFlight = new Map<string, Promise<RouteEntry[]>>();
+const ROUTES_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2h
+
+async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
+  const today = new Date();
+  const end = new Date(today);
+  end.setDate(end.getDate() + 14);
+  const dateStart = today.toISOString().slice(0, 10);
+  const dateEnd = end.toISOString().slice(0, 10);
+
+  let rawSchedules: {
+    actual_ident_icao?: string | null;
+    destination_icao?: string | null;
+    destination?: string | null;
+  }[] = [];
+  try {
+    const response = await getAeroApiClient().getScheduledFlights(
+      dateStart,
+      dateEnd,
+      {
+        origin: icao,
+        max_pages: 10,
+      },
+    );
+    rawSchedules = (response.scheduled ?? []) as typeof rawSchedules;
+  } catch (err) {
+    if (err instanceof AeroAPIError && err.status === 404) {
+      routesCache.set(icao, {
+        data: [],
+        expiresAt: Date.now() + ROUTES_CACHE_TTL_MS,
+      });
+      return [];
+    }
+    if (err instanceof AeroAPIError && err.status === 429) {
+      throw new UpstreamError(
+        "Przekroczono limit zapytań AeroAPI. Spróbuj ponownie za chwilę.",
+      );
+    }
+    throw err;
+  }
+
+  const routeMap = new Map<string, Set<string>>();
+  for (const s of rawSchedules) {
+    const opIcao = s.actual_ident_icao?.match(/^([A-Z]{3})/)?.[1];
+    const destCode = (s.destination_icao ?? s.destination)
+      ?.trim()
+      .toUpperCase();
+    if (!opIcao || !destCode || destCode === icao) continue;
+
+    if (!routeMap.has(opIcao)) routeMap.set(opIcao, new Set());
+    routeMap.get(opIcao)!.add(destCode);
+  }
+
+  const allOpIcaos = [...routeMap.keys()];
+  const allDestCodes = [
+    ...new Set([...routeMap.values()].flatMap((s) => [...s])),
+  ];
+
+  const [dbAirlines, dbAirports] = await Promise.all([
+    airlineRepo().find({ where: { icaoCode: In(allOpIcaos) } }),
+    airportRepo().find({
+      where: { icaoCode: In(allDestCodes) },
+      relations: ["city", "city.country"],
+    }),
+  ]);
+
+  const airlineMap = new Map<string, Airline>(
+    dbAirlines.map((a) => [a.icaoCode, a]),
+  );
+  const airportMap = new Map<string, Airport>(
+    dbAirports.map((a) => [a.icaoCode, a]),
+  );
+
+  const missingAirlines = allOpIcaos.filter((c) => !airlineMap.has(c));
+  const missingAirports = allDestCodes.filter((c) => !airportMap.has(c));
+
+  await runConcurrent(
+    [
+      ...missingAirlines.map(
+        (c) => () =>
+          getOrFetchAirline(c)
+            .then((a) => airlineMap.set(c, a))
+            .catch(() => {}),
+      ),
+      ...missingAirports.map(
+        (c) => () =>
+          getOrFetchAirport(c)
+            .then((a) => airportMap.set(c, a))
+            .catch(() => {}),
+      ),
+    ],
+    5,
+  );
+
+  const result: RouteEntry[] = [];
+
+  for (const [opIcao, destSet] of routeMap) {
+    const airline = airlineMap.get(opIcao);
+    if (!airline) continue;
+
+    const destinations = [...destSet]
+      .map((code) => airportMap.get(code))
+      .filter((a): a is Airport => !!a);
+
+    if (destinations.length > 0) {
+      result.push({
+        airline: serializeAirline(airline),
+        destinations: destinations.map(serializeAirport),
+      });
+    }
+  }
+
+  result.sort((a, b) => a.airline.name.localeCompare(b.airline.name));
+  routesCache.set(icao, {
+    data: result,
+    expiresAt: Date.now() + ROUTES_CACHE_TTL_MS,
+  });
+  return result;
+}
+
+export async function getAirportRoutes(code: string): Promise<RouteEntry[]> {
+  const icao = normalizeIcao(code);
+
+  const cached = routesCache.get(icao);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const inFlight = routesInFlight.get(icao);
+  if (inFlight) return inFlight;
+
+  const promise = fetchAirportRoutes(icao).finally(() =>
+    routesInFlight.delete(icao),
+  );
+  routesInFlight.set(icao, promise);
+  return promise;
 }
 
 export async function findAirlineInDb(code: string): Promise<Airline | null> {
