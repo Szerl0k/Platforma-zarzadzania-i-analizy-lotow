@@ -8,11 +8,16 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typeorm": "typeorm-ts-node-commonjs",
+    "ci:migrate-and-seed": "npm run migration:run && npm run db:setup",
+    "ci:migrate": "npm run typeorm migration:run -- -d src/common/database/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate -d src/common/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/common/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/common/database/data-source.ts",
     "db:setup": "ts-node src/common/database/seeds/init-seed.ts",
-    "ci:migrate-and-seed": "npm run migration:run && npm run db:setup"
+
+    "lint": "eslint .",
+    "format": "prettier --write 'src/**/*.{ts,js,json}'",
+    "format:check": "prettier --check 'src/**/*.{ts,js,json}'"
   },
   "keywords": [],
   "author": "",
@@ -29,10 +34,12 @@
     "jsonwebtoken": "^9.0.3",
     "node-cache": "^5.1.2",
     "pg": "^8.20.0",
+    "prettier": "^3.8.3",
     "typeorm": "^0.3.28",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -41,8 +48,10 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.2.2",
     "@types/pg": "^8.16.0",
+    "eslint": "^10.2.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.2"
   }
 }

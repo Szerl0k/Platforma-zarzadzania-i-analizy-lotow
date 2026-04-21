@@ -3,10 +3,10 @@
 # Stop in case of error
 set -e
 
-DB_PASSWORD=kyNx11B3JW24z957Os4A
+DB_PASSWORD="${db_password}"
 DB_NAME="flight_db"
 DATA_DISK="/dev/nvme0n1"
-PARTITION="${DATA_DISK}p1"
+PARTITION="$${DATA_DISK}p1"
 MOUNT_POINT="/datadisk"
 DATA_DIR="$MOUNT_POINT/postgresql/data"
 LUN_SYMLINK="/dev/disk/azure/scsi1/lun0"
@@ -26,9 +26,9 @@ DATA_DISK=$(readlink -f "$LUN_SYMLINK")
 echo "Data disk physically mapped to: $DATA_DISK"
 
 if [[ "$DATA_DISK" == *"nvme"* ]]; then
-    PARTITION="${DATA_DISK}p1" # NVMe convention (e.g., /dev/nvme0n1p1)
+    PARTITION="$${DATA_DISK}p1" # NVMe convention (e.g., /dev/nvme0n1p1)
 else
-    PARTITION="${DATA_DISK}1"  # SCSI convention (e.g., /dev/sdc1)
+    PARTITION="$${DATA_DISK}1"  # SCSI convention (e.g., /dev/sdc1)
 fi
 
 echo "Target partition mapped to: $PARTITION"
@@ -111,7 +111,7 @@ fi
 echo "Applying postgres performance parameters"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-cp "$CONF_FILE" "${CONF_FILE}.${TIMESTAMP}.bak"
+cp "$CONF_FILE" "$${CONF_FILE}.$${TIMESTAMP}.bak"
 
 update_param()
 {
@@ -119,26 +119,55 @@ update_param()
         local value=$2
 
         # Check if param exists (even if commented out) and change it to new value
-        if grep -qE "^#?${param}[[:space:]]*=" "$CONF_FILE"; then
-                sed -i "s|^#\?${param}[[:space:]]*=.*|${param} = ${value}|" "$CONF_FILE"
+        if grep -qE "^#?$${param}[[:space:]]*=" "$CONF_FILE"; then
+                sed -i "s|^#\?$${param}[[:space:]]*=.*|$${param} = $${value}|" "$CONF_FILE"
         else
-                echo "${param} = ${value}" >> "CONF_FILE"
+                echo "$${param} = $${value}" >> "CONF_FILE"
         fi
 }
 
-# Parameters values are based on recommendations from PostGIS documentation 
+### Params used before the VM scale down
+
+## Parameters values are based on recommendations from PostGIS documentation
+#update_param "max_connections" "50"
+#update_param "shared_buffers" "2GB"
+#update_param "effective_cache_size" "6GB"
+#update_param "maintenance_work_mem" "1GB"
+#update_param "checkpoint_completion_target" "0.9"
+#update_param "wal_buffers" "16MB"
+#update_param "default_statistics_target" "100"
+#update_param "effective_io_concurrency" "200"
+#update_param "work_mem" "32MB"
+#update_param "huge_pages" "off"
+#update_param "min_wal_size" "1GB"
+#update_param "max_wal_size" "4GB"
+#
+## Disks and planist costs
+#update_param "random_page_cost" "1.1"
+#update_param "seq_page_cost" "1.0"
+#
+## Parallel workers based on 2 vCPUs
+#update_param "max_worker_processes" "2"
+#update_param "max_parallel_workers_per_gather" "1"
+#update_param "max_parallel_workers" "2"
+#
+## Additional specific to postgis
+#update_param "jit" "off"
+
+# Params based on VM Standard_B2ats_v2 size (2 vCPU; 1 GB mem)
+# Parameters values are based on recommendations from PostGIS documentation
 update_param "max_connections" "50"
-update_param "shared_buffers" "2GB"
-update_param "effective_cache_size" "6GB"
-update_param "maintenance_work_mem" "1GB"
+update_param "shared_buffers" "256MB"
+update_param "effective_cache_size" "512MB"
+update_param "maintenance_work_mem" "64MB"
 update_param "checkpoint_completion_target" "0.9"
-update_param "wal_buffers" "16MB"
+update_param "wal_buffers" "8MB"
 update_param "default_statistics_target" "100"
 update_param "effective_io_concurrency" "200"
-update_param "work_mem" "32MB"
+update_param "work_mem" "4MB"
 update_param "huge_pages" "off"
-update_param "min_wal_size" "1GB"
-update_param "max_wal_size" "4GB"
+update_param "min_wal_size" "512MB"
+update_param "max_wal_size" "2GB"
 
 # Disks and planist costs
 update_param "random_page_cost" "1.1"
@@ -158,12 +187,12 @@ systemctl start postgresql
 
 if [ "$IS_NEW_DATABASE" = true ]; then
     echo "Initializing new database schema and user credentials..."
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${DB_PASSWORD}';"
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${db_password}';"
     sudo -u postgres psql -c "CREATE DATABASE $DB_NAME;"
     sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION postgis;"
 else
     echo "Bypassing schema initialization. Existing data preserved."
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${DB_PASSWORD}';"
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${db_password}';"
 fi
 
 systemctl restart postgresql

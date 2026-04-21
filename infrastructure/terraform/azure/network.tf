@@ -70,9 +70,12 @@ resource "azurerm_public_ip" "pip" {
   name                = "${var.vm_name}-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  zones               = ["2"]
+
+  allocation_method = "Static"
+
+  domain_name_label = "dev-inz-pzal-postgis"
+
+  sku = "Standard"
 }
 
 resource "azurerm_network_interface" "postgis-nic" {

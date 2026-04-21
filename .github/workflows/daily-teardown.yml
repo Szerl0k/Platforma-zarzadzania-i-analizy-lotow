@@ -2,7 +2,7 @@ name: daily-teardown.yml
 on:
   schedule:
     # 1:00 AM CET
-    - cron: '0 0 * * *'
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 permissions:
@@ -15,6 +15,7 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_OIDC: "true"
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
 
 jobs:
   teardown:

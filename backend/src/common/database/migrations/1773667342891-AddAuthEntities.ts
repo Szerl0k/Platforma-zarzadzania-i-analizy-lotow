@@ -1,11 +1,11 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddAuthEntities1773667342891 implements MigrationInterface {
-    name = 'AddAuthEntities1773667342891'
+  name = "AddAuthEntities1773667342891";
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Create roles table
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Create roles table
+    await queryRunner.query(`
             CREATE TABLE "roles" (
                 "id" SERIAL NOT NULL,
                 "name" character varying(50) NOT NULL,
@@ -17,8 +17,8 @@ export class AddAuthEntities1773667342891 implements MigrationInterface {
             )
         `);
 
-        // Create permissions table
-        await queryRunner.query(`
+    // Create permissions table
+    await queryRunner.query(`
             CREATE TABLE "permissions" (
                 "id" SERIAL NOT NULL,
                 "name" character varying(100) NOT NULL,
@@ -30,8 +30,8 @@ export class AddAuthEntities1773667342891 implements MigrationInterface {
             )
         `);
 
-        // Create role_permissions table
-        await queryRunner.query(`
+    // Create role_permissions table
+    await queryRunner.query(`
             CREATE TABLE "role_permissions" (
                 "role_id" integer NOT NULL,
                 "permission_id" integer NOT NULL,
@@ -40,8 +40,8 @@ export class AddAuthEntities1773667342891 implements MigrationInterface {
             )
         `);
 
-        // Create users table
-        await queryRunner.query(`
+    // Create users table
+    await queryRunner.query(`
             CREATE TABLE "users" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "email" character varying(255) NOT NULL,
@@ -61,8 +61,8 @@ export class AddAuthEntities1773667342891 implements MigrationInterface {
             )
         `);
 
-        // Create user_preferences table
-        await queryRunner.query(`
+    // Create user_preferences table
+    await queryRunner.query(`
             CREATE TABLE "user_preferences" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid NOT NULL,
@@ -81,21 +81,29 @@ export class AddAuthEntities1773667342891 implements MigrationInterface {
             )
         `);
 
-        // Foreign keys
-        await queryRunner.query(`ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_role_permissions_role" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_role_permissions_permission" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "FK_users_role" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_preferences" ADD CONSTRAINT "FK_user_preferences_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    // Foreign keys
+    await queryRunner.query(
+      `ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_role_permissions_role" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_role_permissions_permission" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD CONSTRAINT "FK_users_role" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "user_preferences" ADD CONSTRAINT "FK_user_preferences_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
 
-        // Seed default roles
-        await queryRunner.query(`
+    // Seed default roles
+    await queryRunner.query(`
             INSERT INTO "roles" ("name", "description", "is_system", "created_at") VALUES
             ('admin', 'System administrator', true, NOW()),
             ('user', 'Regular user', true, NOW())
         `);
 
-        // Seed default permissions
-        await queryRunner.query(`
+    // Seed default permissions
+    await queryRunner.query(`
             INSERT INTO "permissions" ("name", "resource", "action", "description") VALUES
             ('users:read', 'users', 'read', 'View user profiles'),
             ('users:write', 'users', 'write', 'Modify user profiles'),
@@ -104,32 +112,40 @@ export class AddAuthEntities1773667342891 implements MigrationInterface {
             ('flights:write', 'flights', 'write', 'Modify flights')
         `);
 
-        // Assign all permissions to admin role
-        await queryRunner.query(`
+    // Assign all permissions to admin role
+    await queryRunner.query(`
             INSERT INTO "role_permissions" ("role_id", "permission_id", "granted_at")
             SELECT r.id, p.id, NOW()
             FROM "roles" r, "permissions" p
             WHERE r.name = 'admin'
         `);
 
-        // Assign read permissions to user role
-        await queryRunner.query(`
+    // Assign read permissions to user role
+    await queryRunner.query(`
             INSERT INTO "role_permissions" ("role_id", "permission_id", "granted_at")
             SELECT r.id, p.id, NOW()
             FROM "roles" r, "permissions" p
             WHERE r.name = 'user' AND p.action = 'read'
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "user_preferences" DROP CONSTRAINT "FK_user_preferences_user"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_users_role"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_permission"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_role"`);
-        await queryRunner.query(`DROP TABLE "user_preferences"`);
-        await queryRunner.query(`DROP TABLE "users"`);
-        await queryRunner.query(`DROP TABLE "role_permissions"`);
-        await queryRunner.query(`DROP TABLE "permissions"`);
-        await queryRunner.query(`DROP TABLE "roles"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "user_preferences" DROP CONSTRAINT "FK_user_preferences_user"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP CONSTRAINT "FK_users_role"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_permission"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_role"`,
+    );
+    await queryRunner.query(`DROP TABLE "user_preferences"`);
+    await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TABLE "role_permissions"`);
+    await queryRunner.query(`DROP TABLE "permissions"`);
+    await queryRunner.query(`DROP TABLE "roles"`);
+  }
 }

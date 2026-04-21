@@ -1,52 +1,55 @@
-import {z} from 'zod';
-import {Point} from 'geojson'
+import { z } from "zod";
+import { Point } from "geojson";
 
 export const LocateFlightQuerySchema = z.object({
-    faFlightId: z.string()
-        .min(5, "Identyfikator faFlightId jest wymagany i musi być poprawny.")
+  faFlightId: z
+    .string()
+    .min(5, "Identyfikator faFlightId jest wymagany i musi być poprawny."),
 });
 
 export type LocateFlightQuery = z.infer<typeof LocateFlightQuerySchema>;
 
 export interface LocateFlightResponseDTO {
-    icao24: string;
-    faFlightId: string;
-    internalFlightId: string; // UUID reference to main domain
-    location: Point
-    persistedAt: string;
+  icao24: string;
+  faFlightId: string;
+  internalFlightId: string; // UUID reference to main domain
+  location: Point;
+  persistedAt: string;
 }
 
-export const BoundingBoxAreaQuerySchema = z.object({
+export const BoundingBoxAreaQuerySchema = z
+  .object({
     lamin: z.coerce.number().min(-90).max(90),
     lamax: z.coerce.number().min(-90).max(90),
     lomin: z.coerce.number().min(-180).max(180),
     lomax: z.coerce.number().min(-180).max(180),
-}).superRefine((data, ctx) => {
+  })
+  .superRefine((data, ctx) => {
     if (data.lamin >= data.lamax) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Parametr 'lamin' musi być mniejszy niż 'lamax'",
-            path: ['lamin']
-        });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Parametr 'lamin' musi być mniejszy niż 'lamax'",
+        path: ["lamin"],
+      });
     }
 
     if (data.lomin > data.lomax) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Parametr 'lomin' musi być mniejszy niż 'lomax'",
-            path: ['lomin']
-        });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Parametr 'lomin' musi być mniejszy niż 'lomax'",
+        path: ["lomin"],
+      });
     }
-})
+  });
 
 export type BoundingBoxAreaQuery = z.infer<typeof BoundingBoxAreaQuerySchema>;
 
 export interface MapFlightSummaryDTO {
-    icao24: string;
-    callsign: string | null;
-    location: Point;
-    altitude: number | null;
-    velocity: number | null;
-    heading: number | null;
-    onGround: boolean;
+  icao24: string;
+  callsign: string | null;
+  location: Point;
+  altitude: number | null;
+  velocity: number | null;
+  heading: number | null;
+  onGround: boolean;
 }

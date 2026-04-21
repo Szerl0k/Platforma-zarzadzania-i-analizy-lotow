@@ -1,8 +1,8 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddRefreshTokens1775135312456 implements MigrationInterface {
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "refresh_tokens" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "token_hash" character varying(255) NOT NULL,
@@ -14,13 +14,13 @@ export class AddRefreshTokens1775135312456 implements MigrationInterface {
                     REFERENCES "users"("id") ON DELETE CASCADE
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX "IDX_refresh_tokens_user_id" ON "refresh_tokens" ("user_id")
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX "IDX_refresh_tokens_user_id"`);
-        await queryRunner.query(`DROP TABLE "refresh_tokens"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX "IDX_refresh_tokens_user_id"`);
+    await queryRunner.query(`DROP TABLE "refresh_tokens"`);
+  }
 }

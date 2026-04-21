@@ -9,7 +9,15 @@ resource "azurerm_linux_virtual_machine" "vm" {
   network_interface_ids           = [azurerm_network_interface.postgis-nic.id]
   zone                            = "1"
 
-  custom_data = filebase64("${path.module}/${var.postgis_provisioning_script_path}")
+  custom_data = base64encode(templatefile(
+    "${path.module}/${var.postgis_provisioning_script_path}",
+    {
+      db_password = var.db_password
+    }
+  ))
+
+
+  #filebase64("${path.module}/${var.postgis_provisioning_script_path}")
 
   admin_ssh_key {
     username   = var.admin_username
@@ -90,18 +98,28 @@ resource "azurerm_linux_web_app" "backend" {
     # Prevents the container from attempting to map the default Azure file share
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
 
-    "WEBSITES_PORT" = "3000"
+    "WEBSITES_PORT" = "5000"
 
     # Expose internal db IP to the container app
     "NODE_ENV" = "production"
-    "DB_PORT" = "5432"
-    "DB_USER" = "postgres"
-    "DB_NAME" = "flight_db"
-    "DB_HOST" = azurerm_network_interface.postgis-nic.private_ip_address
+    "DB_PORT"  = "5432"
+    "DB_USER"  = "postgres"
+    "DB_NAME"  = "flight_db"
+    "DB_HOST"  = azurerm_network_interface.postgis-nic.private_ip_address
 
-    "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
+    # "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
   }
 
+  lifecycle {
+    ignore_changes = [
+      site_config.0.application_stack,
+      app_settings["DB_PASSWORD"],
+      app_settings["JWT_SECRET"],
+      app_settings["AEROAPI_KEY"],
+      app_settings["OPENSKY_CLIENT_ID"],
+      app_settings["OPENSKY_CLIENT_SECRET"]
+    ]
+  }
 }
 
 # FRONTEND
@@ -127,7 +145,12 @@ resource "azurerm_linux_web_app" "frontend" {
     "INTERNAL_API_URL" = "https://${azurerm_linux_web_app.backend.default_hostname}"
     "WEBSITES_PORT"    = "3000"
 
-    "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
+    # "DOCKER_REGISTRY_SERVER_URL" = "https://index.docker.io/v1/"
   }
 
+  lifecycle {
+    ignore_changes = [
+      site_config.0.application_stack
+    ]
+  }
 }

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import { Map as MapGL, NavigationControl, Source, Layer, MapEvent, Popup } from 'react-map-gl/maplibre';
@@ -43,20 +43,21 @@ interface FlightFeatureProperties {
 }
 
 export default function TelemetryMapView() {
-    const mapRef = useRef<MapRef>(null);
-    const { flights, error, loading, setBounds: setFlightBounds } = useTelemetry(10000);
+  const mapRef = useRef<MapRef>(null);
+  const { flights, error, loading, setBounds: setFlightBounds } = useTelemetry(10000);
     const { airports, setBounds: setAirportBounds } = useAirports();
 
-    const [selectedFlight, setSelectedFlight] = useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
-    const [selectedAirportData, setSelectedAirportData] = useState<Airport | null>(null);
+  const [selectedFlight, setSelectedFlight] =
+    useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
+  const [selectedAirportData, setSelectedAirportData] = useState<Airport | null>(null);
     const [selectedRoutes, setSelectedRoutes] = useState<Map<string, Airport[]>>(new Map());
     const [cityAirports, setCityAirports] = useState<Airport[]>([]);
     const [highlightedIcao, setHighlightedIcao] = useState<string | null>(null);
-    const [cursor, setCursor] = useState<string>('');
+    const [cursor, setCursor] = useState<string>("");
 
-    const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
+  const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
 
-    const selectedAirlineIcaos = useMemo(() => new Set(selectedRoutes.keys()), [selectedRoutes]);
+  const selectedAirlineIcaos = useMemo(() => new Set(selectedRoutes.keys()), [selectedRoutes]);
 
     const routesGeoJson = useMemo<GeoJSON.FeatureCollection>(() => {
         if (!selectedAirportData || selectedRoutes.size === 0) return EMPTY_GEOJSON;
@@ -82,7 +83,7 @@ export default function TelemetryMapView() {
 
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useRouteAnimation(mapRef, routesGeoJson);
+  useRouteAnimation(mapRef, routesGeoJson);
 
     const updateBoundingBox = useCallback(() => {
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -92,11 +93,13 @@ export default function TelemetryMapView() {
             if (!map) return;
             const b = map.getBounds();
 
-            // Kwantyzacja siatki do 2 stopni geograficznych.
-            // Zapobiega fragmentacji cache'u na backendzie podczas operacji zoom i mikro-przesunięć.
-            const GRID_SIZE = 2.0;
-            const quantizeMin = (val: number) => Math.floor(val / GRID_SIZE) * GRID_SIZE;
-            const quantizeMax = (val: number) => Math.ceil(val / GRID_SIZE) * GRID_SIZE;
+      // Kwantyzacja siatki do 2 stopni geograficznych.
+      // Zapobiega fragmentacji cache'u na backendzie podczas operacji zoom i mikro-przesunięć.
+      const GRID_SIZE = 2.0;
+      const quantizeMin = (val: number) =>
+        Math.floor(val / GRID_SIZE) * GRID_SIZE;
+      const quantizeMax = (val: number) =>
+        Math.ceil(val / GRID_SIZE) * GRID_SIZE;
 
             const bbox = {
                 lomin: quantizeMin(b.getWest()),
@@ -120,33 +123,36 @@ export default function TelemetryMapView() {
 
         const layers = map.getStyle().layers ?? [];
         for (const layer of layers) {
-            if (layer.type !== 'symbol') continue;
-            const current = map.getLayoutProperty(layer.id, 'text-field');
-            if (current == null) continue;
-            map.setLayoutProperty(layer.id, 'text-field', POLISH_TEXT_FIELD);
-        }
-        updateBoundingBox();
+            if (layer.type !== "symbol") continue;
+        const current = map.getLayoutProperty(layer.id, "text-field");
+        if (current == null) continue;
+        map.setLayoutProperty(layer.id, "text-field", POLISH_TEXT_FIELD);
+      }
+      updateBoundingBox();
 
-        if (!map.hasImage('airplane-icon')) {
-            map.loadImage('/airplane.png')
-                .then((response) => { map.addImage('airplane-icon', response.data); })
-                .catch((err) => { console.error('Error loading airplane icon:', err); });
+        if (!map.hasImage("airplane-icon")) {
+        map
+          .loadImage("/airplane.png")
+                .then((response) => { map.addImage("airplane-icon", response.data); })
+          .catch((err) => { console.error('Error loading airplane icon:', err); });
         }
         if (!map.hasImage('airplane-icon-navy')) {
             tintMapImage(map, 'airplane-icon-navy', '/airplane.png', '#1E3A8A')
-                .catch((err) => { console.error('Error loading airplane-icon-navy:', err); });
+          .catch((err) => { console.error('Error loading airplane-icon-navy:', err); });
         }
         if (!map.hasImage('airport-icon')) {
             tintMapImage(map, 'airport-icon', '/airport.png', '#1E3A8A')
-                .catch((err) => { console.error('Error loading airport-icon:', err); });
+                .catch((err) => { console.error("Error loading airport-icon:", err); });
         }
         if (!map.hasImage('airport-icon-lime')) {
             tintMapImage(map, 'airport-icon-lime', '/airport.png', '#BEF264')
-                .catch((err) => { console.error('Error loading airport-icon-lime:', err); });
-        }
-    }, [updateBoundingBox]);
+          .catch((err) => { console.error('Error loading airport-icon-lime:', err); });
+      }
+    },
+    [updateBoundingBox],
+  );
 
-    const openAirportPanel = useCallback((airport: Airport) => {
+  const openAirportPanel = useCallback((airport: Airport) => {
         setSelectedAirportData(airport);
         setSelectedRoutes(new Map());
         setSelectedFlight(null);
@@ -166,10 +172,10 @@ export default function TelemetryMapView() {
     }, [openAirportPanel]);
 
     const handleMapClick = useCallback((e: MapLayerMouseEvent) => {
-        const feature = e.features?.[0];
+    const feature = e.features?.[0];
 
-        if (!feature) {
-            setSelectedFlight(null);
+    if (!feature) {
+      setSelectedFlight(null);
             return;
         }
 
@@ -187,7 +193,7 @@ export default function TelemetryMapView() {
                     ? { id: 0, name: props.cityName, countryCode: '', countryName: props.countryName ?? null }
                     : null,
             });
-        } else if (feature.layer?.id === 'flights-points') {
+    } else if (feature.layer?.id === 'flights-points') {
             setSelectedFlight(feature as GeoJSON.Feature<GeoJSON.Point>);
         }
     }, [openAirportPanel]);
@@ -222,8 +228,8 @@ export default function TelemetryMapView() {
         });
     }, []);
 
-    const onMouseEnter = useCallback(() => setCursor('pointer'), []);
-    const onMouseLeave = useCallback(() => setCursor(''), []);
+  const onMouseEnter = useCallback(() => setCursor("pointer"), []);
+  const onMouseLeave = useCallback(() => setCursor(""), []);
 
     return (
         <div className="flex h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink">
@@ -308,7 +314,7 @@ export default function TelemetryMapView() {
                             id="flights-points"
                             type="symbol"
                             layout={{
-                                'icon-image': 'airplane-icon',
+                                "icon-image": "airplane-icon",
                                 'icon-rotate': ['get', 'heading'],
                                 'icon-rotation-alignment': 'map',
                                 'icon-allow-overlap': true,
