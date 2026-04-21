@@ -47,11 +47,9 @@ router.get(
     const lamax = parseFloat(String(req.query.lamax ?? ""));
 
     if ([lomin, lamin, lomax, lamax].some((v) => !Number.isFinite(v))) {
-      res
-        .status(400)
-        .json({
-          error: "lomin, lamin, lomax, lamax are required finite numbers",
-        });
+      res.status(400).json({
+        error: "lomin, lamin, lomax, lamax are required finite numbers",
+      });
       return;
     }
 
