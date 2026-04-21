@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Spinner, Alert } from '@/common/components';
+import { Spinner, Alert, Button } from '@/common/components';
 import { getAirportRoutes, type Airport, type AirlineWithDestinations } from '@/common/api/airports';
 
 interface AirportPanelProps {
     airport: Airport;
-    selectedAirlineIcao: string | null;
+    selectedAirlineIcaos: Set<string>;
     onClose: () => void;
-    onAirlineSelect: (airlineIcao: string, destinations: Airport[]) => void;
+    onAirlineToggle: (airlineIcao: string, destinations: Airport[]) => void;
+    onToggleAll: (routes: AirlineWithDestinations[]) => void;
 }
 
 interface RoutesState {
@@ -17,7 +18,7 @@ interface RoutesState {
     error: string | null;
 }
 
-export function AirportPanel({ airport, selectedAirlineIcao, onClose, onAirlineSelect }: AirportPanelProps) {
+export function AirportPanel({ airport, selectedAirlineIcaos, onClose, onAirlineToggle, onToggleAll }: AirportPanelProps) {
     const [{ routes, loading, error }, setRoutesState] = useState<RoutesState>({
         routes: [],
         loading: true,
@@ -59,7 +60,7 @@ export function AirportPanel({ airport, selectedAirlineIcao, onClose, onAirlineS
                                 {airport.city.countryName && `, ${airport.city.countryName}`}
                             </p>
                         )}
-                        <p className="text-xs text-ink-muted font-mono mt-0.5">{airport.timezone}</p>
+                        <p className="text-xs text-ink-muted font-mono mt-0.5">Stefa Czasowa: {airport.timezone}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -72,10 +73,23 @@ export function AirportPanel({ airport, selectedAirlineIcao, onClose, onAirlineS
             </div>
 
             {/* Airlines section header */}
-            <div className="px-3 py-2 border-b border-border-subtle shrink-0">
+            <div className="px-3 py-2 border-b border-border-subtle shrink-0 flex items-center justify-between gap-2">
                 <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-muted">
                     Linie lotnicze · połączenia wylatujące
                 </p>
+                {!loading && !error && routes.length > 0 && (() => {
+                    const allSelected = routes.every((r) => selectedAirlineIcaos.has(r.airline.icaoCode));
+                    return (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onToggleAll(routes)}
+                            className={allSelected ? '!bg-[var(--color-lime)]' : ''}
+                        >
+                            Wszystkie
+                        </Button>
+                    );
+                })()}
             </div>
 
             {/* Content */}
@@ -102,11 +116,11 @@ export function AirportPanel({ airport, selectedAirlineIcao, onClose, onAirlineS
                 {!loading && !error && routes.length > 0 && (
                     <ul className="divide-y divide-border-subtle">
                         {routes.map(({ airline, destinations }) => {
-                            const isSelected = selectedAirlineIcao === airline.icaoCode;
+                            const isSelected = selectedAirlineIcaos.has(airline.icaoCode);
                             return (
                                 <li key={airline.icaoCode}>
                                     <button
-                                        onClick={() => onAirlineSelect(airline.icaoCode, destinations)}
+                                        onClick={() => onAirlineToggle(airline.icaoCode, destinations)}
                                         className={`w-full text-left px-3 py-2.5 transition-colors ${
                                             isSelected
                                                 ? 'bg-navy text-white'

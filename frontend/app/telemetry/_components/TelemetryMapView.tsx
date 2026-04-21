@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
-import { Map, NavigationControl, Source, Layer, MapEvent, Popup } from 'react-map-gl/maplibre';
+import { Map as MapGL, NavigationControl, Source, Layer, MapEvent, Popup } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { MapLayerMouseEvent } from 'maplibre-gl';
 import { useTelemetry } from '@/common/hooks/useTelemetry';
@@ -10,6 +10,7 @@ import { useRouteAnimation } from '@/common/hooks/useRouteAnimation';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { FlightDetails } from '@/common/components/Map/FlightDetails';
 import { AirportPanel } from '@/common/components/Map/AirportPanel';
+import { CityAirportsPanel } from '@/common/components/Map/CityAirportsPanel';
 import { MapOverlay } from '@/common/components/Map/TelemetryOverlay';
 import {
     MAP_STYLE_URL,
@@ -19,7 +20,7 @@ import {
     tintMapImage,
     POLISH_TEXT_FIELD,
 } from '@/app/telemetry/_utils/telemetryMapHelpers';
-import type { Airport } from '@/common/api/airports';
+import type { Airport, AirlineWithDestinations } from '@/common/api/airports';
 
 const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
 
@@ -48,12 +49,36 @@ export default function TelemetryMapView() {
 
     const [selectedFlight, setSelectedFlight] = useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
     const [selectedAirportData, setSelectedAirportData] = useState<Airport | null>(null);
-    const [selectedAirlineIcao, setSelectedAirlineIcao] = useState<string | null>(null);
-    const [routesGeoJson, setRoutesGeoJson] = useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
+    const [selectedRoutes, setSelectedRoutes] = useState<Map<string, Airport[]>>(new Map());
+    const [cityAirports, setCityAirports] = useState<Airport[]>([]);
+    const [highlightedIcao, setHighlightedIcao] = useState<string | null>(null);
     const [cursor, setCursor] = useState<string>('');
 
     const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
-    const airportsGeoJson = useMemo(() => mapAirportsToGeoJson(airports), [airports]);
+
+    const selectedAirlineIcaos = useMemo(() => new Set(selectedRoutes.keys()), [selectedRoutes]);
+
+    const routesGeoJson = useMemo<GeoJSON.FeatureCollection>(() => {
+        if (!selectedAirportData || selectedRoutes.size === 0) return EMPTY_GEOJSON;
+        const allDestinations = [
+            ...new Map(
+                [...selectedRoutes.values()].flat().map((a) => [a.icaoCode, a]),
+            ).values(),
+        ];
+        return mapRoutesToGeoJson(selectedAirportData, allDestinations);
+    }, [selectedAirportData, selectedRoutes]);
+
+    const airportsGeoJson = useMemo<GeoJSON.FeatureCollection>(() => {
+        const base = mapAirportsToGeoJson(airports);
+        if (!highlightedIcao) return base;
+        return {
+            ...base,
+            features: base.features.map((f) => ({
+                ...f,
+                properties: { ...f.properties, highlighted: f.properties?.icaoCode === highlightedIcao },
+            })),
+        };
+    }, [airports, highlightedIcao]);
 
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -107,17 +132,38 @@ export default function TelemetryMapView() {
                 .then((response) => { map.addImage('airplane-icon', response.data); })
                 .catch((err) => { console.error('Error loading airplane icon:', err); });
         }
-
         if (!map.hasImage('airplane-icon-navy')) {
             tintMapImage(map, 'airplane-icon-navy', '/airplane.png', '#1E3A8A')
                 .catch((err) => { console.error('Error loading airplane-icon-navy:', err); });
         }
-
         if (!map.hasImage('airport-icon')) {
             tintMapImage(map, 'airport-icon', '/airport.png', '#1E3A8A')
                 .catch((err) => { console.error('Error loading airport-icon:', err); });
         }
+        if (!map.hasImage('airport-icon-lime')) {
+            tintMapImage(map, 'airport-icon-lime', '/airport.png', '#BEF264')
+                .catch((err) => { console.error('Error loading airport-icon-lime:', err); });
+        }
     }, [updateBoundingBox]);
+
+    const openAirportPanel = useCallback((airport: Airport) => {
+        setSelectedAirportData(airport);
+        setSelectedRoutes(new Map());
+        setSelectedFlight(null);
+        setHighlightedIcao(airport.icaoCode);
+        mapRef.current?.flyTo({
+            center: [airport.longitude, airport.latitude],
+            zoom: Math.max(mapRef.current.getMap().getZoom(), 9),
+            duration: 800,
+        });
+    }, []);
+
+    const handleSearchSelect = useCallback((airport: Airport, results: Airport[]) => {
+        if (results.length > 1) {
+            setCityAirports(results);
+        }
+        openAirportPanel(airport);
+    }, [openAirportPanel]);
 
     const handleMapClick = useCallback((e: MapLayerMouseEvent) => {
         const feature = e.features?.[0];
@@ -130,7 +176,7 @@ export default function TelemetryMapView() {
         if (feature.layer?.id === 'airports-points') {
             const props = feature.properties as AirportFeatureProperties;
             const coords = (feature as GeoJSON.Feature<GeoJSON.Point>).geometry.coordinates;
-            setSelectedAirportData({
+            openAirportPanel({
                 icaoCode: props.icaoCode,
                 iataCode: props.iataCode ?? null,
                 name: props.name,
@@ -141,33 +187,40 @@ export default function TelemetryMapView() {
                     ? { id: 0, name: props.cityName, countryCode: '', countryName: props.countryName ?? null }
                     : null,
             });
-            setSelectedAirlineIcao(null);
-            setRoutesGeoJson(EMPTY_GEOJSON);
-            setSelectedFlight(null);
         } else if (feature.layer?.id === 'flights-points') {
             setSelectedFlight(feature as GeoJSON.Feature<GeoJSON.Point>);
         }
-    }, []);
+    }, [openAirportPanel]);
 
     const handlePanelClose = useCallback(() => {
         setSelectedAirportData(null);
-        setSelectedAirlineIcao(null);
-        setRoutesGeoJson(EMPTY_GEOJSON);
+        setSelectedRoutes(new Map());
+        setHighlightedIcao(null);
     }, []);
 
-    const handleAirlineSelect = useCallback((airlineIcao: string, destinations: Airport[]) => {
-        if (selectedAirlineIcao === airlineIcao) {
-            setSelectedAirlineIcao(null);
-            setRoutesGeoJson(EMPTY_GEOJSON);
-        } else {
-            setSelectedAirlineIcao(airlineIcao);
-            setRoutesGeoJson(
-                selectedAirportData
-                    ? mapRoutesToGeoJson(selectedAirportData, destinations)
-                    : EMPTY_GEOJSON,
-            );
-        }
-    }, [selectedAirlineIcao, selectedAirportData]);
+    const handleCityPanelClose = useCallback(() => {
+        setCityAirports([]);
+    }, []);
+
+    const handleAirlineToggle = useCallback((airlineIcao: string, destinations: Airport[]) => {
+        setSelectedRoutes((prev) => {
+            const next = new Map(prev);
+            if (next.has(airlineIcao)) {
+                next.delete(airlineIcao);
+            } else {
+                next.set(airlineIcao, destinations);
+            }
+            return next;
+        });
+    }, []);
+
+    const handleToggleAll = useCallback((allRoutes: AirlineWithDestinations[]) => {
+        setSelectedRoutes((prev) => {
+            const allSelected = allRoutes.every((r) => prev.has(r.airline.icaoCode));
+            if (allSelected) return new Map();
+            return new Map(allRoutes.map((r) => [r.airline.icaoCode, r.destinations]));
+        });
+    }, []);
 
     const onMouseEnter = useCallback(() => setCursor('pointer'), []);
     const onMouseLeave = useCallback(() => setCursor(''), []);
@@ -175,16 +228,31 @@ export default function TelemetryMapView() {
     return (
         <div className="flex h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink">
 
-            {/* Side panel */}
+            {/* City airports panel */}
+            <div className={`shrink-0 overflow-hidden transition-[width] duration-300 ${cityAirports.length > 0 ? 'w-80' : 'w-0'}`}>
+                <div className="w-80 h-full">
+                    {cityAirports.length > 0 && (
+                        <CityAirportsPanel
+                            airports={cityAirports}
+                            selectedIcao={selectedAirportData?.icaoCode ?? null}
+                            onSelect={openAirportPanel}
+                            onClose={handleCityPanelClose}
+                        />
+                    )}
+                </div>
+            </div>
+
+            {/* Routes panel */}
             <div className={`shrink-0 overflow-hidden transition-[width] duration-300 ${selectedAirportData ? 'w-80' : 'w-0'}`}>
                 <div className="w-80 h-full">
                     {selectedAirportData && (
                         <AirportPanel
                             key={selectedAirportData.icaoCode}
                             airport={selectedAirportData}
-                            selectedAirlineIcao={selectedAirlineIcao}
+                            selectedAirlineIcaos={selectedAirlineIcaos}
                             onClose={handlePanelClose}
-                            onAirlineSelect={handleAirlineSelect}
+                            onAirlineToggle={handleAirlineToggle}
+                            onToggleAll={handleToggleAll}
                         />
                     )}
                 </div>
@@ -192,7 +260,7 @@ export default function TelemetryMapView() {
 
             {/* Map */}
             <div className="relative flex-1 bg-[var(--color-bg)]">
-                <Map
+                <MapGL
                     ref={mapRef}
                     initialViewState={{ longitude: 19.0, latitude: 52.0, zoom: 5 }}
                     mapStyle={MAP_STYLE_URL}
@@ -227,9 +295,9 @@ export default function TelemetryMapView() {
                             type="symbol"
                             minzoom={5}
                             layout={{
-                                'icon-image': 'airport-icon',
+                                'icon-image': ['case', ['==', ['get', 'highlighted'], true], 'airport-icon-lime', 'airport-icon'],
                                 'icon-allow-overlap': true,
-                                'icon-size': 0.015,
+                                'icon-size': ['case', ['==', ['get', 'highlighted'], true], 0.02, 0.015],
                             }}
                         />
                     </Source>
@@ -277,9 +345,14 @@ export default function TelemetryMapView() {
                             <FlightDetails properties={selectedFlight.properties as FlightFeatureProperties} />
                         </Popup>
                     )}
-                </Map>
+                </MapGL>
 
-                <MapOverlay flightsCount={flights.length} loading={loading} error={error} />
+                <MapOverlay
+                    flightsCount={flights.length}
+                    loading={loading}
+                    error={error}
+                    onAirportSelect={handleSearchSelect}
+                />
             </div>
         </div>
     );

@@ -261,16 +261,17 @@ export async function searchAirports(q: string, limit = 20): Promise<Airport[]> 
     if (!term) return [];
     const normalized = normalizeIcao(term);
     const like = `%${term}%`;
-    return airportRepo().find({
-        where: [
-            { icaoCode: normalized },
-            { iataCode: normalized },
-            { name: ILike(like) },
-        ],
-        relations: ['city', 'city.country'],
-        take: Math.min(Math.max(limit, 1), 100),
-        order: { name: 'ASC' },
-    });
+    return airportRepo()
+        .createQueryBuilder('airport')
+        .leftJoinAndSelect('airport.city', 'city')
+        .leftJoinAndSelect('city.country', 'country')
+        .where('airport.icao_code = :normalized', { normalized })
+        .orWhere('airport.iata_code = :normalized', { normalized })
+        .orWhere('airport.name ILIKE :like', { like })
+        .orWhere('city.name ILIKE :like', { like })
+        .orderBy('airport.name', 'ASC')
+        .take(Math.min(Math.max(limit, 1), 100))
+        .getMany();
 }
 
 export async function listAirports(limit = 50, offset = 0): Promise<{ items: Airport[]; total: number }> {
@@ -402,31 +403,6 @@ const routesCache = new Map<string, { data: RouteEntry[]; expiresAt: number }>()
 const routesInFlight = new Map<string, Promise<RouteEntry[]>>();
 const ROUTES_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2h
 
-const MOCK_ROUTES: RouteEntry[] = [
-    {
-        airline: { icaoCode: 'LOT', iataCode: 'LO', name: 'LOT Polish Airlines' },
-        destinations: [
-            { icaoCode: 'EGLL', iataCode: 'LHR', name: 'London Heathrow', latitude: 51.4775, longitude: -0.4614, timezone: 'Europe/London', city: { id: 0, name: 'London', countryCode: 'GB', countryName: 'United Kingdom' } },
-            { icaoCode: 'EDDF', iataCode: 'FRA', name: 'Frankfurt am Main', latitude: 50.0333, longitude: 8.5706, timezone: 'Europe/Berlin', city: { id: 0, name: 'Frankfurt', countryCode: 'DE', countryName: 'Germany' } },
-            { icaoCode: 'LEMD', iataCode: 'MAD', name: 'Adolfo Suárez Madrid–Barajas', latitude: 40.4719, longitude: -3.5626, timezone: 'Europe/Madrid', city: { id: 0, name: 'Madrid', countryCode: 'ES', countryName: 'Spain' } },
-        ],
-    },
-    {
-        airline: { icaoCode: 'RYR', iataCode: 'FR', name: 'Ryanair' },
-        destinations: [
-            { icaoCode: 'EIDW', iataCode: 'DUB', name: 'Dublin Airport', latitude: 53.4213, longitude: -6.2701, timezone: 'Europe/Dublin', city: { id: 0, name: 'Dublin', countryCode: 'IE', countryName: 'Ireland' } },
-            { icaoCode: 'LIRF', iataCode: 'FCO', name: 'Rome Fiumicino', latitude: 41.8003, longitude: 12.2389, timezone: 'Europe/Rome', city: { id: 0, name: 'Rome', countryCode: 'IT', countryName: 'Italy' } },
-        ],
-    },
-    {
-        airline: { icaoCode: 'WZZ', iataCode: 'W6', name: 'Wizz Air' },
-        destinations: [
-            { icaoCode: 'LHBP', iataCode: 'BUD', name: 'Budapest Ferenc Liszt', latitude: 47.4369, longitude: 19.2556, timezone: 'Europe/Budapest', city: { id: 0, name: 'Budapest', countryCode: 'HU', countryName: 'Hungary' } },
-            { icaoCode: 'LOWW', iataCode: 'VIE', name: 'Vienna International', latitude: 48.1103, longitude: 16.5697, timezone: 'Europe/Vienna', city: { id: 0, name: 'Vienna', countryCode: 'AT', countryName: 'Austria' } },
-        ],
-    },
-];
-
 async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
     const today = new Date();
     const end = new Date(today);
@@ -518,8 +494,6 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
 
 export async function getAirportRoutes(code: string): Promise<RouteEntry[]> {
     const icao = normalizeIcao(code);
-
-    if (process.env.AEROAPI_MOCK === 'true') return MOCK_ROUTES;
 
     const cached = routesCache.get(icao);
     if (cached && cached.expiresAt > Date.now()) return cached.data;
