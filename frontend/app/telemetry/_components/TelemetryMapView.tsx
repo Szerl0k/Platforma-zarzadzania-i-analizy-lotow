@@ -15,9 +15,9 @@ import { useTelemetry } from "@/common/hooks/useTelemetry";
 import { useAirports } from "@/common/hooks/useAirports";
 import { useRouteAnimation } from "@/common/hooks/useRouteAnimation";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { FlightDetails } from "@/common/components/Map/FlightDetails";
 import { AirportPanel } from "@/common/components/Map/AirportPanel";
 import { CityAirportsPanel } from "@/common/components/Map/CityAirportsPanel";
+import { FlightPanel } from "@/common/components/Map/FlightPanel";
 import { MapOverlay } from "@/common/components/Map/TelemetryOverlay";
 import {
   MAP_STYLE_URL,
@@ -245,6 +245,9 @@ export default function TelemetryMapView() {
             : null,
         });
       } else if (feature.layer?.id === "flights-points") {
+        // Zamknij panel lotniska przy kliknieciu na lot
+        setSelectedAirportData(null);
+        setHighlightedIcao(null);
         setSelectedFlight(feature as GeoJSON.Feature<GeoJSON.Point>);
       }
     },
@@ -255,6 +258,10 @@ export default function TelemetryMapView() {
     setSelectedAirportData(null);
     setSelectedRoutes(new Map());
     setHighlightedIcao(null);
+  }, []);
+
+  const handleFlightPanelClose = useCallback(() => {
+    setSelectedFlight(null);
   }, []);
 
   const handleCityPanelClose = useCallback(() => {
@@ -312,7 +319,7 @@ export default function TelemetryMapView() {
         </div>
       </div>
 
-      {/* Routes panel */}
+      {/* Routes panel (Lotnisko) */}
       <div
         className={`shrink-0 overflow-hidden transition-[width] duration-300 ${selectedAirportData ? "w-80" : "w-0"}`}
       >
@@ -325,6 +332,20 @@ export default function TelemetryMapView() {
               onClose={handlePanelClose}
               onAirlineToggle={handleAirlineToggle}
               onToggleAll={handleToggleAll}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Flight Panel */}
+      <div
+        className={`shrink-0 overflow-hidden transition-[width] duration-300 ${selectedFlight ? "w-80" : "w-0"}`}
+      >
+        <div className="w-80 h-full">
+          {selectedFlight && (
+            <FlightPanel
+              properties={selectedFlight.properties as FlightFeatureProperties}
+              onClose={handleFlightPanelClose}
             />
           )}
         </div>
@@ -413,24 +434,6 @@ export default function TelemetryMapView() {
               }}
             />
           </Source>
-
-          {selectedFlight && (
-            <Popup
-              longitude={selectedFlight.geometry.coordinates[0]}
-              latitude={selectedFlight.geometry.coordinates[1]}
-              anchor="bottom"
-              offset={15}
-              onClose={() => setSelectedFlight(null)}
-              closeOnClick={false}
-              className="custom-popup"
-            >
-              <FlightDetails
-                properties={
-                  selectedFlight.properties as FlightFeatureProperties
-                }
-              />
-            </Popup>
-          )}
         </MapGL>
 
         <MapOverlay

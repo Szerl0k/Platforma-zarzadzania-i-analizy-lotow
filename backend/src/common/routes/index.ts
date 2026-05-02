@@ -7,6 +7,7 @@ import preferencesRoutes from "../../users/routes/preferences.routes";
 import userRoutes from "../../users/routes/users.routes";
 import roleRoutes from "../../users/routes/roles.routes";
 import permissionRoutes from "../../users/routes/permissions.routes";
+import flightRoutes from "../../flights/routes/flights.routes";
 
 const apiRouter = Router();
 
@@ -32,6 +33,7 @@ apiRouter.use(
 );
 
 apiRouter.use("/telemetry", telemetryRoutes);
+apiRouter.use("/flights", flightRoutes);
 apiRouter.use("/", geoRoutes);
 
 export default apiRouter;

@@ -6,7 +6,6 @@ import {
 } from "../common/integrations/opensky";
 import {
   BoundingBoxAreaQuery,
-  LocateFlightQuery,
   LocateFlightResponseDTO,
   MapFlightSummaryDTO,
 } from "./telemetry.dto";

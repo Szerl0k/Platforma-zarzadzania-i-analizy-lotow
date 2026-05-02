@@ -9,8 +9,11 @@ export function globalErrorHandler(
   res: Response,
   next: NextFunction,
 ): void {
-  // Zod
+  if (res.headersSent) {
+    return next(err);
+  }
 
+  // Zod
   if (err instanceof ZodError) {
     const zodError = err as ZodError<any>;
     res.status(400).json({
@@ -57,11 +60,12 @@ export function globalErrorHandler(
       success: false,
       error: "Error with communication to external data provider",
     });
+    return;
   }
 
   console.error("[Unhandled Server Exception]:", err);
   res.status(500).json({
     success: false,
-    error: "Internal Server Report",
+    error: "Internal Server Error",
   });
 }

@@ -7,8 +7,6 @@ export const LocateFlightQuerySchema = z.object({
     .min(5, "Identyfikator faFlightId jest wymagany i musi być poprawny."),
 });
 
-export type LocateFlightQuery = z.infer<typeof LocateFlightQuerySchema>;
-
 export interface LocateFlightResponseDTO {
   icao24: string;
   faFlightId: string;
