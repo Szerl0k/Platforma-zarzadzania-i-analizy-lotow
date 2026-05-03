@@ -1,8 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { RolePermission } from "./RolePermission";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("permissions")
-export class Permission {
+export class Permission extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id!: number;
 

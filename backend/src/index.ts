@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { AppDataSource } from "./common/database/data-source";
 import { globalErrorHandler } from "./common/middleware/errorHandler";
 import apiRouter from "./common/routes";
+import { logger } from "./common/utils/logger";
 
 dotenv.config();
 
@@ -30,12 +31,12 @@ app.use(globalErrorHandler);
 
 AppDataSource.initialize()
   .then(() => {
-    console.log("Database connected successfully via TypeORM");
+    logger.info("Database connected successfully via TypeORM", null, true);
     app.listen(port, () => {
-      console.log(`Backend server running on port ${port}`);
+      logger.info(`Backend server running on port ${port}`, null, true);
     });
   })
   .catch((err) => {
-    console.error("Database connection error:", err);
+    logger.fatal("Database connection error:", err);
     process.exit(1);
   });

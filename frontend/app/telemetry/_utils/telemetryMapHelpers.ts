@@ -1,8 +1,32 @@
 import type { ExpressionSpecification, Map as MaplibreMap } from "maplibre-gl";
 import { FlightPositionDTO } from "@/common/api/telemetry";
 import type { Airport } from "@/common/api/airports";
+import { LngLatBounds } from "maplibre-gl";
 
 export const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+
+export const EMPTY_GEOJSON: GeoJSON.FeatureCollection = {
+  type: "FeatureCollection",
+  features: [],
+};
+
+export interface AirportFeatureProperties {
+  icaoCode: string;
+  iataCode: string | null;
+  name: string;
+  cityName: string | null;
+  countryName: string | null;
+  timezone: string;
+}
+
+export interface FlightFeatureProperties {
+  icao24: string;
+  callsign?: string;
+  altitude?: number | null;
+  velocity?: number | null;
+  heading?: number | null;
+  onGround?: boolean;
+}
 
 export async function tintMapImage(
   map: MaplibreMap,
@@ -29,6 +53,68 @@ export const POLISH_TEXT_FIELD: ExpressionSpecification = [
   ["get", "name:latin"],
   ["get", "name"],
 ];
+
+/**
+ * Aplikuje polskie nazwy dla wszystkich warstw tekstowych na mapie.
+ */
+export function applyPolishLabels(map: MaplibreMap) {
+  const layers = map.getStyle().layers ?? [];
+  for (const layer of layers) {
+    if (layer.type !== "symbol") continue;
+    const current = map.getLayoutProperty(layer.id, "text-field");
+    if (current == null) continue;
+    map.setLayoutProperty(layer.id, "text-field", POLISH_TEXT_FIELD);
+  }
+}
+
+/**
+ * Ładuje i koloruje ikony wymagane przez widok mapy telemetrycznej.
+ */
+export async function loadTelemetryMapImages(map: MaplibreMap) {
+  const promises = [];
+
+  if (!map.hasImage("airplane-icon")) {
+    promises.push(
+      map.loadImage("/airplane.png").then((response) => {
+        map.addImage("airplane-icon", response.data);
+      }),
+    );
+  }
+
+  if (!map.hasImage("airplane-icon-navy")) {
+    promises.push(
+      tintMapImage(map, "airplane-icon-navy", "/airplane.png", "#1E3A8A"),
+    );
+  }
+
+  if (!map.hasImage("airport-icon")) {
+    promises.push(tintMapImage(map, "airport-icon", "/airport.png", "#1E3A8A"));
+  }
+
+  if (!map.hasImage("airport-icon-lime")) {
+    promises.push(
+      tintMapImage(map, "airport-icon-lime", "/airport.png", "#BEF264"),
+    );
+  }
+
+  return Promise.all(promises);
+}
+
+/**
+ * Kwantyzuje bounding box do siatki o określonym rozmiarze,
+ * aby zoptymalizować cache'owanie zapytań na backendzie.
+ */
+export function calculateQuantizedBBox(bounds: LngLatBounds, gridSize = 2.0) {
+  const quantizeMin = (val: number) => Math.floor(val / gridSize) * gridSize;
+  const quantizeMax = (val: number) => Math.ceil(val / gridSize) * gridSize;
+
+  return {
+    lomin: quantizeMin(bounds.getWest()),
+    lamin: quantizeMin(bounds.getSouth()),
+    lomax: quantizeMax(bounds.getEast()),
+    lamax: quantizeMax(bounds.getNorth()),
+  };
+}
 
 function greatCircleCoords(
   lon1: number,

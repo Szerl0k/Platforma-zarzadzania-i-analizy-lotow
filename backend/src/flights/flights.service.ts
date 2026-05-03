@@ -1,18 +1,19 @@
-import { AppDataSource } from "../../common/database/data-source";
-import { Flight } from "../entities/Flight";
-import { FlightStatus } from "../entities/FlightStatus";
+import { AppDataSource } from "../common/database/data-source";
+import { Flight } from "./entities/Flight";
+import { FlightStatus } from "./entities/FlightStatus";
 import { DataSource } from "typeorm";
-import { getAeroApiClient } from "../../common/integrations/aeroapi";
+import { getAeroApiClient } from "../common/integrations/aeroapi";
 import {
   AeroAPIFlightDetails,
   AeroAPIStandardFlightsResponse,
-} from "../../common/integrations/aeroapi/types";
-import { FlightCodeshare } from "../entities/FlightCodeshare";
-import { Airport } from "../../geo/entities/Airport";
-import { Airline } from "../../geo/entities/Airline";
-import { FlightDetailsResponseDTO } from "../flights.dto";
+} from "../common/integrations/aeroapi/types";
+import { FlightCodeshare } from "./entities/FlightCodeshare";
+import { Airport } from "../geo/entities/Airport";
+import { Airline } from "../geo/entities/Airline";
+import { FlightDetailsResponseDTO } from "./flights.dto";
+import { FlightNotFoundError } from "../common/errors";
 
-export class FlightService {
+export class FlightsService {
   private readonly dataSource: DataSource;
   private readonly aeroClient = getAeroApiClient();
 
@@ -22,12 +23,39 @@ export class FlightService {
 
   public async getFlightDetailsAndSave(
     identIcao: string,
-  ): Promise<FlightDetailsResponseDTO | null> {
+  ): Promise<FlightDetailsResponseDTO> {
+    const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+    // 1. Try to fetch from DB first to check for cache
+    const existingFlight = await this.dataSource.getRepository(Flight).findOne({
+      where: { callsign: identIcao },
+      relations: [
+        "status",
+        "origin",
+        "origin.city",
+        "origin.city.country",
+        "destination",
+        "destination.city",
+        "destination.city.country",
+        "operatingAirline",
+        "codeshares",
+      ],
+      order: { updatedAt: "DESC" }, // Get the most recent one if multiple exist
+    });
+
+    if (existingFlight) {
+      const timeSinceUpdate = Date.now() - existingFlight.updatedAt.getTime();
+      if (timeSinceUpdate < CACHE_DURATION_MS) {
+        return this.mapToDTO(existingFlight, "database");
+      }
+    }
+
+    // 2. Fetch from AeroAPI if cache miss or expired
     const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
     const startTimestamp = now - 4 * 60 * 60; // 4 hours ago
     const endTimestamp = now + 4 * 60 * 60; // 4 hours from now
 
-    // AeroAPI expects strict ISO8601 without milliseconds (e.g. 2026-04-15T23:00:00Z)
+    // AeroAPI expects strict ISO8601 without milliseconds (example: 2026-04-15T23:00:00Z)
     const formatAeroDate = (date: Date): string => date.toISOString().split(".")[0] + "Z";
 
     const response: AeroAPIStandardFlightsResponse =
@@ -38,7 +66,7 @@ export class FlightService {
       });
 
     if (!response.flights || response.flights.length === 0) {
-      return null;
+      throw new FlightNotFoundError(`Could not find active flight details in AeroAPI for ICAO code: ${identIcao}`);
     }
 
     const flightDetails: AeroAPIFlightDetails = response.flights[0];
@@ -52,7 +80,8 @@ export class FlightService {
       if (!status) {
         status = manager.create(FlightStatus, {
           name: flightDetails.status,
-          category: null, // Mapped category if needed
+          // Mapped category if needed
+          category: null,
         });
         await manager.save(status);
       }
@@ -207,10 +236,13 @@ export class FlightService {
       return flightRecord;
     });
 
-    return this.mapToDTO(flight);
+    return this.mapToDTO(flight, "AeroAPI");
   }
 
-  private mapToDTO(flight: Flight): FlightDetailsResponseDTO {
+  private mapToDTO(
+    flight: Flight,
+    source: "database" | "AeroAPI",
+  ): FlightDetailsResponseDTO {
     return {
       id: flight.id,
       identIcao: flight.identIcao,
@@ -227,39 +259,60 @@ export class FlightService {
       gateDestination: flight.gateDestination,
       departureDelay: flight.departureDelay,
       arrivalDelay: flight.arrivalDelay,
-      scheduledOut: flight.scheduledOut ? flight.scheduledOut.toISOString() : null,
-      estimatedOut: flight.estimatedOut ? flight.estimatedOut.toISOString() : null,
+      scheduledOut: flight.scheduledOut
+        ? flight.scheduledOut.toISOString()
+        : null,
+      estimatedOut: flight.estimatedOut
+        ? flight.estimatedOut.toISOString()
+        : null,
       actualOut: flight.actualOut ? flight.actualOut.toISOString() : null,
       scheduledIn: flight.scheduledIn ? flight.scheduledIn.toISOString() : null,
       estimatedIn: flight.estimatedIn ? flight.estimatedIn.toISOString() : null,
       actualIn: flight.actualIn ? flight.actualIn.toISOString() : null,
-      status: flight.status ? {
-        id: flight.status.id,
-        name: flight.status.name,
-        category: flight.status.category,
-      } : undefined,
-      origin: flight.origin ? {
-        icaoCode: flight.origin.icaoCode,
-        iataCode: flight.origin.iataCode,
-        name: flight.origin.name,
-        city: flight.origin.city ? {
-          name: flight.origin.city.name,
-          countryName: flight.origin.city.country ? flight.origin.city.country.name : null,
-        } : undefined,
-      } : null,
-      destination: flight.destination ? {
-        icaoCode: flight.destination.icaoCode,
-        iataCode: flight.destination.iataCode,
-        name: flight.destination.name,
-        city: flight.destination.city ? {
-          name: flight.destination.city.name,
-          countryName: flight.destination.city.country ? flight.destination.city.country.name : null,
-        } : undefined,
-      } : null,
-      operatingAirline: flight.operatingAirline ? {
-        icaoCode: flight.operatingAirline.icaoCode,
-        name: flight.operatingAirline.name,
-      } : null,
+      status: flight.status
+        ? {
+            id: flight.status.id,
+            name: flight.status.name,
+            category: flight.status.category,
+          }
+        : undefined,
+      origin: flight.origin
+        ? {
+            icaoCode: flight.origin.icaoCode,
+            iataCode: flight.origin.iataCode,
+            name: flight.origin.name,
+            city: flight.origin.city
+              ? {
+                  name: flight.origin.city.name,
+                  countryName: flight.origin.city.country
+                    ? flight.origin.city.country.name
+                    : null,
+                }
+              : undefined,
+          }
+        : null,
+      destination: flight.destination
+        ? {
+            icaoCode: flight.destination.icaoCode,
+            iataCode: flight.destination.iataCode,
+            name: flight.destination.name,
+            city: flight.destination.city
+              ? {
+                  name: flight.destination.city.name,
+                  countryName: flight.destination.city.country
+                    ? flight.destination.city.country.name
+                    : null,
+                }
+              : undefined,
+          }
+        : null,
+      operatingAirline: flight.operatingAirline
+        ? {
+            icaoCode: flight.operatingAirline.icaoCode,
+            name: flight.operatingAirline.name,
+          }
+        : null,
+      source,
     };
   }
 }

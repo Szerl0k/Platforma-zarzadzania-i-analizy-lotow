@@ -4,6 +4,9 @@ import {
   getFlightsInArea,
   BoundingBoxDTO,
   FlightPositionDTO,
+  locateFlight,
+  LocateFlightParams,
+  LocateFlightResponseDTO,
 } from "../api/telemetry";
 
 interface UseTelemetryResult {
@@ -72,4 +75,37 @@ export function useTelemetry(pollingIntervalMs = 10000): UseTelemetryResult {
   }, [bounds, fetchFlights, pollingIntervalMs]);
 
   return { flights, error, loading, setBounds: handleSetBounds };
+}
+
+export function useLocateFlight(params: LocateFlightParams | null) {
+  const [data, setData] = useState<LocateFlightResponseDTO | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLocate = useCallback(async (currentParams: LocateFlightParams) => {
+    setLoading(true);
+    try {
+      const result = await locateFlight(currentParams);
+      setData(result);
+      setError(null);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error ?? "Błąd lokalizacji lotu.");
+      } else {
+        setError("Wystąpił nieznany błąd.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (params && (params.faFlightId || params.icao24)) {
+      fetchLocate(params);
+    } else {
+      setData(null);
+    }
+  }, [params, fetchLocate]);
+
+  return { data, loading, error };
 }

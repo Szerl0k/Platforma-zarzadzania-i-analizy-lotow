@@ -9,10 +9,11 @@ import {
 import { Point } from "geojson";
 import { Flight } from "../../flights/entities/Flight";
 import { HexIcao24AddressTransformer } from "../../common/utils/HexTransformer";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flight_telemetry")
 @Index(["flightId", "timestamp"])
-export class FlightTelemetry {
+export class FlightTelemetry extends BaseEntity {
   @PrimaryGeneratedColumn("increment", { type: "bigint" })
   id!: string;
 

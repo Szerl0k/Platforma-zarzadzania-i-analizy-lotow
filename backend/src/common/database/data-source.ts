@@ -37,6 +37,8 @@ import { FavouriteDestination } from "../../tracking/entities/FavouriteDestinati
 // Simulations entities
 import { CustomFlightSimulation } from "../../simulations/entities/CustomFlightSimulation";
 
+import { TypeORMLogger } from "./TypeORMLogger";
+
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.DB_HOST,
@@ -45,7 +47,8 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || "postgres",
   database: process.env.DB_NAME || "flight_db",
   synchronize: false,
-  logging: process.env.NODE_ENV === "development",
+  logging: true,
+  logger: new TypeORMLogger(),
   entities: [
     Country,
     City,

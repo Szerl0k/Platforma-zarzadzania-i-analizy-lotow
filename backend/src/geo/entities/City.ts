@@ -10,10 +10,11 @@ import {
 } from "typeorm";
 import { Country } from "./Country";
 import { Airport } from "./Airport";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("cities")
 @Unique("UQ_country_city", ["countryCode", "name"])
-export class City {
+export class City extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id!: number;
 

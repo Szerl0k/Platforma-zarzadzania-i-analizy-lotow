@@ -7,7 +7,6 @@ import {
   Source,
   Layer,
   MapEvent,
-  Popup,
 } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import type { MapLayerMouseEvent } from "maplibre-gl";
@@ -24,33 +23,16 @@ import {
   mapAirportsToGeoJson,
   mapFlightsToGeoJson,
   mapRoutesToGeoJson,
-  tintMapImage,
-  POLISH_TEXT_FIELD,
+  applyPolishLabels,
+  loadTelemetryMapImages,
+  calculateQuantizedBBox,
+  EMPTY_GEOJSON,
 } from "@/app/telemetry/_utils/telemetryMapHelpers";
 import type { Airport, AirlineWithDestinations } from "@/common/api/airports";
-
-const EMPTY_GEOJSON: GeoJSON.FeatureCollection = {
-  type: "FeatureCollection",
-  features: [],
-};
-
-interface AirportFeatureProperties {
-  icaoCode: string;
-  iataCode: string | null;
-  name: string;
-  cityName: string | null;
-  countryName: string | null;
-  timezone: string;
-}
-
-interface FlightFeatureProperties {
-  icao24: string;
-  callsign?: string;
-  altitude?: number | null;
-  velocity?: number | null;
-  heading?: number | null;
-  onGround?: boolean;
-}
+import type { 
+  AirportFeatureProperties, 
+  FlightFeatureProperties 
+} from "@/app/telemetry/_utils/telemetryMapHelpers";
 
 export default function TelemetryMapView() {
   const mapRef = useRef<MapRef>(null);
@@ -72,6 +54,50 @@ export default function TelemetryMapView() {
   const [cityAirports, setCityAirports] = useState<Airport[]>([]);
   const [highlightedIcao, setHighlightedIcao] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string>("");
+  
+  // Stan szerokości panelu (współdzielony dla wszystkich paneli dla spójności)
+  const [panelWidth, setPanelWidth] = useState(320); // Domyślnie w-80 = 320px
+  const [isResizing, setIsResizing] = useState(false);
+  const isResizingRef = useRef(false);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    isResizingRef.current = true;
+    document.body.style.cursor = "col-resize";
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizingRef.current) return;
+    
+    e.preventDefault();
+    const newWidth = e.clientX;
+    
+    // Nakładamy limity szerokości: min 320px, max 800px lub 50vw
+    if (newWidth >= 320 && newWidth <= Math.min(800, window.innerWidth * 0.5)) {
+      setPanelWidth(newWidth);
+    }
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    if (isResizingRef.current) {
+        setIsResizing(false);
+        isResizingRef.current = false;
+        document.body.style.cursor = "default";
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "default";
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
 
   const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
 
@@ -117,20 +143,7 @@ export default function TelemetryMapView() {
       if (!map) return;
       const b = map.getBounds();
 
-      // Kwantyzacja siatki do 2 stopni geograficznych.
-      // Zapobiega fragmentacji cache'u na backendzie podczas operacji zoom i mikro-przesunięć.
-      const GRID_SIZE = 2.0;
-      const quantizeMin = (val: number) =>
-        Math.floor(val / GRID_SIZE) * GRID_SIZE;
-      const quantizeMax = (val: number) =>
-        Math.ceil(val / GRID_SIZE) * GRID_SIZE;
-
-      const bbox = {
-        lomin: quantizeMin(b.getWest()),
-        lamin: quantizeMin(b.getSouth()),
-        lomax: quantizeMax(b.getEast()),
-        lamax: quantizeMax(b.getNorth()),
-      };
+      const bbox = calculateQuantizedBBox(b);
       setFlightBounds(bbox);
       setAirportBounds(bbox);
     }, 500);
@@ -145,50 +158,11 @@ export default function TelemetryMapView() {
   const handleMapLoad = useCallback(
     (e: MapEvent) => {
       const map = e.target;
-
-      const layers = map.getStyle().layers ?? [];
-      for (const layer of layers) {
-        if (layer.type !== "symbol") continue;
-        const current = map.getLayoutProperty(layer.id, "text-field");
-        if (current == null) continue;
-        map.setLayoutProperty(layer.id, "text-field", POLISH_TEXT_FIELD);
-      }
+      applyPolishLabels(map);
       updateBoundingBox();
-
-      if (!map.hasImage("airplane-icon")) {
-        map
-          .loadImage("/airplane.png")
-          .then((response) => {
-            map.addImage("airplane-icon", response.data);
-          })
-          .catch((err) => {
-            console.error("Error loading airplane icon:", err);
-          });
-      }
-      if (!map.hasImage("airplane-icon-navy")) {
-        tintMapImage(
-          map,
-          "airplane-icon-navy",
-          "/airplane.png",
-          "#1E3A8A",
-        ).catch((err) => {
-          console.error("Error loading airplane-icon-navy:", err);
-        });
-      }
-      if (!map.hasImage("airport-icon")) {
-        tintMapImage(map, "airport-icon", "/airport.png", "#1E3A8A").catch(
-          (err) => {
-            console.error("Error loading airport-icon:", err);
-          },
-        );
-      }
-      if (!map.hasImage("airport-icon-lime")) {
-        tintMapImage(map, "airport-icon-lime", "/airport.png", "#BEF264").catch(
-          (err) => {
-            console.error("Error loading airport-icon-lime:", err);
-          },
-        );
-      }
+      loadTelemetryMapImages(map).catch((err) => {
+        console.error("Error loading map images:", err);
+      });
     },
     [updateBoundingBox],
   );
@@ -301,58 +275,68 @@ export default function TelemetryMapView() {
   const onMouseEnter = useCallback(() => setCursor("pointer"), []);
   const onMouseLeave = useCallback(() => setCursor(""), []);
 
+  // Wyliczamy czy jakikolwiek panel jest otwarty
+  const isAnyPanelOpen = Boolean(cityAirports.length > 0 || selectedAirportData || selectedFlight);
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink">
-      {/* City airports panel */}
-      <div
-        className={`shrink-0 overflow-hidden transition-[width] duration-300 ${cityAirports.length > 0 ? "w-80" : "w-0"}`}
+      
+      {/* Dynamicznie dopasowujący się kontener paneli */}
+      <div 
+        className={`h-full flex shrink-0 relative ${isResizing ? "" : "transition-[width] duration-300"} ${isAnyPanelOpen ? "" : "!w-0 overflow-hidden"}`}
+        style={isAnyPanelOpen ? { width: `${panelWidth}px` } : undefined}
       >
-        <div className="w-80 h-full">
-          {cityAirports.length > 0 && (
-            <CityAirportsPanel
-              airports={cityAirports}
-              selectedIcao={selectedAirportData?.icaoCode ?? null}
-              onSelect={openAirportPanel}
-              onClose={handleCityPanelClose}
-            />
-          )}
-        </div>
-      </div>
+          <div className="flex-1 w-full h-full flex flex-col relative border-r-2 border-ink bg-surface">
+              {/* City airports panel */}
+              {cityAirports.length > 0 && (
+                <div className="absolute inset-0 z-10 bg-surface">
+                    <CityAirportsPanel
+                      airports={cityAirports}
+                      selectedIcao={selectedAirportData?.icaoCode ?? null}
+                      onSelect={openAirportPanel}
+                      onClose={handleCityPanelClose}
+                    />
+                </div>
+              )}
+        
+              {/* Routes panel (Lotnisko) */}
+              {selectedAirportData && !selectedFlight && (
+                 <div className="absolute inset-0 z-20 bg-surface">
+                    <AirportPanel
+                      key={selectedAirportData.icaoCode}
+                      airport={selectedAirportData}
+                      selectedAirlineIcaos={selectedAirlineIcaos}
+                      onClose={handlePanelClose}
+                      onAirlineToggle={handleAirlineToggle}
+                      onToggleAll={handleToggleAll}
+                    />
+                </div>
+              )}
+        
+              {/* Flight Panel */}
+              {selectedFlight && (
+                 <div className="absolute inset-0 z-30 bg-surface">
+                    <FlightPanel
+                      properties={selectedFlight.properties as FlightFeatureProperties}
+                      onClose={handleFlightPanelClose}
+                    />
+                </div>
+              )}
+          </div>
 
-      {/* Routes panel (Lotnisko) */}
-      <div
-        className={`shrink-0 overflow-hidden transition-[width] duration-300 ${selectedAirportData ? "w-80" : "w-0"}`}
-      >
-        <div className="w-80 h-full">
-          {selectedAirportData && (
-            <AirportPanel
-              key={selectedAirportData.icaoCode}
-              airport={selectedAirportData}
-              selectedAirlineIcaos={selectedAirlineIcaos}
-              onClose={handlePanelClose}
-              onAirlineToggle={handleAirlineToggle}
-              onToggleAll={handleToggleAll}
-            />
+          {/* Wspólny Resizer Handle na końcu kontenera paneli */}
+          {isAnyPanelOpen && (
+            <div 
+                className="w-2 hover:bg-ink/10 cursor-col-resize absolute right-0 top-0 bottom-0 flex items-center justify-center group z-50 transform translate-x-1/2"
+                onMouseDown={handleMouseDown}
+            >
+                <div className="w-0.5 h-8 bg-ink/30 group-hover:bg-ink/60 rounded-full" />
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* Flight Panel */}
-      <div
-        className={`shrink-0 overflow-hidden transition-[width] duration-300 ${selectedFlight ? "w-80" : "w-0"}`}
-      >
-        <div className="w-80 h-full">
-          {selectedFlight && (
-            <FlightPanel
-              properties={selectedFlight.properties as FlightFeatureProperties}
-              onClose={handleFlightPanelClose}
-            />
-          )}
-        </div>
       </div>
 
       {/* Map */}
-      <div className="relative flex-1 bg-[var(--color-bg)]">
+      <div className="relative flex-1 bg-(--color-bg)">
         <MapGL
           ref={mapRef}
           initialViewState={{ longitude: 19.0, latitude: 52.0, zoom: 5 }}

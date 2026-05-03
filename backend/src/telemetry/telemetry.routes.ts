@@ -5,6 +5,7 @@ import { LocateFlightQuerySchema } from "./telemetry.dto";
 
 import { BoundingBoxAreaQuerySchema } from "./telemetry.dto";
 import { BoundingBoxLimitError } from "./telemetry.errors";
+import { TelemetryNotFoundError } from "../common/errors";
 import { mapAreaRateLimiter } from "../common/middleware/rateLimiter";
 import { cacheMapArea } from "../common/middleware/cache";
 
@@ -34,17 +35,16 @@ router.get(
   asyncHandler(async (req, res) => {
     const validatedQuery = LocateFlightQuerySchema.parse(req.query);
 
-    const result = await telemetryService.locateAndSaveFlight(
-      validatedQuery.faFlightId,
-    );
-
-    if (!result) {
-      res.status(404).json({
-        error: "Could not find active ADS-B signal in selected flight section",
-      });
-      return;
+    try {
+      const result = await telemetryService.locateAndSaveFlight(validatedQuery);
+      res.json(result);
+    } catch (error: unknown) {
+      if (error instanceof TelemetryNotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      throw error;
     }
-    res.json(result);
   }),
 );
 

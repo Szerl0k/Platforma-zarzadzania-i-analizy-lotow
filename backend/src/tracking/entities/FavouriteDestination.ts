@@ -7,9 +7,10 @@ import {
 } from "typeorm";
 import { User } from "../../users/entities/User";
 import { Airport } from "../../geo/entities/Airport";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("favorite_destinations")
-export class FavouriteDestination {
+export class FavouriteDestination extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -29,10 +30,4 @@ export class FavouriteDestination {
 
   @Column({ type: "text", nullable: true })
   notes!: string | null;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
-
-  @Column({ type: "timestamp", precision: 0, name: "updated_at" })
-  updatedAt!: Date;
 }

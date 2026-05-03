@@ -55,4 +55,5 @@ export interface FlightDetailsResponseDTO {
   origin?: AirportDTO | null;
   destination?: AirportDTO | null;
   operatingAirline?: AirlineDTO | null;
+  source: "database" | "AeroAPI";
 }

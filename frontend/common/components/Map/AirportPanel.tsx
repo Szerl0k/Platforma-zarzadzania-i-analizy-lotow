@@ -58,7 +58,7 @@ export function AirportPanel({
   }, [airport.icaoCode]);
 
   return (
-    <div className="w-80 h-full flex flex-col bg-surface border-r-2 border-ink overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-surface overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b-2 border-ink shrink-0">
         <div className="flex items-start justify-between gap-2">

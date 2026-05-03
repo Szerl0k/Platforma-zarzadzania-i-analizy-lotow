@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AeroAPIError } from "../integrations/aeroapi";
 import { OpenSkyError } from "../integrations/opensky";
+import { logger } from "../utils/logger";
 
 export function globalErrorHandler(
-  err: any,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction,
@@ -15,11 +16,10 @@ export function globalErrorHandler(
 
   // Zod
   if (err instanceof ZodError) {
-    const zodError = err as ZodError<any>;
     res.status(400).json({
       success: false,
       error: "Input data validation error.",
-      details: zodError.issues.map((e) => ({
+      details: err.issues.map((e) => ({
         path: e.path.join("."),
         message: e.message,
       })),
@@ -27,34 +27,41 @@ export function globalErrorHandler(
     return;
   }
 
-  // TypeORM: Duplicate Key
-  if (err.code === "23505") {
-    res.status(409).json({ error: "Resource already exists" });
-    return;
-  }
+  // TypeORM errors often come as objects with 'code'
+  if (err && typeof err === "object" && "code" in err) {
+    const errorWithCode = err as { code: string };
+    // TypeORM: Duplicate Key
+    if (errorWithCode.code === "23505") {
+      res.status(409).json({ error: "Resource already exists" });
+      return;
+    }
 
-  // TypeORM: Foreign Key Violaton
-  if (err.code === "23503") {
-    res.status(400).json({ error: "Referenced resource not found" });
-    return;
+    // TypeORM: Foreign Key Violaton
+    if (errorWithCode.code === "23503") {
+      res.status(400).json({ error: "Referenced resource not found" });
+      return;
+    }
   }
 
   // Custom errors like BoundingBoxLimitError
-  if ("statusCode" in err && typeof err.statusCode === "number") {
-    res.status(err.statusCode).json({
+  if (err && typeof err === "object" && "statusCode" in err && "message" in err) {
+    const customErr = err as { statusCode: number; message: string };
+    res.status(customErr.statusCode).json({
       success: false,
-      error: err.message,
+      error: customErr.message,
     });
     return;
   }
 
   // API wrappers errors
   if (err instanceof AeroAPIError || err instanceof OpenSkyError) {
-    console.error(`[Upstream API Error] ${err.name}: ${err.message}`, err);
+    logger.error(`[Upstream API Error] ${err.name}: ${err.message}`, err);
 
     // 502 bad gateway
-    const statusCode =
-      "status" in err && typeof err.status === "number" ? err.status : 502;
+    let statusCode = 502;
+    if ("status" in err && typeof err.status === "number") {
+      statusCode = err.status;
+    }
 
     res.status(statusCode).json({
       success: false,
@@ -63,7 +70,7 @@ export function globalErrorHandler(
     return;
   }
 
-  console.error("[Unhandled Server Exception]:", err);
+  logger.error("[Unhandled Server Exception]:", err);
   res.status(500).json({
     success: false,
     error: "Internal Server Error",

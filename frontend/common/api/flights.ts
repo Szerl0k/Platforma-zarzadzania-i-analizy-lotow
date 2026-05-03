@@ -47,7 +47,6 @@ export interface FlightDetailsResponse {
   };
   operatingAirline?: {
     icaoCode: string;
-    iataCode: string | null;
     name: string;
   };
 }

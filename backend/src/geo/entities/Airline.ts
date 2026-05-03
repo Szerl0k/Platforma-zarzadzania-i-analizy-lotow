@@ -1,7 +1,8 @@
 import { Entity, PrimaryColumn, Column } from "typeorm";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("airlines")
-export class Airline {
+export class Airline extends BaseEntity {
   @PrimaryColumn({ type: "varchar", length: 3, name: "icao_code" })
   icaoCode!: string;
 

@@ -9,10 +9,11 @@ import {
 } from "typeorm";
 import { Flight } from "./Flight";
 import { Airline } from "../../geo/entities/Airline";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flight_codeshares")
 @Unique(["flightId", "marketingIdentIata"])
-export class FlightCodeshare {
+export class FlightCodeshare extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 

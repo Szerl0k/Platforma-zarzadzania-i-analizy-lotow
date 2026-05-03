@@ -1,5 +1,11 @@
 import { useFlightDetails } from "@/common/hooks/useFlights";
 
+/**
+ * @deprecated Then plik nie powinien być uzywany.
+ * W tym momencie jest to tylko placeholder w razie gdyby potrzebne było wyświetlanie danych
+ *  o lotach w formie popupa
+ */
+
 export interface FlightDetailsProps {
   properties: {
     icao24: string;
@@ -14,7 +20,7 @@ export interface FlightDetailsProps {
 export function FlightDetails({ properties }: FlightDetailsProps) {
   // Use callsign or icao24 to fetch details, prioritizing callsign if it exists
   const icaoCode = properties.callsign ? properties.callsign.trim() : properties.icao24;
-  
+
   const { data: flightDetails, isLoading, error } = useFlightDetails(icaoCode);
 
   return (
@@ -23,8 +29,8 @@ export function FlightDetails({ properties }: FlightDetailsProps) {
         <span>{properties.callsign || "Brak callsign"}</span>
         <span className="text-ink-muted text-xs">AERO API</span>
       </strong>
-      
-      {/* Telemetry Data (OpenSky) */}
+
+      {/* Dane telemetryczne */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1 mb-2 border-b border-ink/20 pb-2">
         <span className="text-ink-muted">ICAO24:</span>
         <span>{properties.icao24}</span>
@@ -47,14 +53,14 @@ export function FlightDetails({ properties }: FlightDetailsProps) {
         <span>{properties.onGround ? "Na ziemi" : "W locie"}</span>
       </div>
 
-      {/* Commercial Details (AeroAPI) */}
+      {/* Dane komerycyjne */}
       <div className="mt-1">
         {isLoading && (
             <div className="flex items-center justify-center p-4 text-ink-muted">
-                <span className="animate-pulse">Pobieranie danych o locie...</span>
+                <span className="animate-pulse">Pobieranie danych o locie</span>
             </div>
         )}
-        
+
         {error !== null && (
             <div className="text-red-500 p-2 bg-red-50 border border-red-200">
                 Nie udało się pobrać szczegółów lotu.
@@ -66,13 +72,13 @@ export function FlightDetails({ properties }: FlightDetailsProps) {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                     <span className="text-ink-muted font-bold">Lot:</span>
                     <span className="font-bold">{flightDetails.operatingAirline?.name} {flightDetails.identIcao || flightDetails.callsign}</span>
-                    
+
                     <span className="text-ink-muted">Z:</span>
                     <span className="truncate" title={flightDetails.origin?.name}>
-                        {flightDetails.origin?.icaoCode || "N/A"} 
+                        {flightDetails.origin?.icaoCode || "N/A"}
                         {flightDetails.terminalOrigin ? ` (T${flightDetails.terminalOrigin})` : ''}
                     </span>
-                    
+
                     <span className="text-ink-muted">Do:</span>
                     <span className="truncate" title={flightDetails.destination?.name}>
                         {flightDetails.destination?.icaoCode || "N/A"}
@@ -102,17 +108,17 @@ export function FlightDetails({ properties }: FlightDetailsProps) {
                         </div>
                     </div>
                 ) : null}
-                
+
                 <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                     <span className="text-ink-muted">Planowany wylot:</span>
                     <span>{flightDetails.scheduledOut ? new Date(flightDetails.scheduledOut).toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) : "Brak"}</span>
-                    
+
                     <span className="text-ink-muted">Planowany przylot:</span>
                     <span>{flightDetails.scheduledIn ? new Date(flightDetails.scheduledIn).toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) : "Brak"}</span>
                 </div>
             </div>
         )}
-        
+
         {!isLoading && error === null && !flightDetails && (
              <div className="text-ink-muted italic p-2">
                  Brak dodatkowych informacji komercyjnych.

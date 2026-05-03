@@ -7,9 +7,10 @@ import {
 } from "typeorm";
 import { TrackedFlight } from "../../tracking/entities/TrackedFlight";
 import { FlightChangeType } from "./FlightChangeType";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flight_status_changes")
-export class FlightStatusChange {
+export class FlightStatusChange extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -28,10 +29,10 @@ export class FlightStatusChange {
   changeType!: FlightChangeType;
 
   @Column({ type: "jsonb", nullable: true, name: "old_value" })
-  oldValue!: Record<string, any> | null;
+  oldValue!: Record<string, unknown> | null;
 
   @Column({ type: "jsonb", nullable: true, name: "new_value" })
-  newValue!: Record<string, any> | null;
+  newValue!: Record<string, unknown> | null;
 
   @Column({ type: "text", nullable: true })
   description!: string | null;
@@ -41,7 +42,4 @@ export class FlightStatusChange {
 
   @Column({ type: "boolean", default: false, name: "notification_sent" })
   notificationSent!: boolean;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
 }

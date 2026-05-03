@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { FlightService } from "../services/flight.service";
+import { FlightsService } from "./flights.service";
+import { FlightNotFoundError } from "../common/errors";
 
 const router = Router();
-const flightService = new FlightService();
+const flightService = new FlightsService();
 
 const FlightDetailsQuerySchema = z.object({
   icaoCode: z
@@ -28,16 +29,16 @@ router.get(
   asyncHandler(async (req, res) => {
     const validatedQuery = FlightDetailsQuerySchema.parse(req.query);
 
-    const result = await flightService.getFlightDetailsAndSave(validatedQuery.icaoCode);
-
-    if (!result) {
-      res.status(404).json({
-        error: `Could not find flight details for ICAO code: ${validatedQuery.icaoCode}`,
-      });
-      return;
+    try {
+      const result = await flightService.getFlightDetailsAndSave(validatedQuery.icaoCode);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof FlightNotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      throw error;
     }
-    
-    res.json(result);
   }),
 );
 

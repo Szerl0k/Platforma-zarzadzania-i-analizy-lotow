@@ -1,7 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("tracking_statuses")
-export class TrackingStatus {
+export class TrackingStatus extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id!: number;
 
