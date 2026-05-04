@@ -199,7 +199,11 @@ describe("listAirlines", () => {
 });
 
 describe("createAirline", () => {
-  const validInput = { icaoCode: "LOT", iataCode: "LO", name: "LOT Polish Airlines" };
+  const validInput = {
+    icaoCode: "LOT",
+    iataCode: "LO",
+    name: "LOT Polish Airlines",
+  };
 
   it("creates and returns airline", async () => {
     const created = makeAirline();
@@ -258,9 +262,9 @@ describe("createAirline", () => {
   });
 
   it("throws BadRequestError when name is empty", async () => {
-    await expect(
-      createAirline({ ...validInput, name: "  " }),
-    ).rejects.toThrow(BadRequestError);
+    await expect(createAirline({ ...validInput, name: "  " })).rejects.toThrow(
+      BadRequestError,
+    );
   });
 
   it("throws BadRequestError when airline already exists", async () => {
@@ -357,7 +361,11 @@ describe("getOrFetchAirline", () => {
   });
 
   it("fetches from AeroAPI and persists when not in DB", async () => {
-    const operatorInfo = { icao: "LOT", iata: "LO", name: "LOT Polish Airlines" };
+    const operatorInfo = {
+      icao: "LOT",
+      iata: "LO",
+      name: "LOT Polish Airlines",
+    };
     const persisted = makeAirline();
 
     airlineRepo.findOne
@@ -378,7 +386,11 @@ describe("getOrFetchAirline", () => {
   });
 
   it("normalizes ICAO and IATA codes from AeroAPI response", async () => {
-    const operatorInfo = { icao: "lot", iata: "lo", name: "LOT Polish Airlines" };
+    const operatorInfo = {
+      icao: "lot",
+      iata: "lo",
+      name: "LOT Polish Airlines",
+    };
     const persisted = makeAirline();
 
     airlineRepo.findOne
@@ -401,7 +413,11 @@ describe("getOrFetchAirline", () => {
   it("throws NotFoundError when airline not in DB and AeroAPI returns 404", async () => {
     airlineRepo.findOne.mockResolvedValue(null);
     const mockClient = {
-      getOperatorInfo: jest.fn().mockRejectedValue(new AeroAPIError("Not Found", "/operators/XXX", 404, null)),
+      getOperatorInfo: jest
+        .fn()
+        .mockRejectedValue(
+          new AeroAPIError("Not Found", "/operators/XXX", 404, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 
@@ -413,7 +429,9 @@ describe("getOrFetchAirline", () => {
     const mockClient = {
       getOperatorInfo: jest
         .fn()
-        .mockRejectedValue(new AeroAPIError("Service Unavailable", "/operators/LOT", 503, null)),
+        .mockRejectedValue(
+          new AeroAPIError("Service Unavailable", "/operators/LOT", 503, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 

@@ -150,7 +150,9 @@ describe("getAirportRoutes", () => {
       }),
       getOperatorInfo: jest
         .fn()
-        .mockRejectedValue(new AeroAPIError("Not Found", "/schedules", 404, null)),
+        .mockRejectedValue(
+          new AeroAPIError("Not Found", "/schedules", 404, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClientForFetch);
 
@@ -201,7 +203,9 @@ describe("getAirportRoutes", () => {
     const mockClient = {
       getScheduledFlights: jest
         .fn()
-        .mockRejectedValue(new AeroAPIError("Not Found", "/schedules", 404, null)),
+        .mockRejectedValue(
+          new AeroAPIError("Not Found", "/schedules", 404, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 
@@ -218,7 +222,9 @@ describe("getAirportRoutes", () => {
     const mockClient = {
       getScheduledFlights: jest
         .fn()
-        .mockRejectedValue(new AeroAPIError("Too Many Requests", "/schedules", 429, null)),
+        .mockRejectedValue(
+          new AeroAPIError("Too Many Requests", "/schedules", 429, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 

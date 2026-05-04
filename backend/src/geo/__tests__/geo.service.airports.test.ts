@@ -337,7 +337,11 @@ describe("createAirport", () => {
       .mockResolvedValueOnce(created);
     countryRepo.findOne.mockResolvedValue({ isoCode: "PL", name: "Poland" });
     cityRepo.findOne.mockResolvedValue(null);
-    cityRepo.save.mockResolvedValue({ id: 99, name: "Warsaw", countryCode: "PL" });
+    cityRepo.save.mockResolvedValue({
+      id: 99,
+      name: "Warsaw",
+      countryCode: "PL",
+    });
 
     await createAirport(validInput);
 
@@ -345,9 +349,9 @@ describe("createAirport", () => {
   });
 
   it("throws BadRequestError when ICAO code is too short", async () => {
-    await expect(createAirport({ ...validInput, icaoCode: "EP" })).rejects.toThrow(
-      BadRequestError,
-    );
+    await expect(
+      createAirport({ ...validInput, icaoCode: "EP" }),
+    ).rejects.toThrow(BadRequestError);
   });
 
   it("throws BadRequestError when ICAO code is too long", async () => {
@@ -560,10 +564,16 @@ describe("getOrFetchAirport", () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(persisted);
     countryRepo.findOne.mockResolvedValue({ isoCode: "PL", name: "Poland" });
-    cityRepo.findOne.mockResolvedValue({ id: 1, name: "Warsaw", countryCode: "PL" });
+    cityRepo.findOne.mockResolvedValue({
+      id: 1,
+      name: "Warsaw",
+      countryCode: "PL",
+    });
     airportRepo.save.mockResolvedValue(undefined);
 
-    const mockClient = { getAirportInfo: jest.fn().mockResolvedValue(aeroInfo) };
+    const mockClient = {
+      getAirportInfo: jest.fn().mockResolvedValue(aeroInfo),
+    };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 
     const result = await getOrFetchAirport("EPWA");
@@ -578,7 +588,9 @@ describe("getOrFetchAirport", () => {
     const mockClient = {
       getAirportInfo: jest
         .fn()
-        .mockRejectedValue(new AeroAPIError("Not Found", "/airports/XXXX", 404, null)),
+        .mockRejectedValue(
+          new AeroAPIError("Not Found", "/airports/XXXX", 404, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 
@@ -590,7 +602,9 @@ describe("getOrFetchAirport", () => {
     const mockClient = {
       getAirportInfo: jest
         .fn()
-        .mockRejectedValue(new AeroAPIError("Server Error", "/airports/EPWA", 500, null)),
+        .mockRejectedValue(
+          new AeroAPIError("Server Error", "/airports/EPWA", 500, null),
+        ),
     };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 
@@ -614,10 +628,16 @@ describe("getOrFetchAirport", () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(persisted);
     countryRepo.findOne.mockResolvedValue({ isoCode: "PL", name: "Poland" });
-    cityRepo.findOne.mockResolvedValue({ id: 1, name: "Warsaw", countryCode: "PL" });
+    cityRepo.findOne.mockResolvedValue({
+      id: 1,
+      name: "Warsaw",
+      countryCode: "PL",
+    });
     airportRepo.save.mockResolvedValue(undefined);
 
-    const mockClient = { getAirportInfo: jest.fn().mockResolvedValue(aeroInfo) };
+    const mockClient = {
+      getAirportInfo: jest.fn().mockResolvedValue(aeroInfo),
+    };
     mockGetAeroApiClient.mockReturnValue(mockClient);
 
     await getOrFetchAirport("WAW");
