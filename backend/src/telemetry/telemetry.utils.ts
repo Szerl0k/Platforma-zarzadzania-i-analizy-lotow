@@ -19,7 +19,7 @@ export const TelemetryUtils = {
 
   /**
    * Creates a BoundingBox around a given coordinate point using the spatial buffer.
-   * 
+   *
    * @param lat - Latitude
    * @param lon - Longitude
    * @returns OpenSky compatible BoundingBox
@@ -35,7 +35,7 @@ export const TelemetryUtils = {
 
   /**
    * Validates that the requested bounding box area does not exceed security limits.
-   * 
+   *
    * @param query - Bounding box area coordinates.
    * @throws {BoundingBoxLimitError} If area exceeds limits.
    */
@@ -46,7 +46,7 @@ export const TelemetryUtils = {
 
     if (areaSqDegrees > this.MAX_AREA_SQ_DEGREES) {
       throw new BoundingBoxLimitError(
-        `Requested map area (${areaSqDegrees.toFixed(2)}) sq° exceeded allowed limit ${this.MAX_AREA_SQ_DEGREES} sq°`
+        `Requested map area (${areaSqDegrees.toFixed(2)}) sq° exceeded allowed limit ${this.MAX_AREA_SQ_DEGREES} sq°`,
       );
     }
   },

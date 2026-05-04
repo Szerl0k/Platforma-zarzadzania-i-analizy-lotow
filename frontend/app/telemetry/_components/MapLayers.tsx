@@ -25,7 +25,11 @@ export function MapLayers({
   return (
     <>
       {/* Flight Path - Traveled Segment */}
-      <Source id="flight-path-traveled" type="geojson" data={traveledPathGeoJson}>
+      <Source
+        id="flight-path-traveled"
+        type="geojson"
+        data={traveledPathGeoJson}
+      >
         <Layer
           id="flight-path-traveled-line"
           type="line"
@@ -38,7 +42,11 @@ export function MapLayers({
       </Source>
 
       {/* Flight Path - Remaining Segment */}
-      <Source id="flight-path-remaining" type="geojson" data={remainingPathGeoJson}>
+      <Source
+        id="flight-path-remaining"
+        type="geojson"
+        data={remainingPathGeoJson}
+      >
         <Layer
           id="flight-path-remaining-line"
           type="line"

@@ -32,40 +32,50 @@ export interface FlightDetailsResponse {
     iataCode: string | null;
     name: string;
     city?: {
-        name: string;
-        countryName?: string | null;
-    }
+      name: string;
+      countryName?: string | null;
+    };
   };
   destination?: {
     icaoCode: string;
     iataCode: string | null;
     name: string;
     city?: {
-        name: string;
-        countryName?: string | null;
-    }
+      name: string;
+      countryName?: string | null;
+    };
   };
   operatingAirline?: {
     icaoCode: string;
     name: string;
   };
+  isLive: boolean;
 }
 
 export const flightApi = {
-  getFlightDetails: async (icaoCode: string): Promise<FlightDetailsResponse> => {
-    const { data } = await apiClient.get<FlightDetailsResponse>("/flights/details", {
-      params: { icaoCode },
-    });
+  getFlightDetails: async (ident: string): Promise<FlightDetailsResponse> => {
+    const { data } = await apiClient.get<FlightDetailsResponse>(
+      "/flights/details",
+      {
+        params: { ident },
+      },
+    );
     return data;
   },
 
   getFlightById: async (id: string): Promise<FlightDetailsResponse> => {
-    const { data } = await apiClient.get<FlightDetailsResponse>(`/flights/${id}`);
+    const { data } = await apiClient.get<FlightDetailsResponse>(
+      `/flights/${id}`,
+    );
     return data;
   },
 
-  getFlightPath: async (id: string): Promise<{ traveled: any; remaining: any }> => {
-    const { data } = await apiClient.get<{ traveled: any; remaining: any }>(`/flights/${id}/path`);
+  getFlightPath: async (
+    id: string,
+  ): Promise<{ traveled: any; remaining: any }> => {
+    const { data } = await apiClient.get<{ traveled: any; remaining: any }>(
+      `/flights/${id}/path`,
+    );
     return data;
   },
 };

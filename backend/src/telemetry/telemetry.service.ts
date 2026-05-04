@@ -41,11 +41,11 @@ export class TelemetryService {
   /**
    * Locates an active flight using either ICAO24 (transponder) or faFlightId (AeroAPI).
    * Persists the current state to the database and calculates distances to origin/destination.
-   * 
+   *
    * @param query - Lookup parameters (icao24 and/or faFlightId).
    * @param atcIdent - Optional Air Traffic Control callsign, prioritized over ident_icao.
    * @returns Enriched telemetry DTO with distance calculations.
-   * 
+   *
    * @calledBy TelemetryRoutes (GET /telemetry/locate)
    */
   public async locateAndSaveFlight(
@@ -55,11 +55,13 @@ export class TelemetryService {
     let matchedState: StateVectorTuple | undefined;
     let resolvedFaFlightId: string | undefined = query.faFlightId;
 
-
     // STRATEGY 1: ICAO24 Direct Lookup (User clicked plane on map)
     if (query.icao24) {
       try {
-        const { state, faFlightId } = await this.resolveByIcao24(query.icao24, resolvedFaFlightId);
+        const { state, faFlightId } = await this.resolveByIcao24(
+          query.icao24,
+          resolvedFaFlightId,
+        );
         matchedState = state;
         resolvedFaFlightId = faFlightId;
       } catch (error) {
@@ -69,11 +71,16 @@ export class TelemetryService {
 
     // STRATEGY 2: faFlightId Spatial Lookup (User clicked flight from a list/AeroAPI)
     if (!matchedState && resolvedFaFlightId) {
-      matchedState = await this.resolveBySpatialMatch(resolvedFaFlightId, atcIdent);
+      matchedState = await this.resolveBySpatialMatch(
+        resolvedFaFlightId,
+        atcIdent,
+      );
     }
 
     if (!matchedState || !resolvedFaFlightId) {
-      throw new TelemetryNotFoundError("Could not resolve flight or state vector.");
+      throw new TelemetryNotFoundError(
+        "Could not resolve flight or state vector.",
+      );
     }
 
     return this.persistTelemetry(matchedState, resolvedFaFlightId);
@@ -81,10 +88,10 @@ export class TelemetryService {
 
   /**
    * Fetches all active flight states within a given bounding box for map visualization.
-   * 
+   *
    * @param query - Bounding box area coordinates.
    * @returns Array of summarized flight states.
-   * 
+   *
    * @calledBy TelemetryRoutes (GET /telemetry/area)
    */
   public async getFlightsInArea(
@@ -106,7 +113,10 @@ export class TelemetryService {
     }
 
     return stateVectors.states
-      .filter((state): state is StateVectorTuple => state[5] !== null && state[6] !== null)
+      .filter(
+        (state): state is StateVectorTuple =>
+          state[5] !== null && state[6] !== null,
+      )
       .map((state) => ({
         icao24: state[0],
         callsign: state[1] ? state[1].trim() : null,
@@ -124,33 +134,48 @@ export class TelemetryService {
   /**
    * Resolves flight state and AeroAPI ID using a direct ICAO24 lookup.
    */
-  private async resolveByIcao24(icao24: string, existingFaFlightId?: string): Promise<{ state: StateVectorTuple, faFlightId: string }> {
-    const stateVectors = await this.openSkyClient.getAllStateVectors(undefined, icao24);
+  private async resolveByIcao24(
+    icao24: string,
+    existingFaFlightId?: string,
+  ): Promise<{ state: StateVectorTuple; faFlightId: string }> {
+    const stateVectors = await this.openSkyClient.getAllStateVectors(
+      undefined,
+      icao24,
+    );
     const state = stateVectors.states?.[0];
 
     if (!state) {
-      throw new TelemetryNotFoundError(`No active state vector found for aircraft ${icao24}.`);
+      throw new TelemetryNotFoundError(
+        `No active state vector found for aircraft ${icao24}.`,
+      );
     }
 
     let faFlightId = existingFaFlightId;
     if (!faFlightId) {
       const callsign = state[1]?.trim();
       if (!callsign) {
-        throw new TelemetryNotFoundError(`Could not resolve callsign for aircraft ${icao24} from OpenSky.`);
+        throw new TelemetryNotFoundError(
+          `Could not resolve callsign for aircraft ${icao24} from OpenSky.`,
+        );
       }
 
       try {
-        const flightDetails = await this.flightsService.getFlightDetailsAndSave(callsign);
+        const flightDetails =
+          await this.flightsService.getFlightDetailsAndSave(callsign);
         faFlightId = flightDetails.faFlightId || undefined;
       } catch (error: unknown) {
         if (error instanceof FlightNotFoundError) {
-          throw new TelemetryNotFoundError(`Could not resolve AeroAPI ID for aircraft ${icao24}.`);
+          throw new TelemetryNotFoundError(
+            `Could not resolve AeroAPI ID for aircraft ${icao24}.`,
+          );
         }
       }
     }
 
     if (!faFlightId) {
-      throw new TelemetryNotFoundError(`Could not resolve AeroAPI ID for aircraft ${icao24}.`);
+      throw new TelemetryNotFoundError(
+        `Could not resolve AeroAPI ID for aircraft ${icao24}.`,
+      );
     }
 
     return { state, faFlightId };
@@ -159,28 +184,57 @@ export class TelemetryService {
   /**
    * Resolves flight state by matching AeroAPI's last known position to OpenSky state vectors in a spatial buffer.
    */
-  private async resolveBySpatialMatch(faFlightId: string, atcIdent?: string | null): Promise<StateVectorTuple> {
+  private async resolveBySpatialMatch(
+    faFlightId: string,
+    atcIdent?: string | null,
+  ): Promise<StateVectorTuple> {
     const flightResponse = await this.aeroClient.getFlightPosition(faFlightId);
     const currentPosition = flightResponse?.last_position;
 
-    if (!currentPosition || currentPosition.latitude === null || currentPosition.longitude === null) {
-      throw new TelemetryNotFoundError(`No active spatial data (last_position) for ${faFlightId}.`);
+    if (
+      !currentPosition ||
+      currentPosition.latitude === null ||
+      currentPosition.longitude === null
+    ) {
+      throw new TelemetryNotFoundError(
+        `No active spatial data (last_position) for ${faFlightId}.`,
+      );
     }
 
-    const targetCallsign = (atcIdent || flightResponse.ident_icao)?.trim().toUpperCase();
+    // Double check atcIdent to avoid codesharing mismatch, as AeroAPI does not return the atcIdent property in getFlightPosition()
+    if (atcIdent === undefined) {
+      const flightDataResponse =
+        await this.aeroClient.getFlightInfo(faFlightId);
+      atcIdent =
+        flightDataResponse.flights[0].atc_ident !== undefined
+          ? flightDataResponse.flights[0].atc_ident
+          : null;
+    }
+
+    const targetCallsign = (atcIdent || flightResponse.ident_icao)
+      ?.trim()
+      .toUpperCase();
     if (!targetCallsign) {
-      throw new TelemetryNotFoundError(`Could not resolve callsign for spatial matching of ${faFlightId}.`);
+      throw new TelemetryNotFoundError(
+        `Could not resolve callsign for spatial matching of ${faFlightId}.`,
+      );
     }
 
-    const boundingBox = TelemetryUtils.createBoundingBox(currentPosition.latitude, currentPosition.longitude);
-    const stateVectors = await this.openSkyClient.getAllStateVectors(boundingBox);
+    const boundingBox = TelemetryUtils.createBoundingBox(
+      currentPosition.latitude,
+      currentPosition.longitude,
+    );
+    const stateVectors =
+      await this.openSkyClient.getAllStateVectors(boundingBox);
 
-    const match = stateVectors.states?.find((state) => 
-      state[1]?.trim().toUpperCase() === targetCallsign
+    const match = stateVectors.states?.find(
+      (state) => state[1]?.trim().toUpperCase() === targetCallsign,
     );
 
     if (!match) {
-      throw new TelemetryNotFoundError(`Could not match callsign ${targetCallsign} to any OpenSky state vector near its last known position.`);
+      throw new TelemetryNotFoundError(
+        `Could not match callsign ${targetCallsign} to any OpenSky state vector near its last known position.`,
+      );
     }
 
     return match;
@@ -189,17 +243,37 @@ export class TelemetryService {
   /**
    * Persists a state vector as a telemetry entry and calculates related spatial metrics.
    */
-  private async persistTelemetry(state: StateVectorTuple, faFlightId: string): Promise<LocateFlightResponseDTO> {
-    const flightRecord = await this.flightsRepository.findByFaFlightId(faFlightId);
+  private async persistTelemetry(
+    state: StateVectorTuple,
+    faFlightId: string,
+  ): Promise<LocateFlightResponseDTO> {
+    const flightRecord =
+      await this.flightsRepository.findByFaFlightId(faFlightId);
 
     if (!flightRecord) {
-      throw new FlightNotFoundError(`Flight with AeroAPI Id ${faFlightId} doesn't exist in the database.`);
+      throw new FlightNotFoundError(
+        `Flight with AeroAPI Id ${faFlightId} doesn't exist in the database.`,
+      );
     }
 
-    const [icao24, , , , , longitude, latitude, altitude, onGround, velocity, heading] = state;
+    const [
+      icao24,
+      ,
+      ,
+      ,
+      ,
+      longitude,
+      latitude,
+      altitude,
+      onGround,
+      velocity,
+      heading,
+    ] = state;
 
     if (longitude === null || latitude === null) {
-      throw new BoundingBoxLimitError(`State vector (icao24: ${icao24}) does not contain valid coordinates.`);
+      throw new BoundingBoxLimitError(
+        `State vector (icao24: ${icao24}) does not contain valid coordinates.`,
+      );
     }
 
     const telemetryEntry = await this.telemetryRepository.save({
@@ -213,7 +287,9 @@ export class TelemetryService {
       onGround,
     });
 
-    const distances = await this.telemetryRepository.calculateDistances(telemetryEntry.id);
+    const distances = await this.telemetryRepository.calculateDistances(
+      telemetryEntry.id,
+    );
 
     return {
       icao24: telemetryEntry.icao24,

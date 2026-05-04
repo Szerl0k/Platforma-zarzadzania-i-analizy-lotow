@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { FlightsService } from "./flights.service";
 import { FlightNotFoundError } from "../common/errors";
-import { 
-  FlightDetailsQuerySchema, 
-  CreateFlightSchema, 
-  UpdateFlightSchema 
+import {
+  FlightDetailsQuerySchema,
+  CreateFlightSchema,
+  UpdateFlightSchema,
 } from "./flights.dto";
 
 const router = Router();
@@ -20,13 +20,13 @@ function asyncHandler(
 
 /**
  * Endpoint GET /flights/details
- * Fetch commercial flight details based on ICAO code and save to DB
+ * Fetch commercial flight details based on ICAO/IATA code and save to DB
  */
 router.get(
   "/details",
   asyncHandler(async (req, res) => {
     const validatedQuery = FlightDetailsQuerySchema.parse(req.query);
-    const result = await flightService.getFlightDetailsAndSave(validatedQuery.icaoCode);
+    const result = await flightService.searchFlight(validatedQuery.ident);
     res.json(result);
   }),
 );
@@ -76,7 +76,10 @@ router.put(
   "/:id",
   asyncHandler(async (req, res) => {
     const validatedBody = UpdateFlightSchema.parse(req.body);
-    const result = await flightService.updateFlight(req.params.id as string, validatedBody);
+    const result = await flightService.updateFlight(
+      req.params.id as string,
+      validatedBody,
+    );
     res.json(result);
   }),
 );

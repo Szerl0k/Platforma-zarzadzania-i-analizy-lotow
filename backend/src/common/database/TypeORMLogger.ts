@@ -2,16 +2,30 @@ import { Logger, QueryRunner } from "typeorm";
 import { logger } from "../utils/logger";
 
 export class TypeORMLogger implements Logger {
-  logQuery(_query: string, _parameters?: unknown[], _queryRunner?: QueryRunner) {
+  logQuery(
+    _query: string,
+    _parameters?: unknown[],
+    _queryRunner?: QueryRunner,
+  ) {
     // Query logging is disabled
   }
 
-  logQueryError(error: string | Error, query: string, parameters?: unknown[], _queryRunner?: QueryRunner) {
+  logQueryError(
+    error: string | Error,
+    query: string,
+    parameters?: unknown[],
+    _queryRunner?: QueryRunner,
+  ) {
     const message = `Query Error: ${error}\nQuery: ${query}${parameters && parameters.length ? ` -- Parameters: ${JSON.stringify(parameters)}` : ""}`;
     logger.error(message);
   }
 
-  logQuerySlow(time: number, query: string, parameters?: unknown[], _queryRunner?: QueryRunner) {
+  logQuerySlow(
+    time: number,
+    query: string,
+    parameters?: unknown[],
+    _queryRunner?: QueryRunner,
+  ) {
     const message = `Slow Query (${time}ms): ${query}${parameters && parameters.length ? ` -- Parameters: ${JSON.stringify(parameters)}` : ""}`;
     logger.warn(message);
   }
@@ -24,7 +38,11 @@ export class TypeORMLogger implements Logger {
     logger.info(`Migration: ${message}`, null, true);
   }
 
-  log(level: "log" | "info" | "warn", message: unknown, _queryRunner?: QueryRunner) {
+  log(
+    level: "log" | "info" | "warn",
+    message: unknown,
+    _queryRunner?: QueryRunner,
+  ) {
     switch (level) {
       case "log":
       case "info":
@@ -40,7 +58,7 @@ export class TypeORMLogger implements Logger {
     // We use the internal mechanism of our logger to write to file without console output
     const timestamp = new Date().toISOString();
     const formatted = `[${timestamp}] [${level}] ${message}`;
-    
+
     // Use writeRawLog which we just added
     logger.writeRawLog(formatted);
   }

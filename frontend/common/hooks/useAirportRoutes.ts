@@ -42,7 +42,9 @@ export function useAirportRoutes(selectedAirport: Airport | null) {
     setSelectedRoutes((prev) => {
       const allSelected = allRoutes.every((r) => prev.has(r.airline.icaoCode));
       if (allSelected) return new Map();
-      return new Map(allRoutes.map((r) => [r.airline.icaoCode, r.destinations]));
+      return new Map(
+        allRoutes.map((r) => [r.airline.icaoCode, r.destinations]),
+      );
     });
   }, []);
 

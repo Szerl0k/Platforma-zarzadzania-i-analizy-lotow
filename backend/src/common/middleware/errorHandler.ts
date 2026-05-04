@@ -44,7 +44,12 @@ export function globalErrorHandler(
   }
 
   // Custom errors like BoundingBoxLimitError
-  if (err && typeof err === "object" && "statusCode" in err && "message" in err) {
+  if (
+    err &&
+    typeof err === "object" &&
+    "statusCode" in err &&
+    "message" in err
+  ) {
     const customErr = err as { statusCode: number; message: string };
     res.status(customErr.statusCode).json({
       success: false,

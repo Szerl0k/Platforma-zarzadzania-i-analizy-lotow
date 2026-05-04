@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useRef, useMemo, useState, useEffect } from "react";
-import { Map as MapGL, NavigationControl, MapEvent } from "react-map-gl/maplibre";
+import {
+  Map as MapGL,
+  NavigationControl,
+  MapEvent,
+} from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import type { MapLayerMouseEvent } from "maplibre-gl";
 import { useTelemetry, useLocateFlight } from "@/common/hooks/useTelemetry";
@@ -11,6 +15,7 @@ import { useRouteAnimation } from "@/common/hooks/useRouteAnimation";
 import { useFlightPath } from "@/common/hooks/useFlights";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapOverlay } from "@/common/components/Map/TelemetryOverlay";
+import { FlightSearch } from "@/common/components/Map/FlightSearch";
 import { MapLayers } from "./MapLayers";
 import { PanelContainer } from "./PanelContainer";
 import {
@@ -24,9 +29,9 @@ import {
   EMPTY_GEOJSON,
 } from "@/app/telemetry/_utils/telemetryMapHelpers";
 import type { Airport, AirlineWithDestinations } from "@/common/api/airports";
-import type { 
-  AirportFeatureProperties, 
-  FlightFeatureProperties 
+import type {
+  AirportFeatureProperties,
+  FlightFeatureProperties,
 } from "@/app/telemetry/_utils/telemetryMapHelpers";
 
 export default function TelemetryMapView() {
@@ -43,32 +48,50 @@ export default function TelemetryMapView() {
     useState<GeoJSON.Feature<GeoJSON.Point> | null>(null);
   const [selectedAirportData, setSelectedAirportData] =
     useState<Airport | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // Flight path and location logic
-  const selectedIcao24 = useMemo(() => 
-    (selectedFlight?.properties as FlightFeatureProperties)?.icao24 || null
-  , [selectedFlight]);
+  const selectedIcao24 = useMemo(
+    () =>
+      (selectedFlight?.properties as FlightFeatureProperties)?.icao24 || null,
+    [selectedFlight],
+  );
 
-  const locateParams = useMemo(() => 
-    selectedIcao24 ? { icao24: selectedIcao24 } : null
-  , [selectedIcao24]);
+  const locateParams = useMemo(
+    () => (selectedIcao24 ? { icao24: selectedIcao24 } : null),
+    [selectedIcao24],
+  );
 
   const { data: detailedTelemetry } = useLocateFlight(locateParams);
-  const { pathData } = useFlightPath(detailedTelemetry?.internalFlightId || null);
+  const { pathData } = useFlightPath(
+    detailedTelemetry?.internalFlightId || null,
+  );
 
-  const traveledPathGeoJson = useMemo<GeoJSON.FeatureCollection>(() => 
-    pathData?.traveled ? { 
-      type: "FeatureCollection", 
-      features: [{ type: "Feature", geometry: pathData.traveled, properties: {} }] 
-    } : EMPTY_GEOJSON
-  , [pathData]);
+  const traveledPathGeoJson = useMemo<GeoJSON.FeatureCollection>(
+    () =>
+      pathData?.traveled
+        ? {
+            type: "FeatureCollection",
+            features: [
+              { type: "Feature", geometry: pathData.traveled, properties: {} },
+            ],
+          }
+        : EMPTY_GEOJSON,
+    [pathData],
+  );
 
-  const remainingPathGeoJson = useMemo<GeoJSON.FeatureCollection>(() => 
-    pathData?.remaining ? { 
-      type: "FeatureCollection", 
-      features: [{ type: "Feature", geometry: pathData.remaining, properties: {} }] 
-    } : EMPTY_GEOJSON
-  , [pathData]);
+  const remainingPathGeoJson = useMemo<GeoJSON.FeatureCollection>(
+    () =>
+      pathData?.remaining
+        ? {
+            type: "FeatureCollection",
+            features: [
+              { type: "Feature", geometry: pathData.remaining, properties: {} },
+            ],
+          }
+        : EMPTY_GEOJSON,
+    [pathData],
+  );
 
   const {
     selectedAirlineIcaos,
@@ -82,7 +105,6 @@ export default function TelemetryMapView() {
   const [cursor, setCursor] = useState<string>("");
 
   const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
-
 
   const airportsGeoJson = useMemo<GeoJSON.FeatureCollection>(() => {
     const base = mapAirportsToGeoJson(airports);
@@ -154,6 +176,22 @@ export default function TelemetryMapView() {
       openAirportPanel(airport);
     },
     [openAirportPanel],
+  );
+
+  const handleFlightSearchSelect = useCallback(
+    (feature: GeoJSON.Feature<GeoJSON.Point>) => {
+      setSelectedAirportData(null);
+      setHighlightedIcao(null);
+      setSelectedFlight(feature);
+      setSearchError(null);
+
+      mapRef.current?.flyTo({
+        center: feature.geometry.coordinates as [number, number],
+        zoom: 8,
+        duration: 1000,
+      });
+    },
+    [],
   );
 
   const handleMapClick = useCallback(
@@ -265,6 +303,21 @@ export default function TelemetryMapView() {
           error={error}
           onAirportSelect={handleSearchSelect}
         />
+
+        {/* Flight Search (Top Right) */}
+        <div className="absolute top-4 right-14 z-10 flex flex-col items-end gap-2">
+          <FlightSearch
+            onSelect={handleFlightSearchSelect}
+            onError={setSearchError}
+          />
+          {searchError && (
+            <div className="border-2 border-ink bg-surface p-2 shadow-brut animate-in fade-in slide-in-from-top-1 duration-200">
+              <p className="font-mono text-[10px] text-red-600 font-bold uppercase leading-tight">
+                Błąd: {searchError}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

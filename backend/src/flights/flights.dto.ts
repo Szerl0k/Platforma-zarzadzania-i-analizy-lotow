@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 export const FlightDetailsQuerySchema = z.object({
-  icaoCode: z
+  ident: z
     .string()
-    .min(1, "Kod ICAO jest wymagany do pobrania szczegółów lotu."),
+    .min(1, "Kod identyfikacyjny lotu (ICAO/IATA) jest wymagany."),
 });
 
 export type FlightDetailsQuery = z.infer<typeof FlightDetailsQuerySchema>;
@@ -84,5 +84,6 @@ export interface FlightDetailsResponseDTO {
   origin?: AirportDTO | null;
   destination?: AirportDTO | null;
   operatingAirline?: AirlineDTO | null;
+  isLive: boolean;
   source: "database" | "AeroAPI";
 }

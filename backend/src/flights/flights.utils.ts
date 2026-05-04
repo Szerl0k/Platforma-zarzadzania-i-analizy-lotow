@@ -12,9 +12,9 @@ export const FlightUtils = {
   CACHE_DURATION_MS: 5 * 60 * 1000,
 
   /**
-   * Formats a Date object to a strict ISO8601 string without milliseconds, 
+   * Formats a Date object to a strict ISO8601 string without milliseconds,
    * as required by AeroAPI (e.g., 2026-04-15T23:00:00Z).
-   * 
+   *
    * @param date - The Date object to format.
    * @returns Formatted string.
    */
@@ -24,7 +24,7 @@ export const FlightUtils = {
 
   /**
    * Maps a Flight entity (with its relations) to a FlightDetailsResponseDTO.
-   * 
+   *
    * @param flight - The Flight entity to map.
    * @param source - The data source (database or AeroAPI).
    * @returns A sanitized DTO for the frontend.
@@ -33,6 +33,8 @@ export const FlightUtils = {
     flight: Flight,
     source: "database" | "AeroAPI",
   ): FlightDetailsResponseDTO {
+    const isLive = !flight.actualIn;
+
     return {
       id: flight.id,
       identIcao: flight.identIcao,
@@ -102,6 +104,7 @@ export const FlightUtils = {
             name: flight.operatingAirline.name,
           }
         : null,
+      isLive,
       source,
     };
   },

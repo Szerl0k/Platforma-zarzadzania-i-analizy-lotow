@@ -24,24 +24,29 @@ export class TelemetryRepository {
 
   /**
    * Persists a new telemetry entry.
-   * 
+   *
    * @param data - Partial telemetry entity data.
    * @param manager - Optional EntityManager for transactions.
    */
-  public async save(data: Partial<FlightTelemetry>, manager?: EntityManager): Promise<FlightTelemetry> {
+  public async save(
+    data: Partial<FlightTelemetry>,
+    manager?: EntityManager,
+  ): Promise<FlightTelemetry> {
     const repo = this.getRepository(manager);
     const entry = repo.create(data);
     return await repo.save(entry);
   }
 
   /**
-   * Calculates real-time distances between the current telemetry point and 
+   * Calculates real-time distances between the current telemetry point and
    * the flight's origin and destination airports using PostGIS geography types.
-   * 
+   *
    * @param telemetryId - The UUID of the persisted telemetry record.
    * @returns Calculated distances in kilometers.
    */
-  public async calculateDistances(telemetryId: string): Promise<TelemetryDistances> {
+  public async calculateDistances(
+    telemetryId: string,
+  ): Promise<TelemetryDistances> {
     const [distances] = await this.dataSource.query(
       `
       SELECT 
@@ -57,8 +62,12 @@ export class TelemetryRepository {
     );
 
     return {
-      distanceFromOriginKm: distances?.distanceFromOriginKm ? parseFloat(distances.distanceFromOriginKm) : null,
-      distanceToDestinationKm: distances?.distanceToDestinationKm ? parseFloat(distances.distanceToDestinationKm) : null,
+      distanceFromOriginKm: distances?.distanceFromOriginKm
+        ? parseFloat(distances.distanceFromOriginKm)
+        : null,
+      distanceToDestinationKm: distances?.distanceToDestinationKm
+        ? parseFloat(distances.distanceToDestinationKm)
+        : null,
     };
   }
 }

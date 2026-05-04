@@ -24,7 +24,11 @@ class Logger {
     }
   }
 
-  private formatMessage(level: LogLevel, message: string, detail?: unknown): string {
+  private formatMessage(
+    level: LogLevel,
+    message: string,
+    detail?: unknown,
+  ): string {
     const timestamp = new Date().toISOString();
     let detailStr = "";
     if (detail) {

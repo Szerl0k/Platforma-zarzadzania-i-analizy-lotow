@@ -91,12 +91,15 @@ export function useFlightDetailsById(id: string | null) {
 
 /**
  * Hook to fetch and manage flight path segments (traveled/remaining).
- * 
+ *
  * @param id - The UUID of the flight.
  * @calledBy TelemetryMapView
  */
 export function useFlightPath(id: string | null) {
-  const [pathData, setPathData] = useState<{ traveled: any; remaining: any } | null>(null);
+  const [pathData, setPathData] = useState<{
+    traveled: any;
+    remaining: any;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -133,4 +136,3 @@ export function useFlightPath(id: string | null) {
 
   return { pathData, isLoading };
 }
-

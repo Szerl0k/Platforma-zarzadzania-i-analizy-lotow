@@ -50,10 +50,10 @@ export function PanelContainer({
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizingRef.current) return;
-    
+
     e.preventDefault();
     const newWidth = e.clientX;
-    
+
     // Width limits: min 320px, max 800px or 50vw
     if (newWidth >= 320 && newWidth <= Math.min(800, window.innerWidth * 0.5)) {
       setPanelWidth(newWidth);
@@ -62,9 +62,9 @@ export function PanelContainer({
 
   const handleMouseUp = useCallback(() => {
     if (isResizingRef.current) {
-        setIsResizing(false);
-        isResizingRef.current = false;
-        document.body.style.cursor = "default";
+      setIsResizing(false);
+      isResizingRef.current = false;
+      document.body.style.cursor = "default";
     }
   }, []);
 
