@@ -22,6 +22,12 @@ export default tseslint.config(
         },
     },
     {
+        files: ['src/**/__tests__/**/*.ts'],
+        rules: {
+            '@typescript-eslint/explicit-function-return-type': 'off',
+        },
+    },
+    {
         ignores: ['dist/**', 'node_modules/**', 'eslint.config.mjs'],
     }
 );

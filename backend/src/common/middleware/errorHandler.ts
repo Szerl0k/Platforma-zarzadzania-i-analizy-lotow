@@ -10,11 +10,6 @@ export function globalErrorHandler(
   res: Response,
   next: NextFunction,
 ): void {
-  if (res.headersSent) {
-    return next(err);
-  }
-
-  // Zod
   if (err instanceof ZodError) {
     res.status(400).json({
       success: false,
@@ -27,33 +22,25 @@ export function globalErrorHandler(
     return;
   }
 
-  // TypeORM errors often come as objects with 'code'
-  if (err && typeof err === "object" && "code" in err) {
-    const errorWithCode = err as { code: string };
-    // TypeORM: Duplicate Key
-    if (errorWithCode.code === "23505") {
-      res.status(409).json({ error: "Resource already exists" });
-      return;
-    }
+  const errObj = err as Record<string, unknown>;
 
-    // TypeORM: Foreign Key Violaton
-    if (errorWithCode.code === "23503") {
-      res.status(400).json({ error: "Referenced resource not found" });
-      return;
-    }
+  // TypeORM: Duplicate Key
+  if (errObj.code === "23505") {
+    res.status(409).json({ error: "Resource already exists" });
+    return;
+  }
+
+  // TypeORM: Foreign Key Violaton
+  if (errObj.code === "23503") {
+    res.status(400).json({ error: "Referenced resource not found" });
+    return;
   }
 
   // Custom errors like BoundingBoxLimitError
-  if (
-    err &&
-    typeof err === "object" &&
-    "statusCode" in err &&
-    "message" in err
-  ) {
-    const customErr = err as { statusCode: number; message: string };
-    res.status(customErr.statusCode).json({
+  if (typeof errObj.statusCode === "number") {
+    res.status(errObj.statusCode).json({
       success: false,
-      error: customErr.message,
+      error: String(errObj.message ?? "Unknown error"),
     });
     return;
   }
