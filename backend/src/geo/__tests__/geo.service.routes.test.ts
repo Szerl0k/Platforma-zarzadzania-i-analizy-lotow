@@ -50,9 +50,13 @@ function makeAirport(icao: string): Airport {
       id: 1,
       name: "City",
       countryCode: "US",
-      country: { isoCode: "US", name: "United States", cities: [] } as Country,
+      country: {
+        isoCode: "US",
+        name: "United States",
+        cities: [],
+      } as unknown as Country,
       airports: [],
-    } as City,
+    } as unknown as City,
     location: { type: "Point", coordinates: [-73.78, 40.63] } as Point,
     timezone: "America/New_York",
   } as unknown as Airport;
