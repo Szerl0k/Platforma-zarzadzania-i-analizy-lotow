@@ -45,11 +45,6 @@ export function FlightSearch({ onSelect, onError }: FlightSearchProps) {
         },
         properties: {
           icao24: tel.icao24,
-          callsign: tel.callsign || term,
-          altitude: tel.altitude,
-          velocity: tel.velocity,
-          heading: tel.heading,
-          onGround: tel.onGround,
         },
       };
 
