@@ -277,7 +277,6 @@ export default function TelemetryMapView() {
           ref={mapRef}
           initialViewState={{ longitude: 19.0, latitude: 52.0, zoom: 5 }}
           mapStyle={MAP_STYLE_URL}
-          className="w-full h-full"
           onLoad={handleMapLoad}
           onMoveEnd={updateBoundingBox}
           interactiveLayerIds={["flights-points", "airports-points"]}

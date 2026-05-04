@@ -47,7 +47,7 @@ export default function MapView() {
         <NavigationControl position="bottom-right" showCompass={false} />
       </Map>
 
-      <div className="absolute top-4 left-4 z-10 border-2 border-ink bg-surface px-3 py-2 shadow-brut pointer-events-none">
+      <div className="absolute top-4 left-4 z-10 bosrder-2 border-ink bg-surface px-3 py-2 shadow-brut pointer-events-none">
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-muted">
           {APP_NAME}
         </p>
