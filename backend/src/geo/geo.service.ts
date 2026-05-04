@@ -108,6 +108,10 @@ function normalizeIcao(code: string): string {
   return code.trim().toUpperCase();
 }
 
+function hasDbCode(err: unknown): err is { code: unknown } {
+  return typeof err === "object" && err !== null && "code" in err;
+}
+
 function makePoint(latitude: number, longitude: number): Point {
   return { type: "Point", coordinates: [longitude, latitude] };
 }
@@ -171,8 +175,8 @@ async function findOrCreateCity(
   const city = cityRepo().create({ countryCode: code, name });
   try {
     return await cityRepo().save(city);
-  } catch (err: any) {
-    if (err?.code === "23505") {
+  } catch (err: unknown) {
+    if (hasDbCode(err) && err.code === "23505") {
       const refetched = await cityRepo().findOne({
         where: { countryCode: code, name },
       });
@@ -239,8 +243,8 @@ async function persistAirportFromAeroApi(
 
   try {
     await airportRepo().save(airport);
-  } catch (err: any) {
-    if (err?.code !== "23505") throw err;
+  } catch (err: unknown) {
+    if (!hasDbCode(err) || err.code !== "23505") throw err;
   }
 
   const reloaded = await airportRepo().findOne({
@@ -605,8 +609,8 @@ async function persistAirlineFromAeroApi(
 
   try {
     await airlineRepo().save(airline);
-  } catch (err: any) {
-    if (err?.code !== "23505") throw err;
+  } catch (err: unknown) {
+    if (!hasDbCode(err) || err.code !== "23505") throw err;
   }
 
   const reloaded = await airlineRepo().findOne({ where: { icaoCode: icao } });
