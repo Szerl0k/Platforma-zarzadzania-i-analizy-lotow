@@ -1,11 +1,20 @@
 import { z } from "zod";
 import { Point } from "geojson";
 
-export const LocateFlightQuerySchema = z.object({
-  faFlightId: z
-    .string()
-    .min(5, "Identyfikator faFlightId jest wymagany i musi być poprawny."),
-});
+export const LocateFlightQuerySchema = z
+  .object({
+    faFlightId: z.string().optional(),
+    icao24: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.faFlightId && !data.icao24) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Należy podać faFlightId lub icao24.",
+        path: ["faFlightId"],
+      });
+    }
+  });
 
 export type LocateFlightQuery = z.infer<typeof LocateFlightQuerySchema>;
 
@@ -14,6 +23,8 @@ export interface LocateFlightResponseDTO {
   faFlightId: string;
   internalFlightId: string; // UUID reference to main domain
   location: Point;
+  distanceFromOriginKm?: number | null;
+  distanceToDestinationKm?: number | null;
   persistedAt: string;
 }
 

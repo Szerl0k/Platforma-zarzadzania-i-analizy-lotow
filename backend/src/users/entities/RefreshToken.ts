@@ -7,9 +7,10 @@ import {
   Index,
 } from "typeorm";
 import { User } from "./User";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("refresh_tokens")
-export class RefreshToken {
+export class RefreshToken extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -22,9 +23,6 @@ export class RefreshToken {
 
   @Column({ type: "timestamp", precision: 0, name: "expires_at" })
   expiresAt!: Date;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
 
   @ManyToOne(() => User, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })

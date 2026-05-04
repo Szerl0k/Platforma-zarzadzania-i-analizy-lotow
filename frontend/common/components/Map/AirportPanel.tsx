@@ -58,7 +58,7 @@ export function AirportPanel({
   }, [airport.icaoCode]);
 
   return (
-    <div className="w-80 h-full flex flex-col bg-surface border-r-2 border-ink overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-surface overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b-2 border-ink shrink-0">
         <div className="flex items-start justify-between gap-2">
@@ -157,7 +157,7 @@ export function AirportPanel({
                       onAirlineToggle(airline.icaoCode, destinations)
                     }
                     className={`w-full text-left px-3 py-2.5 transition-colors ${
-                      isSelected ? "bg-navy text-white" : "hover:bg-gray-50"
+                      isSelected ? "bg-navy text-white" : "hover:bg-bg"
                     }`}
                   >
                     <p

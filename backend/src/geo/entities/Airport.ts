@@ -8,9 +8,10 @@ import {
 } from "typeorm";
 import { Point } from "geojson";
 import { City } from "./City";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("airports")
-export class Airport {
+export class Airport extends BaseEntity {
   @PrimaryColumn({ type: "varchar", length: 4, name: "icao_code" })
   icaoCode!: string;
 

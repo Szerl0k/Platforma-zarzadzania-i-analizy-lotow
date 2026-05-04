@@ -31,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
               "focus:bg-[var(--color-lime)]/30",
               "focus:border-ink",
             ].join(" "),
-        "disabled:bg-[#F5F5F5] disabled:text-ink-subtle disabled:cursor-not-allowed",
+        "disabled:bg-disabled disabled:text-ink-subtle disabled:cursor-not-allowed",
         className,
       )}
       {...rest}

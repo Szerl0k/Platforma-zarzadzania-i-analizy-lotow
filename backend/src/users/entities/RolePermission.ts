@@ -1,9 +1,10 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { Role } from "./Role";
 import { Permission } from "./Permission";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("role_permissions")
-export class RolePermission {
+export class RolePermission extends BaseEntity {
   @PrimaryColumn({ type: "int", name: "role_id" })
   roleId!: number;
 

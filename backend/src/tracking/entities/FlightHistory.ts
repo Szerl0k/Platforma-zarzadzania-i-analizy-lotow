@@ -6,9 +6,10 @@ import {
   JoinColumn,
 } from "typeorm";
 import { User } from "../../users/entities/User";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flight_history")
-export class FlightHistory {
+export class FlightHistory extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -53,10 +54,4 @@ export class FlightHistory {
     name: "user_rating",
   })
   userRating!: number | null;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
-
-  @Column({ type: "timestamp", precision: 0, name: "updated_at" })
-  updatedAt!: Date;
 }

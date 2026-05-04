@@ -8,9 +8,10 @@ import {
 import { User } from "../../users/entities/User";
 import { Airport } from "../../geo/entities/Airport";
 import { SimulationStatus } from "../../flights/entities/SimulationStatus";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("custom_flight_simulations")
-export class CustomFlightSimulation {
+export class CustomFlightSimulation extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -115,10 +116,4 @@ export class CustomFlightSimulation {
 
   @Column({ type: "boolean", default: false, name: "is_public" })
   isPublic!: boolean;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
-
-  @Column({ type: "timestamp", precision: 0, name: "updated_at" })
-  updatedAt!: Date;
 }

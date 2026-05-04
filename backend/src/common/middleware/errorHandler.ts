@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AeroAPIError } from "../integrations/aeroapi";
 import { OpenSkyError } from "../integrations/opensky";
+import { logger } from "../utils/logger";
 
 export function globalErrorHandler(
   err: unknown,
@@ -46,21 +47,24 @@ export function globalErrorHandler(
 
   // API wrappers errors
   if (err instanceof AeroAPIError || err instanceof OpenSkyError) {
-    console.error(`[Upstream API Error] ${err.name}: ${err.message}`, err);
+    logger.error(`[Upstream API Error] ${err.name}: ${err.message}`, err);
 
     // 502 bad gateway
-    const statusCode =
-      "status" in err && typeof err.status === "number" ? err.status : 502;
+    let statusCode = 502;
+    if ("status" in err && typeof err.status === "number") {
+      statusCode = err.status;
+    }
 
     res.status(statusCode).json({
       success: false,
       error: "Error with communication to external data provider",
     });
+    return;
   }
 
-  console.error("[Unhandled Server Exception]:", err);
+  logger.error("[Unhandled Server Exception]:", err);
   res.status(500).json({
     success: false,
-    error: "Internal Server Report",
+    error: "Internal Server Error",
   });
 }

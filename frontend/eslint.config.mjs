@@ -18,6 +18,10 @@ const eslintConfig = defineConfig([
 
   {
     rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      'no-console': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
       "react-hooks/set-state-in-effect": "warn"
     },
   },

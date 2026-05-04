@@ -8,9 +8,10 @@ import {
 } from "typeorm";
 import { Role } from "./Role";
 import { UserPreferences } from "./UserPreferences";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("users")
-export class User {
+export class User extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -60,12 +61,6 @@ export class User {
 
   @Column({ type: "boolean", name: "profile_public" })
   profilePublic!: boolean;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
-
-  @Column({ type: "timestamp", precision: 0, name: "updated_at" })
-  updatedAt!: Date;
 
   @Column({
     type: "timestamp",

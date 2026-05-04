@@ -12,9 +12,10 @@ import { Airport } from "../../geo/entities/Airport";
 import { FlightStatus } from "./FlightStatus";
 import { FlightCodeshare } from "./FlightCodeshare";
 import { FlightTelemetry } from "../../telemetry/entities/FlightTelemetry";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flights")
-export class Flight {
+export class Flight extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 

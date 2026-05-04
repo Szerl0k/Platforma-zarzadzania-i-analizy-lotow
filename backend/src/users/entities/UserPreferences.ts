@@ -6,9 +6,10 @@ import {
   JoinColumn,
 } from "typeorm";
 import { User } from "./User";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("user_preferences")
-export class UserPreferences {
+export class UserPreferences extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -42,10 +43,4 @@ export class UserPreferences {
 
   @Column({ type: "varchar", length: 10, name: "distance_unit" })
   distanceUnit!: string;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
-
-  @Column({ type: "timestamp", precision: 0, name: "updated_at" })
-  updatedAt!: Date;
 }

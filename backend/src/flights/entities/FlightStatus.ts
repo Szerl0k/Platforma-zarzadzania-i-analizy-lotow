@@ -1,7 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flight_statuses")
-export class FlightStatus {
+export class FlightStatus extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id!: number;
 

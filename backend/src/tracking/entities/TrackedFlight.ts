@@ -10,10 +10,11 @@ import { User } from "../../users/entities/User";
 import { Flight } from "../../flights/entities/Flight";
 import { TrackingStatus } from "./TrackingStatus";
 import { TrackingSource } from "./TrackingSource";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("tracked_flights")
 @Unique(["userId", "flightId", "startedTrackingAt"])
-export class TrackedFlight {
+export class TrackedFlight extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
@@ -55,7 +56,4 @@ export class TrackedFlight {
     name: "stopped_tracking_at",
   })
   stoppedTrackingAt!: Date | null;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
 }

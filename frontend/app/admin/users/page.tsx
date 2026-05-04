@@ -188,7 +188,7 @@ export default function AdminUsersPage() {
                           onChange={(e) =>
                             handleRoleChange(u.id, Number(e.target.value))
                           }
-                          className="h-9 px-2 font-mono text-xs uppercase border-2 border-ink bg-surface disabled:bg-[#F5F5F5] disabled:cursor-not-allowed"
+                          className="h-9 px-2 font-mono text-xs uppercase border-2 border-ink bg-surface disabled:bg-disabled disabled:cursor-not-allowed"
                         >
                           {roles.map((r) => (
                             <option key={r.id} value={r.id}>

@@ -1,8 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { RolePermission } from "./RolePermission";
+import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("roles")
-export class Role {
+export class Role extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id!: number;
 
@@ -14,9 +15,6 @@ export class Role {
 
   @Column({ type: "boolean", name: "is_system" })
   isSystem!: boolean;
-
-  @Column({ type: "timestamp", precision: 0, name: "created_at" })
-  createdAt!: Date;
 
   @OneToMany(() => RolePermission, (rp) => rp.role)
   rolePermissions!: RolePermission[];
