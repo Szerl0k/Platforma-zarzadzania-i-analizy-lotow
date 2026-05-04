@@ -86,7 +86,7 @@ export class CustomFlightSimulation {
   cruiseSpeed!: number | null;
 
   @Column({ type: "jsonb", nullable: true, name: "route_waypoints" })
-  routeWaypoints!: Record<string, any>[] | null;
+  routeWaypoints!: Record<string, unknown>[] | null;
 
   @Column({
     type: "decimal",

@@ -89,7 +89,7 @@ export class OpenSkyClient {
 
   private async request<T>(
     endpoint: string,
-    params?: Record<string, any>,
+    params?: Record<string, string | number>,
   ): Promise<T> {
     const token = await this.getAccessToken();
 
@@ -127,7 +127,7 @@ export class OpenSkyClient {
     bbox?: BoundingBox,
     icao24?: string | string[],
   ): Promise<OpenSkyStateVectorsResponse> {
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number> = {};
 
     if (bbox) {
       params.lamin = bbox.lamin;

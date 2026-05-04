@@ -55,7 +55,7 @@ export class AeroAPIClient {
 
   private async request<T>(
     endpoint: string,
-    params?: Record<string, any>,
+    params?: AeroAPIQueryParams,
   ): Promise<T> {
     try {
       const res = await this.httpClient.get<T>(endpoint, { params });

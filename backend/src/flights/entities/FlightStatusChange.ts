@@ -28,10 +28,10 @@ export class FlightStatusChange {
   changeType!: FlightChangeType;
 
   @Column({ type: "jsonb", nullable: true, name: "old_value" })
-  oldValue!: Record<string, any> | null;
+  oldValue!: Record<string, unknown> | null;
 
   @Column({ type: "jsonb", nullable: true, name: "new_value" })
-  newValue!: Record<string, any> | null;
+  newValue!: Record<string, unknown> | null;
 
   @Column({ type: "text", nullable: true })
   description!: string | null;

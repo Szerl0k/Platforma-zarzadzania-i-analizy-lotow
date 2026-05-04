@@ -36,12 +36,16 @@ router.patch("/", async (req: Request, res: Response) => {
     "distanceUnit",
   ] as const;
 
+  type AllowedField = (typeof allowedFields)[number];
+  const updates: Partial<Pick<UserPreferences, AllowedField>> = {};
+
   for (const field of allowedFields) {
     if (req.body[field] !== undefined) {
-      (prefs as any)[field] = req.body[field];
+      (updates as Record<string, unknown>)[field] = req.body[field];
     }
   }
 
+  prefsRepo.merge(prefs, updates);
   prefs.updatedAt = new Date();
   await prefsRepo.save(prefs);
 

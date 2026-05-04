@@ -4,19 +4,16 @@ import { AeroAPIError } from "../integrations/aeroapi";
 import { OpenSkyError } from "../integrations/opensky";
 
 export function globalErrorHandler(
-  err: any,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  // Zod
-
   if (err instanceof ZodError) {
-    const zodError = err as ZodError<any>;
     res.status(400).json({
       success: false,
       error: "Input data validation error.",
-      details: zodError.issues.map((e) => ({
+      details: err.issues.map((e) => ({
         path: e.path.join("."),
         message: e.message,
       })),
@@ -24,23 +21,25 @@ export function globalErrorHandler(
     return;
   }
 
+  const errObj = err as Record<string, unknown>;
+
   // TypeORM: Duplicate Key
-  if (err.code === "23505") {
+  if (errObj.code === "23505") {
     res.status(409).json({ error: "Resource already exists" });
     return;
   }
 
   // TypeORM: Foreign Key Violaton
-  if (err.code === "23503") {
+  if (errObj.code === "23503") {
     res.status(400).json({ error: "Referenced resource not found" });
     return;
   }
 
   // Custom errors like BoundingBoxLimitError
-  if ("statusCode" in err && typeof err.statusCode === "number") {
-    res.status(err.statusCode).json({
+  if (typeof errObj.statusCode === "number") {
+    res.status(errObj.statusCode).json({
       success: false,
-      error: err.message,
+      error: String(errObj.message ?? "Unknown error"),
     });
     return;
   }
