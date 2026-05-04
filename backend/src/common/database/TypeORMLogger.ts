@@ -2,10 +2,8 @@ import { Logger, QueryRunner } from "typeorm";
 import { logger } from "../utils/logger";
 
 export class TypeORMLogger implements Logger {
-  logQuery(query: string, parameters?: unknown[], _queryRunner?: QueryRunner) {
-    // Only log queries to file, not to console
-    const message = `Query: ${query}${parameters && parameters.length ? ` -- Parameters: ${JSON.stringify(parameters)}` : ""}`;
-    this.writeToFile(message, "QUERY");
+  logQuery(_query: string, _parameters?: unknown[], _queryRunner?: QueryRunner) {
+    // Query logging is disabled
   }
 
   logQueryError(error: string | Error, query: string, parameters?: unknown[], _queryRunner?: QueryRunner) {

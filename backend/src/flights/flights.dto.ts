@@ -8,6 +8,35 @@ export const FlightDetailsQuerySchema = z.object({
 
 export type FlightDetailsQuery = z.infer<typeof FlightDetailsQuerySchema>;
 
+export const CreateFlightSchema = z.object({
+  identIcao: z.string().min(1),
+  identIata: z.string().nullable().optional(),
+  operatingAirlineIcao: z.string().length(3).nullable().optional(),
+  callsign: z.string().min(1),
+  faFlightId: z.string().nullable().optional(),
+  originIcao: z.string().length(4).nullable().optional(),
+  destinationIcao: z.string().length(4).nullable().optional(),
+  statusId: z.number().int().positive(),
+  terminalOrigin: z.string().nullable().optional(),
+  gateOrigin: z.string().nullable().optional(),
+  terminalDestination: z.string().nullable().optional(),
+  gateDestination: z.string().nullable().optional(),
+  departureDelay: z.number().int().nullable().optional(),
+  arrivalDelay: z.number().int().nullable().optional(),
+  scheduledOut: z.string().datetime().nullable().optional(),
+  estimatedOut: z.string().datetime().nullable().optional(),
+  actualOut: z.string().datetime().nullable().optional(),
+  scheduledIn: z.string().datetime().nullable().optional(),
+  estimatedIn: z.string().datetime().nullable().optional(),
+  actualIn: z.string().datetime().nullable().optional(),
+});
+
+export type CreateFlightDTO = z.infer<typeof CreateFlightSchema>;
+
+export const UpdateFlightSchema = CreateFlightSchema.partial();
+
+export type UpdateFlightDTO = z.infer<typeof UpdateFlightSchema>;
+
 export interface AirportDTO {
   icaoCode: string;
   iataCode: string | null;

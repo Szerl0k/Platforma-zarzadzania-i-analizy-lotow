@@ -157,7 +157,7 @@ export function AirportPanel({
                       onAirlineToggle(airline.icaoCode, destinations)
                     }
                     className={`w-full text-left px-3 py-2.5 transition-colors ${
-                      isSelected ? "bg-navy text-white" : "hover:bg-gray-50"
+                      isSelected ? "bg-navy text-white" : "hover:bg-bg"
                     }`}
                   >
                     <p

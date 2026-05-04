@@ -58,4 +58,14 @@ export const flightApi = {
     });
     return data;
   },
+
+  getFlightById: async (id: string): Promise<FlightDetailsResponse> => {
+    const { data } = await apiClient.get<FlightDetailsResponse>(`/flights/${id}`);
+    return data;
+  },
+
+  getFlightPath: async (id: string): Promise<{ traveled: any; remaining: any }> => {
+    const { data } = await apiClient.get<{ traveled: any; remaining: any }>(`/flights/${id}/path`);
+    return data;
+  },
 };

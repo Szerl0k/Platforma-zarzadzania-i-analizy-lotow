@@ -47,7 +47,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || "postgres",
   database: process.env.DB_NAME || "flight_db",
   synchronize: false,
-  logging: true,
+  logging: ["error", "migration", "schema", "warn"],
   logger: new TypeORMLogger(),
   entities: [
     Country,

@@ -53,7 +53,7 @@ export function CityAirportsPanel({
                 <button
                   onClick={() => onSelect(airport)}
                   className={`w-full text-left px-3 py-3 transition-colors ${
-                    isSelected ? "bg-navy text-white" : "hover:bg-gray-50"
+                    isSelected ? "bg-navy text-white" : "hover:bg-bg"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">

@@ -106,12 +106,10 @@ export default function Navbar() {
                 ref={dropdownRef}
                 role="menu"
                 style={{
-                  position: "fixed",
                   top: coords.top,
                   right: coords.right,
-                  zIndex: 9999,
                 }}
-                className="w-60 bg-surface border-2 border-ink shadow-brut"
+                className="fixed z-[9999] w-60 bg-surface border-2 border-ink shadow-brut"
               >
                 <div className="px-4 py-3 border-b-2 border-ink">
                   {user.nickname && (

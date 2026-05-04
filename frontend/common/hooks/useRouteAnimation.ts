@@ -7,7 +7,7 @@ import type { GeoJSONSource } from "maplibre-gl";
 import {
   getPositionAlongPath,
   getBearingAlongPath,
-} from "@/app/telemetry/_utils/telemetryMapHelpers";
+} from "@/common/utils/geoUtils";
 
 const ANIMATION_DURATION_MS = 14000;
 

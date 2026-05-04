@@ -48,7 +48,7 @@ export default function MapView() {
           zoom: 5,
         }}
         mapStyle={MAP_STYLE_URL}
-        style={{ width: "100%", height: "100%" }}
+        className="w-full h-full"
         onLoad={forcePolishLabels}
       >
         <NavigationControl position="bottom-right" showCompass={false} />
