@@ -6,6 +6,7 @@ import { AppDataSource } from "./common/database/data-source";
 import { globalErrorHandler } from "./common/middleware/errorHandler";
 import apiRouter from "./common/routes";
 import { logger } from "./common/utils/logger";
+import { doubleCsrfProtection } from "./common/middleware/csrf";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use(doubleCsrfProtection);
 
 app.use("/api/v1", apiRouter);
 
