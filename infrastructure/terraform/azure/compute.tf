@@ -97,7 +97,7 @@ resource "azurerm_linux_web_app" "backend" {
   app_settings = {
     # Prevents the container from attempting to map the default Azure file share
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-
+    "WEBSITE_VNET_ROUTE_ALL" = "1"
     "WEBSITES_PORT" = "5000"
 
     # Expose internal db IP to the container app
