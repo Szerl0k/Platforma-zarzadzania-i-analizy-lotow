@@ -5,14 +5,14 @@ COPY package*.json ./
 # Dev stage
 FROM base AS dev
 RUN npm install
-COPY .. .
+COPY . .
 EXPOSE 5000
 CMD ["npm", "run", "dev"]
 
 # Prod build stage
 FROM base AS builder
 RUN npm install
-COPY .. .
+COPY . .
 RUN npm run build
 
 # Prod stage

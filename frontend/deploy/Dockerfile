@@ -6,14 +6,14 @@ COPY package.json package-lock.json ./
 FROM base AS dev
 RUN npm install
 ENV NODE_ENV=development
-COPY .. .
+COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 # Prod build stage
 FROM base AS builder
 RUN npm install
-COPY .. .
+COPY . .
 
 ARG INTERNAL_API_URL
 
