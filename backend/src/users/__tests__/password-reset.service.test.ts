@@ -3,10 +3,7 @@ import crypto from "crypto";
 import { AppDataSource } from "../../common/database/data-source";
 import { User } from "../entities/User";
 import { RefreshToken } from "../entities/RefreshToken";
-import {
-  requestPasswordReset,
-  resetPassword,
-} from "../password-reset.service";
+import { requestPasswordReset, resetPassword } from "../password-reset.service";
 import { makeMailer, makeRepo, makeUser } from "./test-utils";
 import { BadRequestError } from "../../common/errors/http-errors";
 
@@ -38,7 +35,11 @@ describe("password-reset.service", () => {
     const spy = jest.spyOn(crypto, "randomBytes");
     spy.mockReturnValue(Buffer.from("a".repeat(32)) as never);
 
-    await requestPasswordReset("john@example.com", mailer, "http://localhost:3000");
+    await requestPasswordReset(
+      "john@example.com",
+      mailer,
+      "http://localhost:3000",
+    );
 
     expect(userRepo.save).toHaveBeenCalledWith(user);
     expect(mailer.sendPasswordReset).toHaveBeenCalledTimes(1);
@@ -48,7 +49,11 @@ describe("password-reset.service", () => {
   it("does not send email for unknown account", async () => {
     const mailer = makeMailer();
     userRepo.findOne.mockResolvedValue(null);
-    await requestPasswordReset("x@example.com", mailer, "http://localhost:3000");
+    await requestPasswordReset(
+      "x@example.com",
+      mailer,
+      "http://localhost:3000",
+    );
     expect(mailer.sendPasswordReset).not.toHaveBeenCalled();
   });
 

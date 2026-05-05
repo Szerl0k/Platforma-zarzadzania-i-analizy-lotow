@@ -18,9 +18,7 @@ export type PreferencesPatch = Partial<
   Pick<UserPreferences, AllowedPreferenceField>
 >;
 
-export async function getPreferences(
-  userId: string,
-): Promise<UserPreferences> {
+export async function getPreferences(userId: string): Promise<UserPreferences> {
   const repo = AppDataSource.getRepository(UserPreferences);
   const prefs = await repo.findOne({ where: { userId } });
   if (!prefs) {

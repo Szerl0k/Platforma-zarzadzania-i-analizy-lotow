@@ -66,11 +66,7 @@ export async function resetPassword(
     where: { passwordResetToken: tokenHash },
   });
 
-  if (
-    !user ||
-    !user.passwordResetExpires ||
-    user.passwordResetExpires < now
-  ) {
+  if (!user || !user.passwordResetExpires || user.passwordResetExpires < now) {
     throw new BadRequestError("Invalid or expired token");
   }
 

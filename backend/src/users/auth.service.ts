@@ -112,7 +112,7 @@ export async function buildUserResponse(user: User): Promise<UserResponse> {
   };
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
 function assertString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.length === 0) {
@@ -211,7 +211,8 @@ export async function loginUser(
   const userRepo = AppDataSource.getRepository(User);
   const user = await userRepo.findOne({ where: { email } });
 
-  const fallbackHash = "$2b$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinvi";
+  const fallbackHash =
+    "$2b$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinvi";
   const valid = await bcrypt.compare(
     password,
     user ? user.passwordHash : fallbackHash,

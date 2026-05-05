@@ -30,7 +30,9 @@ describe("preferences.service", () => {
 
   it("throws when preferences missing", async () => {
     preferencesRepo.findOne.mockResolvedValue(null);
-    await expect(getPreferences("user-1")).rejects.toBeInstanceOf(NotFoundError);
+    await expect(getPreferences("user-1")).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 
   it("updates only whitelisted fields", async () => {
@@ -51,7 +53,9 @@ describe("preferences.service", () => {
     });
 
     expect(result.timezone).toBe("Europe/Warsaw");
-    expect((result as unknown as Record<string, unknown>).ignoredField).toBeUndefined();
+    expect(
+      (result as unknown as Record<string, unknown>).ignoredField,
+    ).toBeUndefined();
     expect(preferencesRepo.save).toHaveBeenCalledWith(preferences);
   });
 });

@@ -28,9 +28,11 @@ export function makeRepo(): RepoMock {
     save: jest.fn(),
     remove: jest.fn(),
     delete: jest.fn(),
-    create: jest.fn().mockImplementation((data: unknown) =>
-      typeof data === "object" && data !== null ? { ...data } : {},
-    ),
+    create: jest
+      .fn()
+      .mockImplementation((data: unknown) =>
+        typeof data === "object" && data !== null ? { ...data } : {},
+      ),
     merge: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
@@ -71,7 +73,9 @@ export function makeUser(overrides: Partial<User> = {}): User {
   } as User;
 }
 
-export function makePermission(overrides: Partial<Permission> = {}): Permission {
+export function makePermission(
+  overrides: Partial<Permission> = {},
+): Permission {
   return {
     id: 1,
     name: "users:write",

@@ -1,9 +1,6 @@
 import { AppDataSource } from "../common/database/data-source";
 import { Permission } from "./entities/Permission";
-import {
-  BadRequestError,
-  NotFoundError,
-} from "../common/errors/http-errors";
+import { BadRequestError, NotFoundError } from "../common/errors/http-errors";
 
 export interface CreatePermissionInput {
   name: unknown;

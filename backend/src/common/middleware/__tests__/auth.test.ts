@@ -65,7 +65,11 @@ describe("auth middleware", () => {
   });
 
   it("authorizes required permission", async () => {
-    const repo = { find: jest.fn().mockResolvedValue([{ permission: { name: "users:write" } }]) };
+    const repo = {
+      find: jest
+        .fn()
+        .mockResolvedValue([{ permission: { name: "users:write" } }]),
+    };
     mockedGetRepository.mockImplementation((entity: unknown) => {
       if (entity === RolePermission) return repo;
       return { find: jest.fn() };
@@ -80,7 +84,11 @@ describe("auth middleware", () => {
   });
 
   it("blocks missing permission", async () => {
-    const repo = { find: jest.fn().mockResolvedValue([{ permission: { name: "users:read" } }]) };
+    const repo = {
+      find: jest
+        .fn()
+        .mockResolvedValue([{ permission: { name: "users:read" } }]),
+    };
     mockedGetRepository.mockImplementation((entity: unknown) => {
       if (entity === RolePermission) return repo;
       return { find: jest.fn() };

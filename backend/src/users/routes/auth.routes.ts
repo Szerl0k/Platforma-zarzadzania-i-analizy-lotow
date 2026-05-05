@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { handleHttpError } from "../../common/errors/handle";
+import { authRateLimiter } from "../../common/middleware/rateLimiter";
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   REFRESH_TOKEN_MAX_AGE_MS,
@@ -9,10 +10,7 @@ import {
   rotateRefreshToken,
 } from "../auth.service";
 import { getAppBaseUrl, getMailer } from "../mailer";
-import {
-  requestPasswordReset,
-  resetPassword,
-} from "../password-reset.service";
+import { requestPasswordReset, resetPassword } from "../password-reset.service";
 
 const router = Router();
 
@@ -40,32 +38,40 @@ function setAuthCookies(
   });
 }
 
-router.post("/register", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const result = await registerUser({
-      email: req.body.email,
-      password: req.body.password,
-      nickname: req.body.nickname,
-    });
-    setAuthCookies(res, result.accessToken, result.rawRefreshToken);
-    res.status(201).json({ user: result.user });
-  } catch (err: unknown) {
-    handleHttpError(err, res);
-  }
-});
+router.post(
+  "/register",
+  authRateLimiter,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await registerUser({
+        email: req.body.email,
+        password: req.body.password,
+        nickname: req.body.nickname,
+      });
+      setAuthCookies(res, result.accessToken, result.rawRefreshToken);
+      res.status(201).json({ user: result.user });
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
 
-router.post("/login", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const result = await loginUser({
-      email: req.body.email,
-      password: req.body.password,
-    });
-    setAuthCookies(res, result.accessToken, result.rawRefreshToken);
-    res.json({ user: result.user });
-  } catch (err: unknown) {
-    handleHttpError(err, res);
-  }
-});
+router.post(
+  "/login",
+  authRateLimiter,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await loginUser({
+        email: req.body.email,
+        password: req.body.password,
+      });
+      setAuthCookies(res, result.accessToken, result.rawRefreshToken);
+      res.json({ user: result.user });
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
 
 router.post("/refresh", async (req: Request, res: Response): Promise<void> => {
   try {
@@ -90,13 +96,10 @@ router.post("/logout", async (req: Request, res: Response): Promise<void> => {
 
 router.post(
   "/forgot-password",
+  authRateLimiter,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      await requestPasswordReset(
-        req.body.email,
-        getMailer(),
-        getAppBaseUrl(),
-      );
+      await requestPasswordReset(req.body.email, getMailer(), getAppBaseUrl());
       res.json({
         message: "If the email exists, a reset link has been sent",
       });

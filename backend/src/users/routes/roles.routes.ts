@@ -74,7 +74,10 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const roleId = Number.parseInt(req.params.id as string, 10);
-      const rolePermission = await grantPermission(roleId, req.body.permissionId);
+      const rolePermission = await grantPermission(
+        roleId,
+        req.body.permissionId,
+      );
       res.status(201).json(rolePermission);
     } catch (err: unknown) {
       handleHttpError(err, res);
@@ -87,7 +90,10 @@ router.delete(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const roleId = Number.parseInt(req.params.id as string, 10);
-      const permissionId = Number.parseInt(req.params.permissionId as string, 10);
+      const permissionId = Number.parseInt(
+        req.params.permissionId as string,
+        10,
+      );
       await revokePermission(roleId, permissionId);
       res.status(204).send();
     } catch (err: unknown) {
