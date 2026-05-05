@@ -28,3 +28,8 @@ output "backend_url" {
   value       = azurerm_linux_web_app.backend.default_hostname
 }
 
+output "nat_gateway_public_ip" {
+  description = "The static outbound IP address used by the backend App Service"
+  value       = azurerm_public_ip.nat_pip.ip_address
+}
+
