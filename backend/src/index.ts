@@ -24,7 +24,7 @@ app.use(
   }),
 );
 app.use(express.json());
-app.use(cookieParser()); // codeql[js/missing-token-validation]
+app.use(cookieParser());
 app.use(doubleCsrfProtection);
 
 app.use("/api/v1", apiRouter);
