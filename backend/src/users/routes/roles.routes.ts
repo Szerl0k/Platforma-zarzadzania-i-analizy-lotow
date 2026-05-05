@@ -1,135 +1,98 @@
 import { Router, Request, Response } from "express";
-import { AppDataSource } from "../../common/database/data-source";
-import { Role } from "../entities/Role";
-import { RolePermission } from "../entities/RolePermission";
-import { Permission } from "../entities/Permission";
+import { handleHttpError } from "../../common/errors/handle";
+import {
+  createRole,
+  deleteRole,
+  grantPermission,
+  listRolePermissions,
+  listRoles,
+  revokePermission,
+  updateRole,
+} from "../roles.service";
 
 const router = Router();
 
-router.get("/", async (_req: Request, res: Response) => {
-  const roleRepo = AppDataSource.getRepository(Role);
-  const roles = await roleRepo.find();
-  res.json(roles);
+router.get("/", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const roles = await listRoles();
+    res.json(roles);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
+  }
 });
 
-router.post("/", async (req: Request, res: Response) => {
-  const { name, description } = req.body;
-
-  if (!name) {
-    res.status(400).json({ error: "Name is required" });
-    return;
+router.post("/", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const role = await createRole({
+      name: req.body.name,
+      description: req.body.description,
+    });
+    res.status(201).json(role);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  const roleRepo = AppDataSource.getRepository(Role);
-  const role = roleRepo.create({
-    name,
-    description: description || null,
-    isSystem: false,
-    createdAt: new Date(),
-  });
-
-  await roleRepo.save(role);
-  res.status(201).json(role);
 });
 
-router.patch("/:id", async (req: Request, res: Response) => {
-  const roleRepo = AppDataSource.getRepository(Role);
-  const role = await roleRepo.findOne({
-    where: { id: parseInt(req.params.id as string) },
-  });
-
-  if (!role) {
-    res.status(404).json({ error: "Role not found" });
-    return;
+router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const roleId = Number.parseInt(req.params.id as string, 10);
+    const role = await updateRole(roleId, {
+      name: req.body.name,
+      description: req.body.description,
+    });
+    res.json(role);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  if (role.isSystem) {
-    res.status(403).json({ error: "Cannot modify system roles" });
-    return;
-  }
-
-  if (req.body.name !== undefined) role.name = req.body.name;
-  if (req.body.description !== undefined)
-    role.description = req.body.description;
-
-  await roleRepo.save(role);
-  res.json(role);
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
-  const roleRepo = AppDataSource.getRepository(Role);
-  const role = await roleRepo.findOne({
-    where: { id: parseInt(req.params.id as string) },
-  });
-
-  if (!role) {
-    res.status(404).json({ error: "Role not found" });
-    return;
+router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const roleId = Number.parseInt(req.params.id as string, 10);
+    await deleteRole(roleId);
+    res.status(204).send();
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  if (role.isSystem) {
-    res.status(403).json({ error: "Cannot delete system roles" });
-    return;
-  }
-
-  await roleRepo.remove(role);
-  res.status(204).send();
 });
 
-router.get("/:id/permissions", async (req: Request, res: Response) => {
-  const rpRepo = AppDataSource.getRepository(RolePermission);
-  const rolePermissions = await rpRepo.find({
-    where: { roleId: parseInt(req.params.id as string) },
-    relations: ["permission"],
-  });
+router.get(
+  "/:id/permissions",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const roleId = Number.parseInt(req.params.id as string, 10);
+      const permissions = await listRolePermissions(roleId);
+      res.json(permissions);
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
 
-  res.json(rolePermissions.map((rp) => rp.permission));
-});
-
-router.post("/:id/permissions", async (req: Request, res: Response) => {
-  const { permissionId } = req.body;
-
-  if (!permissionId) {
-    res.status(400).json({ error: "permissionId is required" });
-    return;
-  }
-
-  const permRepo = AppDataSource.getRepository(Permission);
-  const permission = await permRepo.findOne({ where: { id: permissionId } });
-  if (!permission) {
-    res.status(404).json({ error: "Permission not found" });
-    return;
-  }
-
-  const rpRepo = AppDataSource.getRepository(RolePermission);
-  const rp = rpRepo.create({
-    roleId: parseInt(req.params.id as string),
-    permissionId,
-    grantedAt: new Date(),
-  });
-
-  await rpRepo.save(rp);
-  res.status(201).json(rp);
-});
+router.post(
+  "/:id/permissions",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const roleId = Number.parseInt(req.params.id as string, 10);
+      const rolePermission = await grantPermission(roleId, req.body.permissionId);
+      res.status(201).json(rolePermission);
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
 
 router.delete(
   "/:id/permissions/:permissionId",
-  async (req: Request, res: Response) => {
-    const rpRepo = AppDataSource.getRepository(RolePermission);
-    const rp = await rpRepo.findOne({
-      where: {
-        roleId: parseInt(req.params.id as string),
-        permissionId: parseInt(req.params.permissionId as string),
-      },
-    });
-
-    if (!rp) {
-      res.status(404).json({ error: "Role permission not found" });
-      return;
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const roleId = Number.parseInt(req.params.id as string, 10);
+      const permissionId = Number.parseInt(req.params.permissionId as string, 10);
+      await revokePermission(roleId, permissionId);
+      res.status(204).send();
+    } catch (err: unknown) {
+      handleHttpError(err, res);
     }
-
-    await rpRepo.remove(rp);
-    res.status(204).send();
   },
 );
 

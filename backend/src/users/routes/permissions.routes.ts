@@ -1,48 +1,44 @@
 import { Router, Request, Response } from "express";
-import { AppDataSource } from "../../common/database/data-source";
-import { Permission } from "../entities/Permission";
+import { handleHttpError } from "../../common/errors/handle";
+import {
+  createPermission,
+  deletePermission,
+  listPermissions,
+} from "../permissions.service";
 
 const router = Router();
 
-router.get("/", async (_req: Request, res: Response) => {
-  const permRepo = AppDataSource.getRepository(Permission);
-  const permissions = await permRepo.find();
-  res.json(permissions);
+router.get("/", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const permissions = await listPermissions();
+    res.json(permissions);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
+  }
 });
 
-router.post("/", async (req: Request, res: Response) => {
-  const { name, resource, action, description } = req.body;
-
-  if (!name || !resource || !action) {
-    res.status(400).json({ error: "name, resource, and action are required" });
-    return;
+router.post("/", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const permission = await createPermission({
+      name: req.body.name,
+      resource: req.body.resource,
+      action: req.body.action,
+      description: req.body.description,
+    });
+    res.status(201).json(permission);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  const permRepo = AppDataSource.getRepository(Permission);
-  const permission = permRepo.create({
-    name,
-    resource,
-    action,
-    description: description || null,
-  });
-
-  await permRepo.save(permission);
-  res.status(201).json(permission);
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
-  const permRepo = AppDataSource.getRepository(Permission);
-  const permission = await permRepo.findOne({
-    where: { id: parseInt(req.params.id as string) },
-  });
-
-  if (!permission) {
-    res.status(404).json({ error: "Permission not found" });
-    return;
+router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const permissionId = Number.parseInt(req.params.id as string, 10);
+    await deletePermission(permissionId);
+    res.status(204).send();
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  await permRepo.remove(permission);
-  res.status(204).send();
 });
 
 export default router;

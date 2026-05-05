@@ -1,55 +1,28 @@
 import { Router, Request, Response } from "express";
-import { AppDataSource } from "../../common/database/data-source";
-import { UserPreferences } from "../entities/UserPreferences";
+import { handleHttpError } from "../../common/errors/handle";
+import { getPreferences, updatePreferences } from "../preferences.service";
 
 const router = Router();
 
-router.get("/", async (req: Request, res: Response) => {
-  const prefsRepo = AppDataSource.getRepository(UserPreferences);
-  const prefs = await prefsRepo.findOne({ where: { userId: req.userId } });
-
-  if (!prefs) {
-    res.status(404).json({ error: "Preferences not found" });
-    return;
+router.get("/", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const preferences = await getPreferences(req.userId ?? "");
+    res.json(preferences);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  res.json(prefs);
 });
 
-router.patch("/", async (req: Request, res: Response) => {
-  const prefsRepo = AppDataSource.getRepository(UserPreferences);
-  const prefs = await prefsRepo.findOne({ where: { userId: req.userId } });
-
-  if (!prefs) {
-    res.status(404).json({ error: "Preferences not found" });
-    return;
+router.patch("/", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const preferences = await updatePreferences(
+      req.userId ?? "",
+      req.body as Record<string, unknown>,
+    );
+    res.json(preferences);
+  } catch (err: unknown) {
+    handleHttpError(err, res);
   }
-
-  const allowedFields = [
-    "emailNotifications",
-    "pushNotifications",
-    "notifyOnDelay",
-    "notifyOnGateChange",
-    "notifyOnStatusChange",
-    "delayThresholdMinutes",
-    "timezone",
-    "distanceUnit",
-  ] as const;
-
-  type AllowedField = (typeof allowedFields)[number];
-  const updates: Partial<Pick<UserPreferences, AllowedField>> = {};
-
-  for (const field of allowedFields) {
-    if (req.body[field] !== undefined) {
-      (updates as Record<string, unknown>)[field] = req.body[field];
-    }
-  }
-
-  prefsRepo.merge(prefs, updates);
-  prefs.updatedAt = new Date();
-  await prefsRepo.save(prefs);
-
-  res.json(prefs);
 });
 
 export default router;
