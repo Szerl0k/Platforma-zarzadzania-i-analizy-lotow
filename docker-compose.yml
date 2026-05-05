@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: deploy/Dockerfile
       target: dev
     container_name: flight_management_backend
     ports: 
@@ -48,7 +48,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: deploy/Dockerfile
       target: dev
     container_name: flight_management_frontend
     ports:
