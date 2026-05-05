@@ -106,7 +106,7 @@ jobs:
         if: ${{ !inputs.skip_docker_build }}
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./frontend/deploy
           push: true
           target: prod
           build-args:
@@ -197,7 +197,7 @@ jobs:
         if: ${{ !inputs.skip_docker_build }}
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./backend/deploy
           push: true
           target: prod
           tags: |
