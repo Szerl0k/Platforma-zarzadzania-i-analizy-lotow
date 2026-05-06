@@ -26,10 +26,23 @@ FROM base AS prod
 ENV NODE_ENV=prod
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Install OpenSSH, set root password, and generate host keys for Azure SSH
+RUN apk add --no-cache openssh \
+    && echo "root:Docker!" | chpasswd \
+    && ssh-keygen -A
+
+# Copy the SSH config and init script
+COPY deploy/sshd_config /etc/ssh/
+COPY deploy/init.sh /usr/local/bin/
+RUN chmod u+x /usr/local/bin/init.sh
+
 COPY --from=builder /app/public ./public
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-EXPOSE 3000
+# 2222 - Azure SSH port
+EXPOSE 3000 2222
+
+ENTRYPOINT ["init.sh"]
 CMD ["node", "server.js"]

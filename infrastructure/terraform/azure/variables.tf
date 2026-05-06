@@ -48,8 +48,8 @@ variable "admin_username" {
 
 variable "db_password" {
   description = "The password for postgres user"
-  type = string
-  sensitive = true
+  type        = string
+  sensitive   = true
 }
 
 variable "ssh_public_key_path" {
@@ -70,6 +70,12 @@ variable "data_disk_name" {
   default     = "inz-data-disk-postgis-02"
 }
 
+variable "data_nat_pip" {
+  type        = string
+  description = "Name of the existing public ip to attach to NAT gateway"
+  default     = "dev-inz-data-nat-pip"
+}
+
 variable "alert_email" {
   type        = string
   description = "Email for shutdown notifications"
@@ -87,3 +93,4 @@ variable "ssh_public_key" {
   description = "The raw SSH public key string for the VM"
   default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIHH2UZrqGrLmGndgtzrAvSFPPIFswh1k4/8xd0ygjsOzlejzwPkkV3Bgc9/l1aG6dWuCguFxWB6Ysh+7y3gTFt3IxhpFgfas8jxuUuVd/6OX6EfKzu4Qmei1ufc451XwCCS5ECZ2N221Oo8SN5UW3Ae1LCTxqOFMYDNSZCgeWIP+c0MkOwF8CqrSsMjOKvqGFVYthsQurtU9agBzyLVWriXD2oobohv95a/b95Q98hyxZfsR1uV+aed6ZyJzbMFwzljXUlmi9niiuVEJtFcV+L6kMQUOw7xGCP4vxRnjonxRqyQVpYWeF5Slwvfzv6SNq2SOuTxBmZFSJsQ7PmEEQNQqTVL4sv2ftRegMCeic5zoG+gG/REotpzSXnjXm3sRxhAg3vbC6AIVOicliOztUa9FbfAuSpWFGgg0OUKNdQaEQdISUJPVssDOf5JVUwpZZVYkVQ5rIrSjFh4DxQJUCaD7NpbWXHWevozMVU8qCHbbZ4CIitCzvy7rets+ianU= mmiik@DESKTOP-MJ"
 }
+
