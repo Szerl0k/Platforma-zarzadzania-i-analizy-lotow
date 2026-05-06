@@ -104,6 +104,10 @@ jobs:
           echo "::error title=Formatting Check Failed:: run 'npm run format' and update the PR."
           exit 1
 
+      - name: Run Unit Tests
+        working-directory: ./backend
+        run: npm test
+
 
   frontend-ci:
     name: Frontend CI
