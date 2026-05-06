@@ -23,7 +23,7 @@ RUN npm run build
 
 # Prod stage
 FROM base AS prod
-ENV NODE_ENV=prod
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install OpenSSH, set root password, and generate host keys for Azure SSH
