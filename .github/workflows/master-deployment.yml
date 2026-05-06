@@ -107,6 +107,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
+          file: ./frontend/deploy/Dockerfile
           push: true
           target: prod
           build-args:
@@ -166,7 +167,7 @@ jobs:
         env:
           DB_HOST: ${{ needs.infrastructure.outputs.vm_host }}
           DB_PORT: 5432
-          DB_USERNAME: ${{ secrets.DB_USER }}
+          DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: "flight_db"
 
@@ -198,6 +199,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend
+          file: ./backend/deploy/Dockerfile
           push: true
           target: prod
           tags: |
@@ -250,6 +252,46 @@ jobs:
               {
                 "name": "OPENSKY_CLIENT_SECRET",
                 "value": "${{ secrets.OPENSKY_CLIENT_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name": "CSRF_SECRET",
+                "value": "${{ secrets.CSRF_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_HOST",
+                "value": "${{ secrets.SMTP_HOST }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_PORT",
+                "value": "${{ secrets.SMTP_PORT }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_SECURE",
+                "value": "${{ secrets.SMTP_SECURE }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_USER",
+                "value": "${{ secrets.SMTP_USER }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SMTP_PASSWORD",
+                "value": "${{ secrets.SMTP_PASSWORD }}",
+                "slotSetting": false
+              },
+              {
+                "name": "MAIL_FROM",
+                "value": "${{ secrets.MAIL_FROM }}",
+                "slotSetting": false
+              },
+              {
+                "name": "APP_BASE_URL",
+                "value": "https://${{ needs.infrastructure.outputs.backend_url }}",
                 "slotSetting": false
               }
             ]
