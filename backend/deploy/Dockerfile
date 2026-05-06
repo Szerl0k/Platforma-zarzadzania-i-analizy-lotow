@@ -4,7 +4,7 @@ COPY package*.json ./
 
 # Dev stage
 FROM base AS dev
-RUN npm install
+RUN npm ci
 COPY . .
 EXPOSE 5000
 CMD ["npm", "run", "dev"]

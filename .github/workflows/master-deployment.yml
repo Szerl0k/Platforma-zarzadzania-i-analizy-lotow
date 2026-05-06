@@ -288,5 +288,10 @@ jobs:
                 "name": "MAIL_FROM",
                 "value": "${{ secrets.MAIL_FROM }}",
                 "slotSetting": false
+              },
+              {
+                "name": "APP_BASE_URL",
+                "value": "https://${{ needs.infrastructure.outputs.backend_url }}",
+                "slotSetting": false
               }
             ]
