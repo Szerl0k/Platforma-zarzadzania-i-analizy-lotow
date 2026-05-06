@@ -1,0 +1,95 @@
+import nodemailer, { Transporter } from "nodemailer";
+import { InternalError } from "../common/errors/http-errors";
+
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass: string;
+  from: string;
+  appBaseUrl: string;
+}
+
+export interface Mailer {
+  sendPasswordReset(to: string, resetLink: string): Promise<void>;
+}
+
+export function createSmtpMailer(cfg: SmtpConfig): Mailer {
+  const transport: Transporter = nodemailer.createTransport({
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.secure,
+    auth: { user: cfg.user, pass: cfg.pass },
+  });
+
+  return {
+    async sendPasswordReset(to: string, resetLink: string): Promise<void> {
+      await transport.sendMail({
+        from: cfg.from,
+        to,
+        subject: "Password reset request",
+        text:
+          "We received a request to reset your password.\n\n" +
+          `Open the following link to set a new password (valid for 1 hour):\n${resetLink}\n\n` +
+          "If you did not request this, you can ignore this email.",
+        html:
+          "<p>We received a request to reset your password.</p>" +
+          `<p>Open the following link to set a new password (valid for 1 hour):</p>` +
+          `<p><a href="${resetLink}">${resetLink}</a></p>` +
+          "<p>If you did not request this, you can ignore this email.</p>",
+      });
+    },
+  };
+}
+
+function readSmtpConfigFromEnv(): SmtpConfig {
+  const host = process.env.SMTP_HOST;
+  const portRaw = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+  const from = process.env.MAIL_FROM;
+  const appBaseUrl = process.env.APP_BASE_URL;
+
+  if (!host || !portRaw || !user || !pass || !from || !appBaseUrl) {
+    throw new InternalError("SMTP not configured");
+  }
+
+  const port = Number.parseInt(portRaw, 10);
+  if (Number.isNaN(port)) {
+    throw new InternalError("SMTP_PORT must be a number");
+  }
+
+  return {
+    host,
+    port,
+    secure: process.env.SMTP_SECURE === "true",
+    user,
+    pass,
+    from,
+    appBaseUrl,
+  };
+}
+
+let cachedMailer: Mailer | null = null;
+let cachedAppBaseUrl: string | null = null;
+
+export function getMailer(): Mailer {
+  if (cachedMailer) return cachedMailer;
+  const cfg = readSmtpConfigFromEnv();
+  cachedMailer = createSmtpMailer(cfg);
+  cachedAppBaseUrl = cfg.appBaseUrl;
+  return cachedMailer;
+}
+
+export function getAppBaseUrl(): string {
+  if (cachedAppBaseUrl !== null) return cachedAppBaseUrl;
+  const cfg = readSmtpConfigFromEnv();
+  cachedAppBaseUrl = cfg.appBaseUrl;
+  return cachedAppBaseUrl;
+}
+
+export function resetMailerCacheForTests(): void {
+  cachedMailer = null;
+  cachedAppBaseUrl = null;
+}
