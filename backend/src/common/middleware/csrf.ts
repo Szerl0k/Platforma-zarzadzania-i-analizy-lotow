@@ -6,6 +6,7 @@ const csrfCookieName = isProduction
   ? "__Host-psifi.x-csrf-token"
   : "x-csrf-token";
 const ignoredMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+const anonymousCsrfSession = "anonymous";
 
 const {
   invalidCsrfTokenError,
@@ -14,7 +15,7 @@ const {
 } = doubleCsrf({
   getSecret: () => process.env.CSRF_SECRET ?? "csrf-dev-secret-change-in-prod",
   getSessionIdentifier: (req: Request) =>
-    (req.cookies?.access_token as string | undefined) ?? req.ip ?? "",
+    (req.cookies?.access_token as string | undefined) ?? anonymousCsrfSession,
   cookieName: csrfCookieName,
   cookieOptions: {
     httpOnly: true,
