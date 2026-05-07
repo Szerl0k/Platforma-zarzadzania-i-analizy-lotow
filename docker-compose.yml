@@ -38,6 +38,7 @@ services:
       - JWT_SECRET=flight-mgmt-jwt-secret-change-in-production
       - JWT_EXPIRES_IN=7d
       - CORS_ORIGIN=http://localhost:3000
+      - APP_BASE_URL=http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,4 +66,3 @@ services:
 
 volumes:
   postgres_data:
-

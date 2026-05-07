@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, FormEvent, Suspense } from "react";
-import { useAuth } from "@/common/hooks/useAuth";
-import { APP_NAME } from "@/common/config";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import type { FormEvent, ReactElement } from "react";
 import Link from "next/link";
+import { APP_NAME } from "@/common/config";
+import { requestPasswordReset } from "@/common/api/auth";
 import {
   Alert,
   Button,
@@ -14,35 +14,25 @@ import {
   PageShell,
 } from "@/common/components";
 
-function LoginForm() {
-  const { login, user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function ForgotPasswordPage(): ReactElement {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && user) {
-      router.replace("/");
-    }
-  }, [authLoading, user, router]);
-
-  if (authLoading || user) return null;
-
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent): Promise<void> {
     e.preventDefault();
     setError(null);
+    setSent(false);
     setLoading(true);
+
     try {
-      await login(email, password);
-      const from = searchParams.get("from");
-      router.push(from || "/");
+      await requestPasswordReset(email);
+      setSent(true);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ?? "Nie udalo sie zalogowac";
+          ?.error ?? "Nie udalo sie wyslac linku resetujacego";
       setError(message);
     } finally {
       setLoading(false);
@@ -53,10 +43,10 @@ function LoginForm() {
     <PageShell maxWidth="md" center>
       <div className="mb-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink-muted mb-2">
-          {APP_NAME} · Logowanie
+          {APP_NAME} · Reset hasla
         </p>
         <h1 className="text-5xl font-black tracking-tighter leading-[0.95] text-ink">
-          Zaloguj sie.
+          Odzyskaj dostep.
         </h1>
         <div className="mt-3 h-[3px] w-16 bg-ink" />
       </div>
@@ -65,6 +55,15 @@ function LoginForm() {
         {error && (
           <div className="mb-5">
             <Alert variant="error">{error}</Alert>
+          </div>
+        )}
+
+        {sent && (
+          <div className="mb-5">
+            <Alert variant="success">
+              Jesli konto istnieje, link do ustawienia nowego hasla zostal
+              wyslany na podany adres.
+            </Alert>
           </div>
         )}
 
@@ -81,26 +80,6 @@ function LoginForm() {
             />
           </FormField>
 
-          <FormField label="Haslo" htmlFor="password">
-            <Input
-              id="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </FormField>
-
-          <div className="-mt-2 text-right">
-            <Link
-              href="/forgot-password"
-              className="font-mono text-[11px] uppercase tracking-widest text-ink underline decoration-2 underline-offset-4 hover:bg-[var(--color-lime)] px-1"
-            >
-              Nie pamietasz hasla?
-            </Link>
-          </div>
-
           <Button
             type="submit"
             variant="primary"
@@ -109,28 +88,20 @@ function LoginForm() {
             className="w-full"
             rightIcon={<span aria-hidden>&rarr;</span>}
           >
-            {loading ? "Logowanie" : "Zaloguj sie"}
+            {loading ? "Wysylanie" : "Wyslij link"}
           </Button>
         </form>
       </Card>
 
       <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-muted text-center">
-        Nie masz konta?{" "}
+        Pamietasz haslo?{" "}
         <Link
-          href="/register"
+          href="/login"
           className="text-ink underline decoration-2 underline-offset-4 hover:bg-[var(--color-lime)] px-1"
         >
-          Zarejestruj sie
+          Zaloguj sie
         </Link>
       </p>
     </PageShell>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   );
 }
