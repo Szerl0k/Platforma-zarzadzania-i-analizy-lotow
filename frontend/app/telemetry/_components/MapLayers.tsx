@@ -2,6 +2,7 @@
 
 import { Source, Layer } from "react-map-gl/maplibre";
 import { EMPTY_GEOJSON } from "@/app/telemetry/_utils/telemetryMapHelpers";
+import {useThemeColors} from "@/common/hooks/UseThemeColors";
 
 interface MapLayersProps {
   routesGeoJson: GeoJSON.FeatureCollection;
@@ -9,6 +10,7 @@ interface MapLayersProps {
   flightsGeoJson: GeoJSON.FeatureCollection;
   traveledPathGeoJson?: GeoJSON.FeatureCollection;
   remainingPathGeoJson?: GeoJSON.FeatureCollection;
+  activeBBoxGeoJson?: GeoJSON.FeatureCollection;
 }
 
 /**
@@ -21,9 +23,35 @@ export function MapLayers({
   flightsGeoJson,
   traveledPathGeoJson = EMPTY_GEOJSON,
   remainingPathGeoJson = EMPTY_GEOJSON,
+  activeBBoxGeoJson = EMPTY_GEOJSON,
 }: MapLayersProps) {
+
+    const {navy, lime} = useThemeColors();
+
   return (
     <>
+      {/* Active Bounding Box Outline */}
+      <Source id="bbox-source" type="geojson" data={activeBBoxGeoJson}>
+        <Layer
+          id="bbox-outline"
+          type="line"
+          paint={{
+            "line-color": navy, // --navy
+            "line-width": 1,
+            "line-dasharray": [4, 4],
+            "line-opacity": 0.3,
+          }}
+        />
+        <Layer
+          id="bbox-fill"
+          type="fill"
+          paint={{
+            "fill-color": navy,
+            "fill-opacity": 0.02,
+          }}
+        />
+      </Source>
+
       {/* Flight Path - Traveled Segment */}
       <Source
         id="flight-path-traveled"
@@ -34,7 +62,7 @@ export function MapLayers({
           id="flight-path-traveled-line"
           type="line"
           paint={{
-            "line-color": "#1E3A8A", // --navy
+            "line-color": navy, // --navy
             "line-width": 4,
             "line-opacity": 0.8,
           }}
@@ -51,7 +79,7 @@ export function MapLayers({
           id="flight-path-remaining-line"
           type="line"
           paint={{
-            "line-color": "#1E3A8A", // --navy
+            "line-color": navy, // --navy
             "line-width": 4,
             "line-dasharray": [2, 1],
             "line-opacity": 0.6,
@@ -65,7 +93,7 @@ export function MapLayers({
           id="routes-lines"
           type="line"
           paint={{
-            "line-color": "#BEF264", // --lime
+            "line-color": lime, // --lime
             "line-width": 2,
             "line-dasharray": [3, 2],
           }}
