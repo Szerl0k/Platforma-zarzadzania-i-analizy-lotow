@@ -2,8 +2,13 @@ import { DataSource, Repository, EntityManager } from "typeorm";
 import { AppDataSource } from "../common/database/data-source";
 import { FlightTelemetry } from "./entities/FlightTelemetry";
 
+/**
+ * Container for calculated spatial distances.
+ */
 export interface TelemetryDistances {
+  /** Distance from the origin airport in kilometers. */
   distanceFromOriginKm: number | null;
+  /** Distance to the destination airport in kilometers. */
   distanceToDestinationKm: number | null;
 }
 

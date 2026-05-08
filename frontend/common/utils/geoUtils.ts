@@ -88,3 +88,13 @@ export function getBearingAlongPath(coords: number[][], t: number): number {
     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
   return (Math.atan2(y, x) * (180 / Math.PI) + 360) % 360;
 }
+
+/**
+ * Translates heading in degrees to a universal short geographical direction (N, NE, E, etc.).
+ * @param heading Heading in degrees (0-360)
+ */
+export function getDirectionShort(heading: number): string {
+  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const index = Math.round(heading / 45) % 8;
+  return directions[index];
+}

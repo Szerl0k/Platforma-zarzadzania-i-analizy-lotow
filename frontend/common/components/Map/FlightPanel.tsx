@@ -10,6 +10,7 @@ import {
   calculateMinutesBetween,
   calculateTimeRemaining,
 } from "@/common/utils/flightUtils";
+import { getDirectionShort } from "@/common/utils/geoUtils";
 
 interface FlightPanelProps {
   properties: {
@@ -212,7 +213,7 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
             </span>
             <span className="font-mono font-medium text-base">
               {properties.heading != null
-                ? `${Math.round(properties.heading)}°`
+                ? `${Math.round(properties.heading)}° | ${getDirectionShort(properties.heading)}`
                 : "Brak"}
             </span>
 

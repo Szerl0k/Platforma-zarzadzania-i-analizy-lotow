@@ -18,6 +18,7 @@ import { MapOverlay } from "@/common/components/Map/TelemetryOverlay";
 import { FlightSearch } from "@/common/components/Map/FlightSearch";
 import { MapLayers } from "./MapLayers";
 import { PanelContainer } from "./PanelContainer";
+import { AltitudeLegend } from "./AltitudeLegend";
 import {
   MAP_STYLE_URL,
   mapAirportsToGeoJson,
@@ -26,6 +27,7 @@ import {
   applyPolishLabels,
   loadTelemetryMapImages,
   calculateQuantizedBBox,
+  bboxToGeoJson,
   EMPTY_GEOJSON,
 } from "@/app/telemetry/_utils/telemetryMapHelpers";
 import type { Airport, AirlineWithDestinations } from "@/common/api/airports";
@@ -102,6 +104,8 @@ export default function TelemetryMapView() {
 
   const [cityAirports, setCityAirports] = useState<Airport[]>([]);
   const [highlightedIcao, setHighlightedIcao] = useState<string | null>(null);
+  const [activeBBoxGeoJson, setActiveBBoxGeoJson] =
+    useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
   const [cursor, setCursor] = useState<string>("");
 
   const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
@@ -136,6 +140,7 @@ export default function TelemetryMapView() {
       const bbox = calculateQuantizedBBox(b);
       setFlightBounds(bbox);
       setAirportBounds(bbox);
+      setActiveBBoxGeoJson(bboxToGeoJson(bbox));
     }, 500);
   }, [setFlightBounds, setAirportBounds]);
 
@@ -285,7 +290,7 @@ export default function TelemetryMapView() {
           onMouseLeave={onMouseLeave}
           cursor={cursor}
         >
-          <NavigationControl position="bottom-right" showCompass={false} />
+          <NavigationControl position="bottom-right" showCompass={true} />
 
           <MapLayers
             routesGeoJson={routesGeoJson}
@@ -293,8 +298,11 @@ export default function TelemetryMapView() {
             flightsGeoJson={geoJsonData}
             traveledPathGeoJson={traveledPathGeoJson}
             remainingPathGeoJson={remainingPathGeoJson}
+            activeBBoxGeoJson={activeBBoxGeoJson}
           />
         </MapGL>
+
+        <AltitudeLegend />
 
         <MapOverlay
           flightsCount={flights.length}
