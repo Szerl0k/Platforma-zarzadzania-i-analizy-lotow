@@ -13,8 +13,11 @@ const router = Router();
 const telemetryService = new TelemetryService();
 
 /**
- * Hermetyzuje asynchroniczne funkcje obłusgi żądań, automatycznie przekazując
- * nieprzechwycone wyjątki go globalnego middleware
+ * Hermetyzuje asynchroniczne funkcje obsługi żądań, automatycznie przekazując
+ * nieprzechwycone wyjątki do globalnego middleware.
+ *
+ * @param fn - Asynchroniczna funkcja obsługi żądania Express.
+ * @returns Funkcja middleware Express obsługująca błędy.
  */
 function asyncHandler(
   fn: (req: Request, res: Response, next: NextFunction) => Promise<void>,
@@ -49,7 +52,10 @@ router.get(
 );
 
 /**
- *
+ * Endpoint GET /telemetry/area
+ * Pobiera listę wszystkich aktywnych lotów w danym obszarze geograficznym (Bounding Box).
+ * Wykorzystuje OpenSky Network API do pobierania wektorów stanu.
+ * Obszar jest ograniczony do 400 stopni kwadratowych ze względów wydajnościowych.
  */
 router.get(
   "/area",

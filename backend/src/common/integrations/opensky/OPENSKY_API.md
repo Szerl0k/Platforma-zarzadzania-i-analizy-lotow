@@ -44,36 +44,36 @@ Retrieves the trajectory (path) of a specific aircraft.
 OpenSky uses positional arrays (tuples) for performance. These are mapped in `types.ts`.
 
 ### 3.1 State Vector Tuple (`StateVectorTuple`)
-| Index | Field | Type | Description |
-| :--- | :--- | :--- | :--- |
-| 0 | `icao24` | `string` | Unique ICAO 24-bit address (hex). |
-| 1 | `callsign` | `string \| null` | 8-character callsign. |
-| 2 | `origin_country` | `string` | Country of origin. |
-| 3 | `time_position` | `number \| null` | Last position update (Unix seconds). |
-| 4 | `last_contact` | `number` | Last update in general (Unix seconds). |
-| 5 | `longitude` | `number \| null` | WGS-84 longitude (decimal degrees). |
-| 6 | `latitude` | `number \| null` | WGS-84 latitude (decimal degrees). |
-| 7 | `baro_altitude` | `number \| null` | Barometric altitude (meters). |
-| 8 | `on_ground` | `boolean` | True if aircraft is on ground. |
-| 9 | `velocity` | `number \| null` | Velocity over ground (m/s). |
-| 10 | `true_track` | `number \| null` | True track (decimal degrees, 0° = North). |
-| 11 | `vertical_rate` | `number \| null` | Vertical rate (m/s, positive = climb). |
-| 12 | `sensors` | `number[] \| null` | IDs of contributing receivers. |
-| 13 | `geo_altitude` | `number \| null` | Geometric altitude (meters). |
-| 14 | `squawk` | `string \| null` | Transponder code (Squawk). |
-| 15 | `spi` | `boolean` | Special Purpose Indicator flag. |
-| 16 | `position_source`| `number` | Source (0=ADS-B, 1=Asterix, 2=MLAT). |
-| 17 | `category` | `number` | Aircraft category (0-20). |
+| Index | Field             | Type               | Description                               |
+|:------|:------------------|:-------------------|:------------------------------------------|
+| 0     | `icao24`          | `string`           | Unique ICAO 24-bit address (hex).         |
+| 1     | `callsign`        | `string \| null`   | 8-character callsign.                     |
+| 2     | `origin_country`  | `string`           | Country of origin.                        |
+| 3     | `time_position`   | `number \| null`   | Last position update (Unix seconds).      |
+| 4     | `last_contact`    | `number`           | Last update in general (Unix seconds).    |
+| 5     | `longitude`       | `number \| null`   | WGS-84 longitude (decimal degrees).       |
+| 6     | `latitude`        | `number \| null`   | WGS-84 latitude (decimal degrees).        |
+| 7     | `baro_altitude`   | `number \| null`   | Barometric altitude (meters).             |
+| 8     | `on_ground`       | `boolean`          | True if aircraft is on ground.            |
+| 9     | `velocity`        | `number \| null`   | Velocity over ground (m/s).               |
+| 10    | `true_track`      | `number \| null`   | True track (decimal degrees, 0° = North). |
+| 11    | `vertical_rate`   | `number \| null`   | Vertical rate (m/s, positive = climb).    |
+| 12    | `sensors`         | `number[] \| null` | IDs of contributing receivers.            |
+| 13    | `geo_altitude`    | `number \| null`   | Geometric altitude (meters).              |
+| 14    | `squawk`          | `string \| null`   | Transponder code (Squawk).                |
+| 15    | `spi`             | `boolean`          | Special Purpose Indicator flag.           |
+| 16    | `position_source` | `number`           | Source (0=ADS-B, 1=Asterix, 2=MLAT).      |
+| 17    | `category`        | `number`           | Aircraft category (0-20).                 |
 
 ### 3.2 Track Path Tuple (`TrackPathTuple`)
-| Index | Field | Type | Description |
-| :--- | :--- | :--- | :--- |
-| 0 | `time` | `number` | Unix timestamp. |
-| 1 | `latitude` | `number \| null` | Latitude (decimal degrees). |
-| 2 | `longitude` | `number \| null` | Longitude (decimal degrees). |
-| 3 | `baro_altitude` | `number \| null` | Altitude (meters). |
-| 4 | `true_track` | `number \| null` | Heading (decimal degrees). |
-| 5 | `on_ground` | `boolean` | Ground status. |
+| Index | Field           | Type             | Description                  |
+|:------|:----------------|:-----------------|:-----------------------------|
+| 0     | `time`          | `number`         | Unix timestamp.              |
+| 1     | `latitude`      | `number \| null` | Latitude (decimal degrees).  |
+| 2     | `longitude`     | `number \| null` | Longitude (decimal degrees). |
+| 3     | `baro_altitude` | `number \| null` | Altitude (meters).           |
+| 4     | `true_track`    | `number \| null` | Heading (decimal degrees).   |
+| 5     | `on_ground`     | `boolean`        | Ground status.               |
 
 ---
 
