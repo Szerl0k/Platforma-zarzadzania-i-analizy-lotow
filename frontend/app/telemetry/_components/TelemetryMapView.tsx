@@ -290,7 +290,7 @@ export default function TelemetryMapView() {
           onMouseLeave={onMouseLeave}
           cursor={cursor}
         >
-          <NavigationControl position="bottom-right" showCompass={true}/>
+          <NavigationControl position="bottom-right" showCompass={true} />
 
           <MapLayers
             routesGeoJson={routesGeoJson}

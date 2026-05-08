@@ -2,7 +2,7 @@
 
 import { Source, Layer } from "react-map-gl/maplibre";
 import { EMPTY_GEOJSON } from "@/app/telemetry/_utils/telemetryMapHelpers";
-import {useThemeColors} from "@/common/hooks/UseThemeColors";
+import { useThemeColors } from "@/common/hooks/UseThemeColors";
 
 interface MapLayersProps {
   routesGeoJson: GeoJSON.FeatureCollection;
@@ -25,8 +25,7 @@ export function MapLayers({
   remainingPathGeoJson = EMPTY_GEOJSON,
   activeBBoxGeoJson = EMPTY_GEOJSON,
 }: MapLayersProps) {
-
-    const {navy, lime, ink, navyHover} = useThemeColors();
+  const { navy, lime, ink, navyHover } = useThemeColors();
 
   return (
     <>
@@ -137,9 +136,12 @@ export function MapLayers({
             "icon-size": [
               "interpolate",
               ["linear"],
-              ["ln", ["+", ["max", ["coalesce", ["get", "altitude"], 0], 0], 1]],
+              [
+                "ln",
+                ["+", ["max", ["coalesce", ["get", "altitude"], 0], 0], 1],
+              ],
               0,
-              0.50,
+              0.5,
               9.3927, // ln(12000 + 1)
               0.62,
             ],
@@ -158,9 +160,7 @@ export function MapLayers({
             "icon-halo-width": 2,
             "icon-halo-blur": 0,
           }}
-
         />
-
       </Source>
 
       {/* Animated airplanes along routes */}

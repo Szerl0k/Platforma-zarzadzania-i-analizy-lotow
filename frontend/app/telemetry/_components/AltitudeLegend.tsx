@@ -16,43 +16,41 @@ export function AltitudeLegend() {
       <div className="w-full flex flex-col gap-1.5">
         {/* Gradient Bar with Ticks */}
         <div className="w-full relative h-3">
-          <div 
+          <div
             className="w-full h-full border border-ink/20"
             style={{
-              background: "linear-gradient(to right, var(--lime), var(--navy))"
+              background: "linear-gradient(to right, var(--lime), var(--navy))",
             }}
           />
           {/* Tick Marks */}
           {[0, 25, 50, 75, 100].map((pos) => (
-            <div 
-              key={pos} 
-              className="absolute top-0 h-full w-[2px] bg-ink/40 -translate-x-1/2" 
-              style={{ left: `${pos}%` }} 
+            <div
+              key={pos}
+              className="absolute top-0 h-full w-[2px] bg-ink/40 -translate-x-1/2"
+              style={{ left: `${pos}%` }}
             />
           ))}
         </div>
 
         {/* Labels positioned relative to the bar's width */}
         <div className="w-full relative h-4">
-            <span className="absolute left-0 -translate-x-1/2 font-mono text-[10px] font-bold text-ink whitespace-nowrap">
-              0 m
-            </span>
-            <span className="absolute left-1/4 -translate-x-1/2 font-mono text-[10px] font-bold text-ink-muted whitespace-nowrap">
-              3,000 m
-            </span>
-            <span className="absolute left-1/2 -translate-x-1/2 font-mono text-[10px] font-bold text-ink-muted whitespace-nowrap">
-              6,000 m
-            </span>
-            <span className="absolute left-3/4 -translate-x-1/2 font-mono text-[10px] font-bold text-ink-muted whitespace-nowrap">
-              9,000 m
-            </span>
-            <span className="absolute left-full -translate-x-1/2 font-mono text-[10px] font-bold text-ink whitespace-nowrap">
-              12,000+ m
-            </span>
+          <span className="absolute left-0 -translate-x-1/2 font-mono text-[10px] font-bold text-ink whitespace-nowrap">
+            0 m
+          </span>
+          <span className="absolute left-1/4 -translate-x-1/2 font-mono text-[10px] font-bold text-ink-muted whitespace-nowrap">
+            3,000 m
+          </span>
+          <span className="absolute left-1/2 -translate-x-1/2 font-mono text-[10px] font-bold text-ink-muted whitespace-nowrap">
+            6,000 m
+          </span>
+          <span className="absolute left-3/4 -translate-x-1/2 font-mono text-[10px] font-bold text-ink-muted whitespace-nowrap">
+            9,000 m
+          </span>
+          <span className="absolute left-full -translate-x-1/2 font-mono text-[10px] font-bold text-ink whitespace-nowrap">
+            12,000+ m
+          </span>
         </div>
       </div>
     </div>
-
   );
 }
-

@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 
 /**
  * Służy do ekstrakcji wartości zmiennych CSS zdefiniowanych w :root (globals.css)
@@ -10,28 +10,28 @@ import {useState, useEffect} from "react";
  *
  */
 export function useThemeColors() {
-    const [colors, setColors] = useState({
-        navy: "#1E3A8A",
-        lime: "#BEF264",
-        navyHover: "#0F1E4A",
-        ink: "#0A0A0A",
+  const [colors, setColors] = useState({
+    navy: "#1E3A8A",
+    lime: "#BEF264",
+    navyHover: "#0F1E4A",
+    ink: "#0A0A0A",
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    const getVar = (name: string, fallback: string) => {
+      const value = getComputedStyle(root).getPropertyValue(name).trim();
+      return value || fallback;
+    };
+
+    setColors({
+      navy: getVar("--navy", "#1E3A8A"),
+      lime: getVar("--lime", "#BEF264"),
+      navyHover: getVar("--navy-hover", "#0F1E4A"),
+      ink: getVar("--ink", "#0A0A0A"),
     });
+  }, []);
 
-    useEffect(() => {
-        const root = document.documentElement;
-
-        const getVar = (name: string, fallback: string) => {
-            const value = getComputedStyle(root).getPropertyValue(name).trim();
-            return value || fallback
-        };
-
-        setColors({
-            navy: getVar("--navy", "#1E3A8A"),
-            lime: getVar("--lime", "#BEF264"),
-            navyHover: getVar("--navy-hover", "#0F1E4A"),
-            ink: getVar("--ink", "#0A0A0A"),
-        })
-    }, []);
-
-    return colors;
+  return colors;
 }
