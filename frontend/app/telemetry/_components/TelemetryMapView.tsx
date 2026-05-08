@@ -18,6 +18,7 @@ import { MapOverlay } from "@/common/components/Map/TelemetryOverlay";
 import { FlightSearch } from "@/common/components/Map/FlightSearch";
 import { MapLayers } from "./MapLayers";
 import { PanelContainer } from "./PanelContainer";
+import { AltitudeLegend } from "./AltitudeLegend";
 import {
   MAP_STYLE_URL,
   mapAirportsToGeoJson,
@@ -300,6 +301,8 @@ export default function TelemetryMapView() {
             activeBBoxGeoJson={activeBBoxGeoJson}
           />
         </MapGL>
+
+        <AltitudeLegend />
 
         <MapOverlay
           flightsCount={flights.length}

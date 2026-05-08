@@ -88,6 +88,14 @@ export async function loadTelemetryMapImages(map: MaplibreMap) {
     );
   }
 
+  if (!map.hasImage("airplane-icon-sdf")) {
+    promises.push(
+      map.loadImage("/airplane.png").then((response) => {
+        map.addImage("airplane-icon-sdf", response.data, { sdf: true });
+      }),
+    );
+  }
+
   if (!map.hasImage("airport-icon")) {
     promises.push(tintMapImage(map, "airport-icon", "/airport.png", "#1E3A8A"));
   }

@@ -13,6 +13,8 @@ export function useThemeColors() {
     const [colors, setColors] = useState({
         navy: "#1E3A8A",
         lime: "#BEF264",
+        navyHover: "#0F1E4A",
+        ink: "#0A0A0A",
     });
 
     useEffect(() => {
@@ -26,6 +28,8 @@ export function useThemeColors() {
         setColors({
             navy: getVar("--navy", "#1E3A8A"),
             lime: getVar("--lime", "#BEF264"),
+            navyHover: getVar("--navy-hover", "#0F1E4A"),
+            ink: getVar("--ink", "#0A0A0A"),
         })
     }, []);
 

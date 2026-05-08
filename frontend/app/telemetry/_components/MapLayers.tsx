@@ -26,7 +26,7 @@ export function MapLayers({
   activeBBoxGeoJson = EMPTY_GEOJSON,
 }: MapLayersProps) {
 
-    const {navy, lime} = useThemeColors();
+    const {navy, lime, ink, navyHover} = useThemeColors();
 
   return (
     <>
@@ -130,13 +130,37 @@ export function MapLayers({
           id="flights-points"
           type="symbol"
           layout={{
-            "icon-image": "airplane-icon",
+            "icon-image": "airplane-icon-sdf",
             "icon-rotate": ["get", "heading"],
             "icon-rotation-alignment": "map",
             "icon-allow-overlap": true,
-            "icon-size": 0.5,
+            "icon-size": [
+              "interpolate",
+              ["linear"],
+              ["ln", ["+", ["max", ["coalesce", ["get", "altitude"], 0], 0], 1]],
+              0,
+              0.50,
+              9.3927, // ln(12000 + 1)
+              0.62,
+            ],
           }}
+          paint={{
+            "icon-color": [
+              "interpolate",
+              ["linear"],
+              ["max", ["coalesce", ["get", "altitude"], 0], 0],
+              0,
+              lime,
+              12000,
+              navy,
+            ],
+            "icon-halo-color": ink,
+            "icon-halo-width": 2,
+            "icon-halo-blur": 0,
+          }}
+
         />
+
       </Source>
 
       {/* Animated airplanes along routes */}
