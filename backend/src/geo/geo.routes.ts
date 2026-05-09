@@ -102,8 +102,8 @@ router.get(
       res.status(400).json({ error: "Airport code is required" });
       return;
     }
-    const routes = await getAirportRoutes(code);
-    res.json(routes);
+    const { routes, stale } = await getAirportRoutes(code);
+    res.json({ routes, stale });
   }),
 );
 

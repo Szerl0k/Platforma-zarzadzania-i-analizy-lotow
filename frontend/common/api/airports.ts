@@ -57,10 +57,15 @@ export interface AirlineWithDestinations {
   destinations: Airport[];
 }
 
+export interface AirportRoutesResponse {
+  routes: AirlineWithDestinations[];
+  stale: boolean;
+}
+
 export async function getAirportRoutes(
   icaoCode: string,
-): Promise<AirlineWithDestinations[]> {
-  const { data } = await apiClient.get<AirlineWithDestinations[]>(
+): Promise<AirportRoutesResponse> {
+  const { data } = await apiClient.get<AirportRoutesResponse>(
     `/airports/${encodeURIComponent(icaoCode)}/routes`,
   );
   return data;
