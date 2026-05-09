@@ -7,6 +7,7 @@ import { Country } from "../../geo/entities/Country";
 import { City } from "../../geo/entities/City";
 import { Airport } from "../../geo/entities/Airport";
 import { Airline } from "../../geo/entities/Airline";
+import { AirportRoute } from "../../geo/entities/AirportRoute";
 
 // Flight entities
 import { FlightStatus } from "../../flights/entities/FlightStatus";
@@ -54,6 +55,7 @@ export const AppDataSource = new DataSource({
     City,
     Airport,
     Airline,
+    AirportRoute,
     FlightStatus,
     Flight,
     FlightCodeshare,
