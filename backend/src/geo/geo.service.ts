@@ -460,7 +460,11 @@ function setCachedRoutes(
   data: RouteEntry[],
   stale: boolean,
 ): void {
-  routesCache.set(icao, { data, stale, expiresAt: Date.now() + ROUTES_CACHE_TTL_MS });
+  routesCache.set(icao, {
+    data,
+    stale,
+    expiresAt: Date.now() + ROUTES_CACHE_TTL_MS,
+  });
 }
 
 async function getDbRouteFreshness(
@@ -495,7 +499,10 @@ async function buildRoutesFromDb(icao: string): Promise<RouteEntry[]> {
   >();
   for (const row of rows) {
     if (!byAirline.has(row.airlineCode)) {
-      byAirline.set(row.airlineCode, { airline: row.airline, destinations: [] });
+      byAirline.set(row.airlineCode, {
+        airline: row.airline,
+        destinations: [],
+      });
     }
     byAirline.get(row.airlineCode)!.destinations.push(row.destinationAirport);
   }

@@ -45,9 +45,7 @@ export class AddAirportRoutesTable1778290000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX "idx_airport_routes_origin_fetched"`,
-    );
+    await queryRunner.query(`DROP INDEX "idx_airport_routes_origin_fetched"`);
     await queryRunner.query(
       `ALTER TABLE "airport_routes" DROP CONSTRAINT "fk_airport_routes_destination"`,
     );

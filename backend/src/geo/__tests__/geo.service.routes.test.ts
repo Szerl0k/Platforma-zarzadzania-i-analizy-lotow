@@ -24,10 +24,12 @@ import {
 const mockGetRepository = AppDataSource.getRepository as jest.Mock;
 const mockGetAeroApiClient = getAeroApiClient as jest.Mock;
 
-function makeQueryBuilder(overrides: {
-  getRawOne?: jest.Mock;
-  getMany?: jest.Mock;
-} = {}) {
+function makeQueryBuilder(
+  overrides: {
+    getRawOne?: jest.Mock;
+    getMany?: jest.Mock;
+  } = {},
+) {
   const qb: Record<string, jest.Mock> = {};
   qb.select = jest.fn().mockReturnValue(qb);
   qb.where = jest.fn().mockReturnValue(qb);
@@ -35,8 +37,7 @@ function makeQueryBuilder(overrides: {
   qb.innerJoinAndSelect = jest.fn().mockReturnValue(qb);
   qb.leftJoinAndSelect = jest.fn().mockReturnValue(qb);
   qb.getRawOne =
-    overrides.getRawOne ??
-    jest.fn().mockResolvedValue({ maxFetchedAt: null });
+    overrides.getRawOne ?? jest.fn().mockResolvedValue({ maxFetchedAt: null });
   qb.getMany = overrides.getMany ?? jest.fn().mockResolvedValue([]);
   return qb;
 }
@@ -372,7 +373,9 @@ describe("getAirportRoutes", () => {
     const result = await getAirportRoutes("EIDW");
 
     expect(mockClient.getScheduledFlights).toHaveBeenCalledTimes(1);
-    expect(routeRepo.delete).toHaveBeenCalledWith({ originAirportCode: "EIDW" });
+    expect(routeRepo.delete).toHaveBeenCalledWith({
+      originAirportCode: "EIDW",
+    });
     expect(routeRepo.insert).toHaveBeenCalled();
     expect(result.stale).toBe(false);
     expect(result.routes).toHaveLength(1);
@@ -421,7 +424,9 @@ describe("getAirportRoutes", () => {
 
     await getAirportRoutes("EDDM");
 
-    expect(routeRepo.delete).toHaveBeenCalledWith({ originAirportCode: "EDDM" });
+    expect(routeRepo.delete).toHaveBeenCalledWith({
+      originAirportCode: "EDDM",
+    });
     expect(routeRepo.insert).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
