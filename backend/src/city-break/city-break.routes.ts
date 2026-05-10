@@ -64,9 +64,9 @@ router.get(
     try {
       const query = ProposalDetailsQuerySchema.parse(req.query);
       const destinationIcao = String(req.params.destinationIcao ?? "");
-      if (!destinationIcao) {
+      if (!/^[A-Za-z0-9]{3,4}$/.test(destinationIcao)) {
         handleHttpError(
-          new BadRequestError("destinationIcao jest wymagany"),
+          new BadRequestError("destinationIcao must be 3-4 alphanumeric chars"),
           res,
         );
         return;
