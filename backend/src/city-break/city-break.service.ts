@@ -6,7 +6,6 @@ import {
   getAeroApiClient,
   AeroAPIError,
   AeroAPISchedule,
-  AeroAPISegmentedFlight,
 } from "../common/integrations/aeroapi";
 import { findAirportInDb } from "../geo/geo.service";
 import {
@@ -308,53 +307,47 @@ export class CityBreakService {
 
     const { start, end } = clampWindow(params.dateFrom, params.dateTo);
 
-    let segments: AeroAPISegmentedFlight[] = [];
+    let schedules: AeroAPISchedule[] = [];
     try {
-      const response = await this.aeroClient.getFlightsBetween(
-        originIcao,
-        destIcao,
-        {
-          start: `${start}T00:00:00Z`,
-          end: `${end}T23:59:59Z`,
-          max_pages: 1,
-        },
-      );
-      segments = response.flights ?? [];
+      const response = await this.aeroClient.getScheduledFlights(start, end, {
+        origin: originIcao,
+        destination: destIcao,
+        max_pages: 1,
+      });
+      schedules = response.scheduled ?? [];
     } catch (err) {
       wrapAeroError(err);
     }
 
-    const options: ProposalFlightOptionDTO[] = segments.map((seg) => {
-      const segs = seg.segments ?? [];
-      const first = segs[0];
-      const last = segs[segs.length - 1];
-      if (!first || !last) {
+    const options: ProposalFlightOptionDTO[] = schedules
+      .filter((s) => s.scheduled_out && s.scheduled_in)
+      .map((s) => {
+        const dep = s.scheduled_out;
+        const arr = s.scheduled_in;
+        const identIcao = s.actual_ident_icao ?? s.ident_icao ?? null;
+        const identIata = s.actual_ident_iata ?? s.ident_iata ?? null;
+        const airlineIcao = identIcao?.match(/^[A-Z]{3}/)?.[0] ?? null;
+        const airlineIata = identIata?.match(/^[A-Z0-9]{2}/)?.[0] ?? null;
+        const flightNumber =
+          (identIata ?? identIcao ?? s.ident)?.match(/\d+[A-Z]?$/)?.[0] ??
+          null;
         return {
-          airlineIcao: null,
-          airlineIata: null,
+          airlineIcao,
+          airlineIata,
           airlineName: null,
-          flightNumber: null,
-          scheduledDeparture: null,
-          scheduledArrival: null,
-          durationMinutes: null,
+          flightNumber,
+          scheduledDeparture: dep,
+          scheduledArrival: arr,
+          durationMinutes: durationMinutes(dep, arr),
           isDirect: true,
           stops: 0,
         };
-      }
-      const dep = first.scheduled_out;
-      const arr = last.scheduled_in;
-      return {
-        airlineIcao: first.operator_icao ?? null,
-        airlineIata: first.operator_iata ?? null,
-        airlineName: first.operator ?? null,
-        flightNumber: first.flight_number ?? first.ident,
-        scheduledDeparture: dep,
-        scheduledArrival: arr,
-        durationMinutes: dep && arr ? durationMinutes(dep, arr) : null,
-        isDirect: segs.length <= 1,
-        stops: Math.max(0, segs.length - 1),
-      };
-    });
+      })
+      .sort((a, b) => {
+        const ta = a.scheduledDeparture ? Date.parse(a.scheduledDeparture) : 0;
+        const tb = b.scheduledDeparture ? Date.parse(b.scheduledDeparture) : 0;
+        return ta - tb;
+      });
 
     const result: ProposalDetailsDTO = {
       originIcao,

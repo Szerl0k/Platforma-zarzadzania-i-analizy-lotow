@@ -331,43 +331,26 @@ describe("CityBreakService.getProposalDetails", () => {
     }));
   });
 
-  it("maps direct and connecting segments", async () => {
-    aeroClient.getFlightsBetween.mockResolvedValue({
-      flights: [
+  it("maps schedules into direct flight options sorted by departure", async () => {
+    aeroClient.getScheduledFlights.mockResolvedValue({
+      scheduled: [
         {
-          segments: [
-            {
-              ident: "LH456",
-              flight_number: "456",
-              operator: "Lufthansa",
-              operator_icao: "DLH",
-              operator_iata: "LH",
-              scheduled_out: "2026-05-20T08:00:00Z",
-              scheduled_in: "2026-05-20T10:00:00Z",
-            },
-          ],
+          ident: "AFR1234",
+          ident_icao: "AFR1234",
+          ident_iata: "AF1234",
+          actual_ident_icao: "AFR1234",
+          actual_ident_iata: "AF1234",
+          scheduled_out: "2026-05-20T09:00:00Z",
+          scheduled_in: "2026-05-20T11:30:00Z",
         },
         {
-          segments: [
-            {
-              ident: "AF1",
-              flight_number: "1",
-              operator: "Air France",
-              operator_icao: "AFR",
-              operator_iata: "AF",
-              scheduled_out: "2026-05-20T09:00:00Z",
-              scheduled_in: "2026-05-20T11:30:00Z",
-            },
-            {
-              ident: "AF2",
-              flight_number: "2",
-              operator: "Air France",
-              operator_icao: "AFR",
-              operator_iata: "AF",
-              scheduled_out: "2026-05-20T13:00:00Z",
-              scheduled_in: "2026-05-20T14:00:00Z",
-            },
-          ],
+          ident: "DLH456",
+          ident_icao: "DLH456",
+          ident_iata: "LH456",
+          actual_ident_icao: "DLH456",
+          actual_ident_iata: "LH456",
+          scheduled_out: "2026-05-20T08:00:00Z",
+          scheduled_in: "2026-05-20T10:00:00Z",
         },
       ],
     });
@@ -379,10 +362,12 @@ describe("CityBreakService.getProposalDetails", () => {
     });
     expect(result.destinationIcao).toBe("EDDF");
     expect(result.options).toHaveLength(2);
+    expect(result.options[0].airlineIata).toBe("LH");
+    expect(result.options[0].flightNumber).toBe("456");
     expect(result.options[0].isDirect).toBe(true);
     expect(result.options[0].stops).toBe(0);
     expect(result.options[0].durationMinutes).toBe(120);
-    expect(result.options[1].isDirect).toBe(false);
-    expect(result.options[1].stops).toBe(1);
+    expect(result.options[1].airlineIata).toBe("AF");
+    expect(result.options[1].durationMinutes).toBe(150);
   });
 });
