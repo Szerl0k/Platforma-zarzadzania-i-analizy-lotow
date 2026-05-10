@@ -14,6 +14,19 @@ import { FlightNotFoundError } from "../common/errors";
 import { FlightsRepository } from "./flights.repository";
 import { FlightUtils } from "./flights.utils";
 import { findAirlineInDb } from "../geo/geo.service";
+import { Flight } from "./entities/Flight";
+
+const FULL_FLIGHT_RELATIONS = [
+  "status",
+  "origin",
+  "origin.city",
+  "origin.city.country",
+  "destination",
+  "destination.city",
+  "destination.city.country",
+  "operatingAirline",
+  "codeshares",
+];
 
 /**
  * Service handling commercial flight operations, including integration with AeroAPI
@@ -204,17 +217,7 @@ export class FlightsService {
     // 1. Try to fetch from DB first to check for cache
     const existingFlight = await this.flightsRepository.findByCallsign(
       identIcao,
-      [
-        "status",
-        "origin",
-        "origin.city",
-        "origin.city.country",
-        "destination",
-        "destination.city",
-        "destination.city.country",
-        "operatingAirline",
-        "codeshares",
-      ],
+      FULL_FLIGHT_RELATIONS,
     );
 
     if (existingFlight) {
@@ -243,9 +246,39 @@ export class FlightsService {
     }
 
     const flightDetails: AeroAPIFlightDetails = response.flights[0];
+    const flight = await this.persistAeroFlight(flightDetails);
+    return FlightUtils.mapToDTO(flight, "AeroAPI");
+  }
 
-    // Transaction to ensure consistency
-    const flight = await this.dataSource.transaction(async (manager) => {
+  /**
+   * Fetches a flight from AeroAPI by its `fa_flight_id` and persists it (create-or-update).
+   * Used as a second-chance ingestion path when telemetry locate finds a `faFlightId`
+   * that has no corresponding row in the `flights` table.
+   *
+   * @param faFlightId - AeroAPI unique flight identifier.
+   * @returns The persisted Flight entity, or null if AeroAPI returned no matching flight.
+   */
+  public async ingestByFaFlightId(faFlightId: string): Promise<Flight | null> {
+    let response: AeroAPIStandardFlightsResponse;
+    try {
+      response = await this.aeroClient.getFlightInfo(faFlightId);
+    } catch {
+      return null;
+    }
+    if (!response.flights || response.flights.length === 0) {
+      return null;
+    }
+    return this.persistAeroFlight(response.flights[0]);
+  }
+
+  /**
+   * Persists an AeroAPI flight payload (create-or-update by `fa_flight_id`) inside a
+   * single transaction, syncs codeshares, and returns the reloaded Flight with relations.
+   */
+  private async persistAeroFlight(
+    flightDetails: AeroAPIFlightDetails,
+  ): Promise<Flight> {
+    return this.dataSource.transaction(async (manager) => {
       const status = await this.flightsRepository.findOrCreateStatus(
         flightDetails.status,
         manager,
@@ -279,17 +312,7 @@ export class FlightsService {
 
       let flightRecord = await this.flightsRepository.findByFaFlightId(
         flightDetails.fa_flight_id,
-        [
-          "status",
-          "origin",
-          "origin.city",
-          "origin.city.country",
-          "destination",
-          "destination.city",
-          "destination.city.country",
-          "operatingAirline",
-          "codeshares",
-        ],
+        FULL_FLIGHT_RELATIONS,
         manager,
       );
 
@@ -306,7 +329,6 @@ export class FlightsService {
         );
       }
 
-      // Handle codeshares
       if (flightDetails.codeshares_iata?.length) {
         await this.flightsRepository.syncCodeshares(
           flightRecord.id,
@@ -315,20 +337,10 @@ export class FlightsService {
         );
       }
 
-      // Reload with relations for final DTO mapping
-      return (await this.flightsRepository.findById(flightRecord.id, [
-        "status",
-        "origin",
-        "origin.city",
-        "origin.city.country",
-        "destination",
-        "destination.city",
-        "destination.city.country",
-        "operatingAirline",
-        "codeshares",
-      ]))!;
+      return (await this.flightsRepository.findById(
+        flightRecord.id,
+        FULL_FLIGHT_RELATIONS,
+      ))!;
     });
-
-    return FlightUtils.mapToDTO(flight, "AeroAPI");
   }
 }

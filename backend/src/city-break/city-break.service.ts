@@ -329,8 +329,7 @@ export class CityBreakService {
         const airlineIcao = identIcao?.match(/^[A-Z]{3}/)?.[0] ?? null;
         const airlineIata = identIata?.match(/^[A-Z0-9]{2}/)?.[0] ?? null;
         const flightNumber =
-          (identIata ?? identIcao ?? s.ident)?.match(/\d+[A-Z]?$/)?.[0] ??
-          null;
+          (identIata ?? identIcao ?? s.ident)?.match(/\d+[A-Z]?$/)?.[0] ?? null;
         return {
           airlineIcao,
           airlineIata,
