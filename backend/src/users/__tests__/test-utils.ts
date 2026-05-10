@@ -143,5 +143,6 @@ export function makePreferences(
 export function makeMailer(): jest.Mocked<Mailer> {
   return {
     sendPasswordReset: jest.fn(),
+    sendFlightNotification: jest.fn(),
   };
 }

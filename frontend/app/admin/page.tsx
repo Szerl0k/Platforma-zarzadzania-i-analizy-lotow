@@ -24,6 +24,13 @@ const TILES = [
     title: "Uprawnienia",
     description: "Definiuj uprawnienia używane w systemie.",
   },
+  {
+    href: "/admin/api-usage",
+    perm: "api-usage:read",
+    title: "Zużycie API",
+    description:
+      "Monitoruj zużycie OpenSky i AeroAPI względem darmowego limitu.",
+  },
 ];
 
 export default function AdminHomePage() {

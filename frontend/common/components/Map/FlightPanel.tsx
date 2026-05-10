@@ -1,8 +1,9 @@
 "use client";
 
-import { Spinner, Alert } from "@/common/components";
+import { Spinner, Alert, TrackThisFlightButton } from "@/common/components";
 import { useFlightDetailsById } from "@/common/hooks/useFlights";
 import { useLocateFlight } from "@/common/hooks/useTelemetry";
+import { useAuth } from "@/common/hooks/useAuth";
 import { useMemo, useEffect, useState } from "react";
 import {
   calculateFlightDuration,
@@ -25,6 +26,7 @@ interface FlightPanelProps {
 }
 
 export function FlightPanel({ properties, onClose }: FlightPanelProps) {
+  const { user } = useAuth();
   // Local state for "Time Left" to allow it to tick if needed, though minutes is fine for static render
   const [now, setNow] = useState(new Date());
 
@@ -112,6 +114,16 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
           </button>
         </div>
       </div>
+
+      {/* Track this flight */}
+      {flightDetails && user && (
+        <div className="p-3 border-b-2 border-ink shrink-0">
+          <TrackThisFlightButton
+            flightId={flightDetails.id}
+            source="map_click"
+          />
+        </div>
+      )}
 
       {/* Visual Timeline */}
       {flightDetails && (

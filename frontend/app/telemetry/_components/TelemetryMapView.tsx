@@ -13,6 +13,8 @@ import { useAirports } from "@/common/hooks/useAirports";
 import { useAirportRoutes } from "@/common/hooks/useAirportRoutes";
 import { useRouteAnimation } from "@/common/hooks/useRouteAnimation";
 import { useFlightPath } from "@/common/hooks/useFlights";
+import { useMyFlights } from "@/common/hooks/useTracking";
+import { useAuth } from "@/common/hooks/useAuth";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapOverlay } from "@/common/components/Map/TelemetryOverlay";
 import { FlightSearch } from "@/common/components/Map/FlightSearch";
@@ -108,7 +110,21 @@ export default function TelemetryMapView() {
     useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
   const [cursor, setCursor] = useState<string>("");
 
-  const geoJsonData = useMemo(() => mapFlightsToGeoJson(flights), [flights]);
+  const { user } = useAuth();
+  const { flights: myTrackedFlights } = useMyFlights(user ? 30_000 : 600_000);
+  const trackedCallsigns = useMemo(() => {
+    if (!user) return new Set<string>();
+    return new Set(
+      myTrackedFlights
+        .map((f) => f.callsign?.trim())
+        .filter((c): c is string => !!c && c.length > 0),
+    );
+  }, [user, myTrackedFlights]);
+
+  const geoJsonData = useMemo(
+    () => mapFlightsToGeoJson(flights, trackedCallsigns),
+    [flights, trackedCallsigns],
+  );
 
   const airportsGeoJson = useMemo<GeoJSON.FeatureCollection>(() => {
     const base = mapAirportsToGeoJson(airports);

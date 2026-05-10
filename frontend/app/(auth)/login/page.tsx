@@ -92,6 +92,15 @@ function LoginForm() {
             />
           </FormField>
 
+          <div className="-mt-2 text-right">
+            <Link
+              href="/forgot-password"
+              className="font-mono text-[11px] uppercase tracking-widest text-ink underline decoration-2 underline-offset-4 hover:bg-[var(--color-lime)] px-1"
+            >
+              Nie pamietasz hasla?
+            </Link>
+          </div>
+
           <Button
             type="submit"
             variant="primary"

@@ -56,4 +56,11 @@ export class TrackedFlight extends BaseEntity {
     name: "stopped_tracking_at",
   })
   stoppedTrackingAt!: Date | null;
+
+  @Column({
+    type: "timestamp with time zone",
+    nullable: true,
+    name: "last_notified_at",
+  })
+  lastNotifiedAt!: Date | null;
 }

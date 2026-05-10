@@ -284,6 +284,7 @@ export function mapAirportsToGeoJson(
 
 export function mapFlightsToGeoJson(
   flights: FlightPositionDTO[],
+  trackedCallsigns: Set<string> = new Set(),
 ): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
@@ -294,20 +295,27 @@ export function mapFlightsToGeoJson(
           typeof f.location.coordinates[0] === "number" &&
           typeof f.location.coordinates[1] === "number",
       )
-      .map((f) => ({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [f.location!.coordinates[0], f.location!.coordinates[1]],
-        },
-        properties: {
-          icao24: f.icao24,
-          callsign: f.callsign?.trim() || f.icao24,
-          altitude: f.altitude,
-          velocity: f.velocity,
-          heading: f.heading,
-          onGround: f.onGround,
-        },
-      })),
+      .map((f) => {
+        const callsign = f.callsign?.trim() || f.icao24;
+        return {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [
+              f.location!.coordinates[0],
+              f.location!.coordinates[1],
+            ],
+          },
+          properties: {
+            icao24: f.icao24,
+            callsign,
+            altitude: f.altitude,
+            velocity: f.velocity,
+            heading: f.heading,
+            onGround: f.onGround,
+            tracked: trackedCallsigns.has(callsign),
+          },
+        };
+      }),
   };
 }

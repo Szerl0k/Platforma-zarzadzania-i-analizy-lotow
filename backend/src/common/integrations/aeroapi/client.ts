@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 
+import { recordApiCall } from "../usage/recorder";
 import {
   AeroAPIQueryParams,
   AeroAPIAirportFlightParams,
@@ -12,6 +13,23 @@ import {
   AeroAPIOperatorInfo,
   AeroAPIFlightPositionResponse,
 } from "./types";
+
+const SAFE_PATH_SEGMENT = /^[A-Za-z0-9_-]{1,32}$/;
+const SAFE_DATE_SEGMENT = /^\d{4}-\d{2}-\d{2}$/;
+
+function assertSafePathSegment(value: string, name: string): string {
+  if (!SAFE_PATH_SEGMENT.test(value)) {
+    throw new Error(`Invalid ${name}: must match ${SAFE_PATH_SEGMENT}`);
+  }
+  return value;
+}
+
+function assertSafeDateSegment(value: string, name: string): string {
+  if (!SAFE_DATE_SEGMENT.test(value)) {
+    throw new Error(`Invalid ${name}: must be YYYY-MM-DD`);
+  }
+  return value;
+}
 
 export class AeroAPIError extends Error {
   public readonly status: number | null;
@@ -57,10 +75,29 @@ export class AeroAPIClient {
     endpoint: string,
     params?: AeroAPIQueryParams,
   ): Promise<T> {
+    const startedAt = Date.now();
     try {
       const res = await this.httpClient.get<T>(endpoint, { params });
+      recordApiCall({
+        provider: "aeroapi",
+        endpoint,
+        statusCode: res.status,
+        success: true,
+        durationMs: Date.now() - startedAt,
+      });
       return res.data;
     } catch (error) {
+      const status =
+        axios.isAxiosError(error) && typeof error.response?.status === "number"
+          ? error.response.status
+          : null;
+      recordApiCall({
+        provider: "aeroapi",
+        endpoint,
+        statusCode: status,
+        success: false,
+        durationMs: Date.now() - startedAt,
+      });
       this.handleAxiosError(error, endpoint);
     }
   }
@@ -84,8 +121,9 @@ export class AeroAPIClient {
     ident: string,
     params?: AeroAPIQueryParams,
   ): Promise<AeroAPIStandardFlightsResponse> {
+    const safeIdent = assertSafePathSegment(ident, "ident");
     return this.request<AeroAPIStandardFlightsResponse>(
-      `/flights/${ident}`,
+      `/flights/${safeIdent}`,
       params,
     );
   }
@@ -94,8 +132,9 @@ export class AeroAPIClient {
     airportId: string,
     params?: AeroAPIAirportFlightParams,
   ): Promise<AeroAPIStandardFlightsResponse> {
+    const safeAirport = assertSafePathSegment(airportId, "airportId");
     return this.request<AeroAPIStandardFlightsResponse>(
-      `/airports/${airportId}/flights`,
+      `/airports/${safeAirport}/flights`,
       params,
     );
   }
@@ -104,8 +143,9 @@ export class AeroAPIClient {
     airportId: string,
     params?: AeroAPIAirportFlightParams,
   ): Promise<AeroAPIStandardFlightsResponse> {
+    const safeAirport = assertSafePathSegment(airportId, "airportId");
     return this.request<AeroAPIStandardFlightsResponse>(
-      `/airports/${airportId}/flights/arrivals`,
+      `/airports/${safeAirport}/flights/arrivals`,
       params,
     );
   }
@@ -113,8 +153,9 @@ export class AeroAPIClient {
     airportId: string,
     params?: AeroAPIAirportFlightParams,
   ): Promise<AeroAPIStandardFlightsResponse> {
+    const safeAirport = assertSafePathSegment(airportId, "airportId");
     return this.request<AeroAPIStandardFlightsResponse>(
-      `/airports/${airportId}/flights/departures`,
+      `/airports/${safeAirport}/flights/departures`,
       params,
     );
   }
@@ -124,20 +165,24 @@ export class AeroAPIClient {
     destination: string,
     params?: AeroAPIFlightsBetweenParams,
   ): Promise<AeroAPISegmentedFlightsResponse> {
+    const safeOrigin = assertSafePathSegment(origin, "origin");
+    const safeDestination = assertSafePathSegment(destination, "destination");
     return this.request<AeroAPISegmentedFlightsResponse>(
-      `/airports/${origin}/flights/to/${destination}`,
+      `/airports/${safeOrigin}/flights/to/${safeDestination}`,
       params,
     );
   }
 
   public async getAirportInfo(airportId: string): Promise<AeroAPIAirportInfo> {
-    return this.request<AeroAPIAirportInfo>(`/airports/${airportId}`);
+    const safeAirport = assertSafePathSegment(airportId, "airportId");
+    return this.request<AeroAPIAirportInfo>(`/airports/${safeAirport}`);
   }
 
   public async getOperatorInfo(
     operatorId: string,
   ): Promise<AeroAPIOperatorInfo> {
-    return this.request<AeroAPIOperatorInfo>(`/operators/${operatorId}`);
+    const safeOperator = assertSafePathSegment(operatorId, "operatorId");
+    return this.request<AeroAPIOperatorInfo>(`/operators/${safeOperator}`);
   }
 
   public async getScheduledFlights(
@@ -145,8 +190,10 @@ export class AeroAPIClient {
     dateEnd: string,
     params?: AeroAPISchedulesParams,
   ): Promise<AeroAPISchedulesResponse> {
+    const safeStart = assertSafeDateSegment(dateStart, "dateStart");
+    const safeEnd = assertSafeDateSegment(dateEnd, "dateEnd");
     return this.request<AeroAPISchedulesResponse>(
-      `/schedules/${dateStart}/${dateEnd}`,
+      `/schedules/${safeStart}/${safeEnd}`,
       params,
     );
   }
@@ -154,8 +201,9 @@ export class AeroAPIClient {
   public async getFlightPosition(
     faFlightId: string,
   ): Promise<AeroAPIFlightPositionResponse> {
+    const safeFlightId = assertSafePathSegment(faFlightId, "faFlightId");
     return this.request<AeroAPIFlightPositionResponse>(
-      `/flights/${faFlightId}/position`,
+      `/flights/${safeFlightId}/position`,
     );
   }
 }

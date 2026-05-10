@@ -43,11 +43,29 @@ export async function register(
   return data.user;
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  await apiClient.post("/auth/forgot-password", { email });
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  await apiClient.post("/auth/reset-password", { token, password });
+}
+
 export async function logout(): Promise<void> {
   await apiClient.post("/auth/logout");
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await apiClient.get<AuthUser>("/users/me");
+  return data;
+}
+
+export async function updateProfilePublic(value: boolean): Promise<AuthUser> {
+  const { data } = await apiClient.patch<AuthUser>("/users/me", {
+    profilePublic: value,
+  });
   return data;
 }

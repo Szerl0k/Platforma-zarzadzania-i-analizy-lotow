@@ -8,7 +8,16 @@ import userRoutes from "../../users/routes/users.routes";
 import roleRoutes from "../../users/routes/roles.routes";
 import permissionRoutes from "../../users/routes/permissions.routes";
 import flightRoutes from "../../flights/flights.routes";
+import cityBreakRoutes from "../../city-break/city-break.routes";
+import favoritesRoutes from "../../tracking/favorites.routes";
+import trackingRoutes, {
+  notificationsRouter,
+} from "../../tracking/tracking.routes";
+import statsRoutes from "../../stats/stats.routes";
+import rankingsRoutes from "../../stats/rankings.routes";
+import apiUsageRoutes from "../integrations/usage/usage.routes";
 import { generateCsrfToken } from "../middleware/csrf";
+import { apiRateLimiter } from "../middleware/rateLimiter";
 
 const apiRouter = Router();
 
@@ -37,9 +46,27 @@ apiRouter.use(
   authorize("permissions:write"),
   permissionRoutes,
 );
+apiRouter.use(
+  "/admin/api-usage",
+  apiRateLimiter,
+  authenticate,
+  authorize("api-usage:read"),
+  apiUsageRoutes,
+);
 
 apiRouter.use("/telemetry", telemetryRoutes);
 apiRouter.use("/flights", flightRoutes);
+apiRouter.use("/city-break", cityBreakRoutes);
+apiRouter.use("/favorites", apiRateLimiter, authenticate, favoritesRoutes);
+apiRouter.use("/tracking", apiRateLimiter, authenticate, trackingRoutes);
+apiRouter.use(
+  "/notifications",
+  apiRateLimiter,
+  authenticate,
+  notificationsRouter,
+);
+apiRouter.use("/stats", apiRateLimiter, authenticate, statsRoutes);
+apiRouter.use("/rankings", rankingsRoutes);
 apiRouter.use("/", geoRoutes);
 
 export default apiRouter;

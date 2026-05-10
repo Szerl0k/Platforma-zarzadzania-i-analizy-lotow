@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from "typeorm";
 import { User } from "../../users/entities/User";
+import { Flight } from "../../flights/entities/Flight";
 import { BaseEntity } from "../../common/database/BaseEntity";
 
 @Entity("flight_history")
@@ -19,6 +20,13 @@ export class FlightHistory extends BaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: "user_id" })
   user!: User;
+
+  @Column({ type: "uuid", nullable: true, name: "flight_id" })
+  flightId!: string | null;
+
+  @ManyToOne(() => Flight)
+  @JoinColumn({ name: "flight_id" })
+  flight!: Flight | null;
 
   @Column({ type: "date", name: "travel_date" })
   travelDate!: string;

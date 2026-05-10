@@ -1,4 +1,5 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ override: true });
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 
@@ -34,9 +35,13 @@ import { TrackingStatus } from "../../tracking/entities/TrackingStatus";
 import { TrackingSource } from "../../tracking/entities/TrackingSource";
 import { FlightHistory } from "../../tracking/entities/FlightHistory";
 import { FavouriteDestination } from "../../tracking/entities/FavouriteDestination";
+import { NotificationLog } from "../../tracking/entities/NotificationLog";
 
 // Simulations entities
 import { CustomFlightSimulation } from "../../simulations/entities/CustomFlightSimulation";
+
+// Integrations entities
+import { ApiUsageLog } from "../integrations/usage/ApiUsageLog";
 
 import { TypeORMLogger } from "./TypeORMLogger";
 
@@ -74,7 +79,9 @@ export const AppDataSource = new DataSource({
     TrackedFlight,
     FlightChangeType,
     FlightStatusChange,
+    NotificationLog,
     RefreshToken,
+    ApiUsageLog,
   ],
   migrations: ["src/common/database/migrations/**/*.ts"],
   subscribers: [],

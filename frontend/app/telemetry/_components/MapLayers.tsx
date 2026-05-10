@@ -92,7 +92,7 @@ export function MapLayers({
           id="routes-lines"
           type="line"
           paint={{
-            "line-color": lime, // --lime
+            "line-color": ["coalesce", ["get", "color"], lime],
             "line-width": 2,
             "line-dasharray": [3, 2],
           }}
@@ -148,16 +148,26 @@ export function MapLayers({
           }}
           paint={{
             "icon-color": [
-              "interpolate",
-              ["linear"],
-              ["max", ["coalesce", ["get", "altitude"], 0], 0],
-              0,
-              lime,
-              12000,
-              navy,
+              "case",
+              ["==", ["get", "tracked"], true],
+              navyHover,
+              [
+                "interpolate",
+                ["linear"],
+                ["max", ["coalesce", ["get", "altitude"], 0], 0],
+                0,
+                lime,
+                12000,
+                navy,
+              ],
             ],
-            "icon-halo-color": ink,
-            "icon-halo-width": 2,
+            "icon-halo-color": [
+              "case",
+              ["==", ["get", "tracked"], true],
+              lime,
+              ink,
+            ],
+            "icon-halo-width": ["case", ["==", ["get", "tracked"], true], 4, 2],
             "icon-halo-blur": 0,
           }}
         />
