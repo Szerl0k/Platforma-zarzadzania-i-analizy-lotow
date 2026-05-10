@@ -7,10 +7,7 @@ import { Flight } from "../flights/entities/Flight";
 import { User } from "../users/entities/User";
 import { UserPreferences } from "../users/entities/UserPreferences";
 import { TrackingRepository } from "./tracking.repository";
-import {
-  NotificationsService,
-  detectChanges,
-} from "./notifications.service";
+import { NotificationsService, detectChanges } from "./notifications.service";
 import { isFlightTerminal } from "./tracking.service";
 import { TrackedFlight } from "./entities/TrackedFlight";
 
@@ -134,7 +131,11 @@ export class TrackingScheduler {
       .findOne({ where: { userId: tracked.userId } });
     if (!prefs) return;
 
-    const changes = detectChanges(prevSnapshot, fresh, prefs.delayThresholdMinutes);
+    const changes = detectChanges(
+      prevSnapshot,
+      fresh,
+      prefs.delayThresholdMinutes,
+    );
     if (changes.length === 0) return;
 
     const user = await this.dataSource
@@ -162,17 +163,11 @@ export class TrackingScheduler {
       tracked.flightId,
     );
     if (!existing) {
-      const travelDate = (
-        flight.actualOut ??
-        flight.scheduledOut ??
-        this.now()
-      )
+      const travelDate = (flight.actualOut ?? flight.scheduledOut ?? this.now())
         .toISOString()
         .slice(0, 10);
       const wasDelayed =
-        flight.departureDelay != null
-          ? flight.departureDelay >= 15 * 60
-          : null;
+        flight.departureDelay != null ? flight.departureDelay >= 15 * 60 : null;
       const delayMinutes =
         flight.departureDelay != null
           ? Math.round(flight.departureDelay / 60)
@@ -191,7 +186,10 @@ export class TrackingScheduler {
 }
 
 function cloneFlight(flight: Flight): Flight {
-  const copy = Object.assign(Object.create(Object.getPrototypeOf(flight)), flight);
+  const copy = Object.assign(
+    Object.create(Object.getPrototypeOf(flight)),
+    flight,
+  );
   if (flight.status) {
     copy.status = { ...flight.status };
   }

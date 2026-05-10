@@ -8,22 +8,21 @@ import {
   makeTrackedFlight,
   makeTrackingRepoMock,
 } from "./test-utils";
-import {
-  makePreferences,
-  makeUser,
-} from "../../users/__tests__/test-utils";
+import { makePreferences, makeUser } from "../../users/__tests__/test-utils";
 
 jest.mock("node-cron", () => ({
   schedule: jest.fn().mockReturnValue({ stop: jest.fn() }),
 }));
 
-function buildScheduler(opts: {
-  prevFlight?: ReturnType<typeof makeFlight>;
-  freshFlight?: ReturnType<typeof makeFlight>;
-  user?: ReturnType<typeof makeUser>;
-  prefs?: ReturnType<typeof makePreferences>;
-  trackedList?: ReturnType<typeof makeTrackedFlight>[];
-} = {}) {
+function buildScheduler(
+  opts: {
+    prevFlight?: ReturnType<typeof makeFlight>;
+    freshFlight?: ReturnType<typeof makeFlight>;
+    user?: ReturnType<typeof makeUser>;
+    prefs?: ReturnType<typeof makePreferences>;
+    trackedList?: ReturnType<typeof makeTrackedFlight>[];
+  } = {},
+) {
   const repo = makeTrackingRepoMock();
   const tracked = opts.trackedList ?? [
     makeTrackedFlight({ flight: opts.prevFlight ?? makeFlight() }),
@@ -69,7 +68,16 @@ function buildScheduler(opts: {
     now: () => new Date("2026-05-10T12:00:00Z"),
   });
 
-  return { scheduler, repo, flightsService, notifications, dataSource, flightRepo, userRepo, prefsRepo };
+  return {
+    scheduler,
+    repo,
+    flightsService,
+    notifications,
+    dataSource,
+    flightRepo,
+    userRepo,
+    prefsRepo,
+  };
 }
 
 describe("TrackingScheduler", () => {
@@ -126,7 +134,9 @@ describe("TrackingScheduler", () => {
       freshFlight: fresh,
     });
     await scheduler.tick();
-    expect(flightsService.getFlightDetailsAndSave).toHaveBeenCalledWith("LOT123");
+    expect(flightsService.getFlightDetailsAndSave).toHaveBeenCalledWith(
+      "LOT123",
+    );
     expect(notifications.recordAndDispatch).toHaveBeenCalledTimes(1);
     expect(notifications.recordAndDispatch.mock.calls[0][3].kind).toBe(
       "gate_change",

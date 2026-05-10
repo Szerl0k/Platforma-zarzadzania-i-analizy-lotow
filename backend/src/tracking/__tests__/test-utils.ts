@@ -183,9 +183,7 @@ export function makeAirline(overrides: Partial<Airline> = {}): Airline {
   } as Airline;
 }
 
-export function makeUserWithPublicProfile(
-  overrides: Partial<User> = {},
-): User {
+export function makeUserWithPublicProfile(overrides: Partial<User> = {}): User {
   return {
     id: "user-1",
     email: "user@example.com",

@@ -157,7 +157,11 @@ describe("StatsService.getMyStats", () => {
         makeFlightHistory({
           id: `h-${y}`,
           travelDate: `${y}-01-01`,
-          flight: makeFlight({ id: `f-${y}`, scheduledOut: null, scheduledIn: null }),
+          flight: makeFlight({
+            id: `f-${y}`,
+            scheduledOut: null,
+            scheduledIn: null,
+          }),
         }),
       ),
     );

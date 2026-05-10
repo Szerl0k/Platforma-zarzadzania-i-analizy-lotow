@@ -25,9 +25,9 @@ describe("normalizeEndpoint", () => {
     });
 
     it("collapses flight position path into :id/position", () => {
-      expect(normalizeEndpoint("aeroapi", "/flights/AAL456-1234567/position")).toBe(
-        "/flights/:id/position",
-      );
+      expect(
+        normalizeEndpoint("aeroapi", "/flights/AAL456-1234567/position"),
+      ).toBe("/flights/:id/position");
     });
 
     it("collapses airport ICAO/IATA into :id", () => {

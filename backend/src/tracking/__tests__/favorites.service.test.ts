@@ -19,7 +19,9 @@ jest.mock("../../common/database/data-source", () => ({
 
 const mockedGetRepository = AppDataSource.getRepository as jest.Mock;
 
-function makeFav(overrides: Partial<FavouriteDestination> = {}): FavouriteDestination {
+function makeFav(
+  overrides: Partial<FavouriteDestination> = {},
+): FavouriteDestination {
   return {
     id: "fav-1",
     userId: "user-1",
@@ -68,7 +70,9 @@ describe("favorites.service", () => {
     });
 
     it("rejects without userId", async () => {
-      await expect(listFavoritesForUser("")).rejects.toBeInstanceOf(BadRequestError);
+      await expect(listFavoritesForUser("")).rejects.toBeInstanceOf(
+        BadRequestError,
+      );
     });
   });
 

@@ -29,8 +29,14 @@ const MAX_WINDOW_DAYS = 7;
 const MIN_PROPOSALS = 5;
 const MAX_PROPOSALS = 50;
 
-const searchCache = new NodeCache({ stdTTL: SEARCH_CACHE_TTL_S, checkperiod: 60 });
-const detailsCache = new NodeCache({ stdTTL: DETAILS_CACHE_TTL_S, checkperiod: 60 });
+const searchCache = new NodeCache({
+  stdTTL: SEARCH_CACHE_TTL_S,
+  checkperiod: 60,
+});
+const detailsCache = new NodeCache({
+  stdTTL: DETAILS_CACHE_TTL_S,
+  checkperiod: 60,
+});
 
 interface DestinationAggregate {
   destinationIcao: string;
@@ -43,10 +49,15 @@ function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
-function clampWindow(dateFrom: string, dateTo: string): { start: string; end: string } {
+function clampWindow(
+  dateFrom: string,
+  dateTo: string,
+): { start: string; end: string } {
   const start = new Date(`${dateFrom}T00:00:00Z`);
   const end = new Date(`${dateTo}T00:00:00Z`);
-  const maxEnd = new Date(start.getTime() + MAX_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const maxEnd = new Date(
+    start.getTime() + MAX_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+  );
   const clampedEnd = end.getTime() > maxEnd.getTime() ? maxEnd : end;
   return {
     start: start.toISOString().slice(0, 10),
@@ -54,7 +65,10 @@ function clampWindow(dateFrom: string, dateTo: string): { start: string; end: st
   };
 }
 
-function durationMinutes(scheduledOut: string, scheduledIn: string): number | null {
+function durationMinutes(
+  scheduledOut: string,
+  scheduledIn: string,
+): number | null {
   const out = Date.parse(scheduledOut);
   const inMs = Date.parse(scheduledIn);
   if (!Number.isFinite(out) || !Number.isFinite(inMs)) return null;
@@ -246,7 +260,9 @@ export class CityBreakService {
     const { start, end } = clampWindow(params.dateFrom, params.dateTo);
     const originAirport = await findAirportInDb(originIcao);
     if (!originAirport) {
-      throw new NotFoundError(`Lotnisko origin ${originIcao} nie znalezione w bazie.`);
+      throw new NotFoundError(
+        `Lotnisko origin ${originIcao} nie znalezione w bazie.`,
+      );
     }
 
     let schedules: AeroAPISchedule[] = [];
@@ -265,7 +281,11 @@ export class CityBreakService {
     const airportsByIcao = await loadDestinationAirports(destIcaos);
 
     const proposals = [...aggregates.values()].map((agg) =>
-      buildProposal(agg, airportsByIcao.get(agg.destinationIcao), originAirport),
+      buildProposal(
+        agg,
+        airportsByIcao.get(agg.destinationIcao),
+        originAirport,
+      ),
     );
 
     const filtered = applyFilters(proposals, params);

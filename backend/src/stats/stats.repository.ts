@@ -166,10 +166,10 @@ export class StatsRepository {
             .groupBy("u.id");
         }, "ranked")
         .where("ranked.value > :v", { v: userValue })
-        .orWhere(
-          "(ranked.value = :v AND ranked.\"userId\" < :uid)",
-          { v: userValue, uid: userId },
-        )
+        .orWhere('(ranked.value = :v AND ranked."userId" < :uid)', {
+          v: userValue,
+          uid: userId,
+        })
         .getRawOne<{ count: number }>();
       return row?.count ?? 0;
     }
@@ -188,10 +188,10 @@ export class StatsRepository {
             .groupBy("u.id");
         }, "ranked")
         .where("ranked.value > :v", { v: userValue })
-        .orWhere(
-          "(ranked.value = :v AND ranked.\"userId\" < :uid)",
-          { v: userValue, uid: userId },
-        )
+        .orWhere('(ranked.value = :v AND ranked."userId" < :uid)', {
+          v: userValue,
+          uid: userId,
+        })
         .getRawOne<{ count: number }>();
       return row?.count ?? 0;
     }
@@ -212,10 +212,10 @@ export class StatsRepository {
           .groupBy("u.id");
       }, "ranked")
       .where("ranked.value > :v", { v: userValue })
-      .orWhere(
-        "(ranked.value = :v AND ranked.\"userId\" < :uid)",
-        { v: userValue, uid: userId },
-      )
+      .orWhere('(ranked.value = :v AND ranked."userId" < :uid)', {
+        v: userValue,
+        uid: userId,
+      })
       .getRawOne<{ count: number }>();
     return row?.count ?? 0;
   }

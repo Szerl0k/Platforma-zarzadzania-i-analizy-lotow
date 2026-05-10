@@ -17,6 +17,7 @@ import statsRoutes from "../../stats/stats.routes";
 import rankingsRoutes from "../../stats/rankings.routes";
 import apiUsageRoutes from "../integrations/usage/usage.routes";
 import { generateCsrfToken } from "../middleware/csrf";
+import { apiRateLimiter } from "../middleware/rateLimiter";
 
 const apiRouter = Router();
 
@@ -47,6 +48,7 @@ apiRouter.use(
 );
 apiRouter.use(
   "/admin/api-usage",
+  apiRateLimiter,
   authenticate,
   authorize("api-usage:read"),
   apiUsageRoutes,
@@ -55,10 +57,15 @@ apiRouter.use(
 apiRouter.use("/telemetry", telemetryRoutes);
 apiRouter.use("/flights", flightRoutes);
 apiRouter.use("/city-break", cityBreakRoutes);
-apiRouter.use("/favorites", authenticate, favoritesRoutes);
-apiRouter.use("/tracking", authenticate, trackingRoutes);
-apiRouter.use("/notifications", authenticate, notificationsRouter);
-apiRouter.use("/stats", authenticate, statsRoutes);
+apiRouter.use("/favorites", apiRateLimiter, authenticate, favoritesRoutes);
+apiRouter.use("/tracking", apiRateLimiter, authenticate, trackingRoutes);
+apiRouter.use(
+  "/notifications",
+  apiRateLimiter,
+  authenticate,
+  notificationsRouter,
+);
+apiRouter.use("/stats", apiRateLimiter, authenticate, statsRoutes);
 apiRouter.use("/rankings", rankingsRoutes);
 apiRouter.use("/", geoRoutes);
 

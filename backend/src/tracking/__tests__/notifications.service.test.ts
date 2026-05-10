@@ -11,7 +11,11 @@ import {
   makeTrackedFlight,
   makeTrackingRepoMock,
 } from "./test-utils";
-import { makePreferences, makeUser, makeMailer } from "../../users/__tests__/test-utils";
+import {
+  makePreferences,
+  makeUser,
+  makeMailer,
+} from "../../users/__tests__/test-utils";
 
 function makeFlightChangeType(name: string): FlightChangeType {
   return {
@@ -37,8 +41,13 @@ function makeDataSource(opts: {
   };
   const saveMock =
     opts.saveStatusChange ??
-    jest.fn().mockImplementation((data: object) => Promise.resolve({ id: "sc-1", ...data }));
-  const updateMock = opts.updateStatusChange ?? jest.fn().mockResolvedValue(undefined);
+    jest
+      .fn()
+      .mockImplementation((data: object) =>
+        Promise.resolve({ id: "sc-1", ...data }),
+      );
+  const updateMock =
+    opts.updateStatusChange ?? jest.fn().mockResolvedValue(undefined);
   const statusChangeRepo = { save: saveMock, update: updateMock };
   return {
     getRepository: jest.fn().mockImplementation((entity: unknown) => {
@@ -149,12 +158,14 @@ describe("NotificationsService.recordAndDispatch", () => {
     description: "Opóźnienie wylotu wzrosło do 25 min.",
   };
 
-  function arrange(opts: {
-    prefs?: ReturnType<typeof makePreferences>;
-    tracked?: ReturnType<typeof makeTrackedFlight>;
-    changeType?: FlightChangeType | null;
-    mailerThrows?: boolean;
-  } = {}) {
+  function arrange(
+    opts: {
+      prefs?: ReturnType<typeof makePreferences>;
+      tracked?: ReturnType<typeof makeTrackedFlight>;
+      changeType?: FlightChangeType | null;
+      mailerThrows?: boolean;
+    } = {},
+  ) {
     const repo = makeTrackingRepoMock();
     repo.insertNotification.mockResolvedValue({ id: "n1" });
     repo.updateLastNotifiedAt.mockResolvedValue(undefined);
@@ -184,8 +195,17 @@ describe("NotificationsService.recordAndDispatch", () => {
     const { service, repo, tracked, prefs, user, mailer } = arrange({
       changeType: null,
     });
-    const result = await service.recordAndDispatch(tracked, user, prefs, change);
-    expect(result).toEqual({ emailSent: false, inAppLogged: false, throttled: false });
+    const result = await service.recordAndDispatch(
+      tracked,
+      user,
+      prefs,
+      change,
+    );
+    expect(result).toEqual({
+      emailSent: false,
+      inAppLogged: false,
+      throttled: false,
+    });
     expect(repo.insertNotification).not.toHaveBeenCalled();
     expect(mailer.sendFlightNotification).not.toHaveBeenCalled();
   });
@@ -214,8 +234,17 @@ describe("NotificationsService.recordAndDispatch", () => {
   it("respects per-kind preferences (delay disabled)", async () => {
     const prefs = makePreferences({ notifyOnDelay: false });
     const { service, repo, tracked, user, mailer } = arrange({ prefs });
-    const result = await service.recordAndDispatch(tracked, user, prefs, change);
-    expect(result).toEqual({ emailSent: false, inAppLogged: false, throttled: false });
+    const result = await service.recordAndDispatch(
+      tracked,
+      user,
+      prefs,
+      change,
+    );
+    expect(result).toEqual({
+      emailSent: false,
+      inAppLogged: false,
+      throttled: false,
+    });
     expect(mailer.sendFlightNotification).not.toHaveBeenCalled();
     expect(repo.insertNotification).not.toHaveBeenCalled();
   });
@@ -259,7 +288,12 @@ describe("NotificationsService.recordAndDispatch", () => {
     const { service, repo, tracked, prefs, user } = arrange({
       mailerThrows: true,
     });
-    const result = await service.recordAndDispatch(tracked, user, prefs, change);
+    const result = await service.recordAndDispatch(
+      tracked,
+      user,
+      prefs,
+      change,
+    );
     expect(result.emailSent).toBe(false);
     expect(result.inAppLogged).toBe(true);
     expect(repo.insertNotification).toHaveBeenCalled();
@@ -268,7 +302,12 @@ describe("NotificationsService.recordAndDispatch", () => {
   it("does not send email when emailNotifications disabled but still logs in-app", async () => {
     const prefs = makePreferences({ emailNotifications: false });
     const { service, repo, tracked, user, mailer } = arrange({ prefs });
-    const result = await service.recordAndDispatch(tracked, user, prefs, change);
+    const result = await service.recordAndDispatch(
+      tracked,
+      user,
+      prefs,
+      change,
+    );
     expect(mailer.sendFlightNotification).not.toHaveBeenCalled();
     expect(result.emailSent).toBe(false);
     expect(result.inAppLogged).toBe(true);

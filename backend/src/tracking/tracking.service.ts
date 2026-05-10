@@ -48,8 +48,11 @@ export class TrackingService {
     const flight = await this.flightsService.searchFlight(ident);
     if (departureDate) {
       const wanted = departureDate;
-      const candidate = (flight.scheduledOut ?? flight.estimatedOut ?? flight.actualOut)
-        ?.slice(0, 10);
+      const candidate = (
+        flight.scheduledOut ??
+        flight.estimatedOut ??
+        flight.actualOut
+      )?.slice(0, 10);
       if (candidate && candidate !== wanted) {
         throw new BadRequestError(
           `Nie znaleziono lotu ${ident} na ${wanted}. Najbliższy lot: ${candidate}.`,
@@ -67,7 +70,10 @@ export class TrackingService {
     flightId: string,
     sourceName: "flight_number" | "map_click",
   ): Promise<TrackedFlightDTO> {
-    const existing = await this.repo.findActiveByUserAndFlight(userId, flightId);
+    const existing = await this.repo.findActiveByUserAndFlight(
+      userId,
+      flightId,
+    );
     if (existing) {
       throw new ConflictError("Już śledzisz ten lot.");
     }
@@ -91,7 +97,9 @@ export class TrackingService {
 
     const status = await this.repo.findStatusByName("active");
     if (!status) {
-      throw new NotFoundError("Brak rekordu tracking_statuses.active. Uruchom migracje.");
+      throw new NotFoundError(
+        "Brak rekordu tracking_statuses.active. Uruchom migracje.",
+      );
     }
 
     const source = await this.repo.findSourceByName(sourceName);
@@ -213,7 +221,10 @@ export class TrackingService {
 
 export function isFlightTerminal(flight: Flight): boolean {
   if (flight.actualIn) return true;
-  if (flight.status?.name && TERMINAL_STATUS_NAMES.includes(flight.status.name)) {
+  if (
+    flight.status?.name &&
+    TERMINAL_STATUS_NAMES.includes(flight.status.name)
+  ) {
     return true;
   }
   return false;

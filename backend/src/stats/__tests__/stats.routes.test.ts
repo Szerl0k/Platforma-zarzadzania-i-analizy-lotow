@@ -88,7 +88,9 @@ describe("GET /stats/me/routes", () => {
 
 describe("GET /rankings", () => {
   it("is publicly accessible", async () => {
-    getRankings.mockResolvedValue([{ rank: 1, userId: "u1", nickname: "n", value: 100 }]);
+    getRankings.mockResolvedValue([
+      { rank: 1, userId: "u1", nickname: "n", value: 100 },
+    ]);
     const res = await request(makeApp(null)).get("/rankings?metric=flights");
     expect(res.status).toBe(200);
     expect(res.body.items).toHaveLength(1);

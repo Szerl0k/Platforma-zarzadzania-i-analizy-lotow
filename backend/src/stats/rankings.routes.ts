@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate } from "../common/middleware/auth";
+import { apiRateLimiter } from "../common/middleware/rateLimiter";
 import { RankingsService } from "./rankings.service";
 import { MyRankingQuerySchema, RankingsQuerySchema } from "./stats.dto";
 
@@ -27,6 +28,7 @@ router.get(
 // Authenticated — caller's row
 router.get(
   "/me",
+  apiRateLimiter,
   authenticate,
   asyncHandler(async (req, res) => {
     const query = MyRankingQuerySchema.parse(req.query);

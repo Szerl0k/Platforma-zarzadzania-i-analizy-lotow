@@ -172,8 +172,7 @@ export class NotificationsService {
       return { emailSent: false, inAppLogged: false, throttled: true };
     }
 
-    const ident =
-      tracked.flight?.identIcao ?? tracked.flight?.callsign ?? "?";
+    const ident = tracked.flight?.identIcao ?? tracked.flight?.callsign ?? "?";
     const link = `${this.appBaseUrlFactory()}/telemetry?flightId=${tracked.flightId}`;
 
     let emailSent = false;

@@ -27,8 +27,12 @@ export const SearchCityBreakQuerySchema = z
     sortBy: z.enum(["flightTime", "popularity"]).default("flightTime"),
   })
   .refine(
-    (data) => new Date(data.dateFrom).getTime() <= new Date(data.dateTo).getTime(),
-    { message: "dateFrom musi być wcześniejsze lub równe dateTo", path: ["dateFrom"] },
+    (data) =>
+      new Date(data.dateFrom).getTime() <= new Date(data.dateTo).getTime(),
+    {
+      message: "dateFrom musi być wcześniejsze lub równe dateTo",
+      path: ["dateFrom"],
+    },
   );
 
 export type SearchCityBreakQuery = z.infer<typeof SearchCityBreakQuerySchema>;

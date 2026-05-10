@@ -5,7 +5,10 @@ import { Airport } from "../../geo/entities/Airport";
 import * as geoService from "../../geo/geo.service";
 import * as aeroIntegration from "../../common/integrations/aeroapi";
 import { AeroAPIError } from "../../common/integrations/aeroapi";
-import { BadRequestError, NotFoundError } from "../../common/errors/http-errors";
+import {
+  BadRequestError,
+  NotFoundError,
+} from "../../common/errors/http-errors";
 import { CityBreakProposalDTO, SearchCityBreakQuery } from "../city-break.dto";
 
 jest.mock("../../common/database/data-source", () => ({
@@ -37,7 +40,8 @@ jest.mock("../../common/integrations/aeroapi", () => {
 
 const mockedGetRepository = AppDataSource.getRepository as jest.Mock;
 const mockedFindAirportInDb = geoService.findAirportInDb as jest.Mock;
-const mockedGetAeroApiClient = aeroIntegration.getAeroApiClient as unknown as jest.Mock;
+const mockedGetAeroApiClient =
+  aeroIntegration.getAeroApiClient as unknown as jest.Mock;
 
 function makeAirport(overrides: Partial<Airport> = {}): Airport {
   return {

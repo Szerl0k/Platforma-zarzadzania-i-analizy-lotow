@@ -20,9 +20,7 @@ function durationMinutesOf(history: FlightHistory): number | null {
   const f = history.flight;
   if (!f) return null;
   if (f.actualOut && f.actualIn) {
-    return Math.round(
-      (f.actualIn.getTime() - f.actualOut.getTime()) / 60000,
-    );
+    return Math.round((f.actualIn.getTime() - f.actualOut.getTime()) / 60000);
   }
   if (f.scheduledOut && f.scheduledIn) {
     return Math.round(
@@ -76,7 +74,9 @@ function topAirlines(
     .slice(0, limit);
 }
 
-function findLongestFlight(rows: EnrichedHistoryRow[]): LongestFlightDTO | null {
+function findLongestFlight(
+  rows: EnrichedHistoryRow[],
+): LongestFlightDTO | null {
   let best: EnrichedHistoryRow | null = null;
   for (const row of rows) {
     if (row.distanceKm == null) continue;
@@ -154,9 +154,7 @@ export class StatsService {
       .filter((d): d is number => d != null);
     const averageDurationMinutes =
       durations.length > 0
-        ? Math.round(
-            durations.reduce((s, d) => s + d, 0) / durations.length,
-          )
+        ? Math.round(durations.reduce((s, d) => s + d, 0) / durations.length)
         : 0;
 
     const airlines = topAirlines(rows, 5);
@@ -177,9 +175,7 @@ export class StatsService {
 
   async getMyRoutes(userId: string, year?: number): Promise<UserRouteDTO[]> {
     const rows = await this.repo.listUserHistoryWithJoins(userId);
-    const filtered = year
-      ? rows.filter((r) => travelYear(r) === year)
-      : rows;
+    const filtered = year ? rows.filter((r) => travelYear(r) === year) : rows;
     return filtered.map((h) => {
       const f = h.flight;
       const origin = f?.origin ? airportCoords(f.origin) : null;

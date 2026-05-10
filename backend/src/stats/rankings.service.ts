@@ -5,7 +5,10 @@ import {
   RankingMetric,
 } from "./stats.dto";
 
-function nicknameOrFallback(row: { nickname: string | null; email: string }): string {
+function nicknameOrFallback(row: {
+  nickname: string | null;
+  email: string;
+}): string {
   if (row.nickname && row.nickname.trim().length > 0) return row.nickname;
   const local = row.email.split("@")[0] ?? row.email;
   return local;
@@ -23,13 +26,19 @@ function toEntry(row: RankingRow, rank: number): RankingEntryDTO {
 export class RankingsService {
   constructor(private readonly repo: StatsRepository = new StatsRepository()) {}
 
-  private fetchRanking(metric: RankingMetric, limit: number): Promise<RankingRow[]> {
+  private fetchRanking(
+    metric: RankingMetric,
+    limit: number,
+  ): Promise<RankingRow[]> {
     if (metric === "distance") return this.repo.fetchDistanceRanking(limit);
     if (metric === "flights") return this.repo.fetchFlightsRanking(limit);
     return this.repo.fetchCountriesRanking(limit);
   }
 
-  private fetchUserValue(metric: RankingMetric, userId: string): Promise<number> {
+  private fetchUserValue(
+    metric: RankingMetric,
+    userId: string,
+  ): Promise<number> {
     if (metric === "distance") return this.repo.fetchUserDistance(userId);
     if (metric === "flights") return this.repo.fetchUserFlightCount(userId);
     return this.repo.fetchUserCountriesCount(userId);

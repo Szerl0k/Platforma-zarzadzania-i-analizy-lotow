@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddTrackingNotifications1778500000000
-  implements MigrationInterface
-{
+export class AddTrackingNotifications1778500000000 implements MigrationInterface {
   name = "AddTrackingNotifications1778500000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -107,13 +105,17 @@ export class AddTrackingNotifications1778500000000
     await queryRunner.query(
       `ALTER TABLE "flight_history" DROP CONSTRAINT "flight_history_flight_id_foreign"`,
     );
-    await queryRunner.query(`ALTER TABLE "flight_history" DROP COLUMN "flight_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "flight_history" DROP COLUMN "flight_id"`,
+    );
 
     await queryRunner.query(
       `DELETE FROM "tracking_sources" WHERE "name" IN ('flight_number', 'map_click')`,
     );
 
-    await queryRunner.query(`DROP INDEX "UQ_tracked_flights_active_user_flight"`);
+    await queryRunner.query(
+      `DROP INDEX "UQ_tracked_flights_active_user_flight"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "tracked_flights" DROP COLUMN "last_notified_at"`,
     );

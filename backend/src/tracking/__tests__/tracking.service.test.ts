@@ -27,7 +27,10 @@ function makeDataSource(flightRepo: { findOne: jest.Mock }) {
 
 describe("TrackingService.previewByIdent", () => {
   it("delegates to FlightsService and returns the result", async () => {
-    const flightDto = { id: "f1", scheduledOut: "2026-05-10T08:00:00Z" } as never;
+    const flightDto = {
+      id: "f1",
+      scheduledOut: "2026-05-10T08:00:00Z",
+    } as never;
     const flightsService = {
       searchFlight: jest.fn().mockResolvedValue(flightDto),
     } as unknown as FlightsService;
@@ -110,7 +113,11 @@ describe("TrackingService.confirmTrack", () => {
 
   it("creates a TrackedFlight when no active record exists", async () => {
     const { repo, service } = arrange({});
-    const dto = await service.confirmTrack("user-1", "flight-1", "flight_number");
+    const dto = await service.confirmTrack(
+      "user-1",
+      "flight-1",
+      "flight_number",
+    );
     expect(repo.create).toHaveBeenCalledWith({
       userId: "user-1",
       flightId: "flight-1",
@@ -195,9 +202,9 @@ describe("TrackingService listing & untrack", () => {
       {} as FlightsService,
       {} as never,
     );
-    await expect(
-      service.untrack("user-1", "nope"),
-    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.untrack("user-1", "nope")).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });
 
@@ -257,8 +264,16 @@ describe("TrackingService history", () => {
   it("sorts oldest and alpha correctly", async () => {
     const repo = makeTrackingRepoMock();
     repo.listHistoryByUser.mockResolvedValue([
-      makeFlightHistory({ id: "a", travelDate: "2026-03-01", flight: makeFlight({ identIcao: "ZZZ" } as never) }),
-      makeFlightHistory({ id: "b", travelDate: "2026-01-01", flight: makeFlight({ identIcao: "AAA" } as never) }),
+      makeFlightHistory({
+        id: "a",
+        travelDate: "2026-03-01",
+        flight: makeFlight({ identIcao: "ZZZ" } as never),
+      }),
+      makeFlightHistory({
+        id: "b",
+        travelDate: "2026-01-01",
+        flight: makeFlight({ identIcao: "AAA" } as never),
+      }),
     ]);
     const service = new TrackingService(
       repo as never,
@@ -294,7 +309,9 @@ describe("TrackingService history", () => {
       {} as FlightsService,
       {} as never,
     );
-    await expect(service.deleteHistory("user-1", "ok")).resolves.toBeUndefined();
+    await expect(
+      service.deleteHistory("user-1", "ok"),
+    ).resolves.toBeUndefined();
   });
 
   it("exportHistoryCsv produces a header + escaped rows", async () => {
