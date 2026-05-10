@@ -53,6 +53,7 @@ export function useNotifications(
   }, []);
 
   useEffect(() => {
+    if (pollIntervalMs <= 0) return;
     refresh();
     const interval = setInterval(refresh, pollIntervalMs);
     return () => clearInterval(interval);
