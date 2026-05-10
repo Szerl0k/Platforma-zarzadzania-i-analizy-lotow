@@ -88,6 +88,14 @@ export async function loadTelemetryMapImages(map: MaplibreMap) {
     );
   }
 
+  if (!map.hasImage("airplane-icon-sdf")) {
+    promises.push(
+      map.loadImage("/airplane.png").then((response) => {
+        map.addImage("airplane-icon-sdf", response.data, { sdf: true });
+      }),
+    );
+  }
+
   if (!map.hasImage("airport-icon")) {
     promises.push(tintMapImage(map, "airport-icon", "/airport.png", "#1E3A8A"));
   }
@@ -102,18 +110,125 @@ export async function loadTelemetryMapImages(map: MaplibreMap) {
 }
 
 /**
- * Kwantyzuje bounding box do siatki o określonym rozmiarze,
- * aby zoptymalizować cache'owanie zapytań na backendzie.
+ * Obszar limitu dla zapytań mapy (w stopniach kwadratowych).
+ * Musi być spójny z limitem na backendzie.
  */
-export function calculateQuantizedBBox(bounds: LngLatBounds, gridSize = 2.0) {
+export const MAX_BBOX_AREA = 400;
+
+/**
+ * Kwantyzuje bounding box do siatki o określonym rozmiarze oraz ogranicza go
+ * do maksymalnej dozwolonej powierzchni, aby uniknąć błędów backendu.
+ * Zapewnia, że środek mapy pozostaje punktem centralnym pobieranych danych.
+ */
+export function calculateQuantizedBBox(
+  bounds: LngLatBounds,
+  gridSize = 2.0,
+  maxArea = MAX_BBOX_AREA,
+) {
+  const west = bounds.getWest();
+  const east = bounds.getEast();
+  const south = bounds.getSouth();
+  const north = bounds.getNorth();
+
+  const lonRange = east - west;
+  const latRange = north - south;
+  const currentArea = lonRange * latRange;
+
+  let targetLomin = west;
+  let targetLomax = east;
+  let targetLamin = south;
+  let targetLamax = north;
+
+  // 1. Jeśli obszar przekracza limit, obliczamy mniejszy prostokąt wokół środka
+  if (currentArea > maxArea) {
+    const scaleFactor = Math.sqrt(maxArea / currentArea);
+    const newLonRange = lonRange * scaleFactor;
+    const newLatRange = latRange * scaleFactor;
+    const center = bounds.getCenter();
+
+    targetLomin = center.lng - newLonRange / 2;
+    targetLomax = center.lng + newLonRange / 2;
+    targetLamin = center.lat - newLatRange / 2;
+    targetLamax = center.lat + newLatRange / 2;
+
+    // Korekta szerokości geograficznej, aby nie wykraczała poza [-90, 90]
+    if (targetLamin < -90) {
+      targetLamax += -90 - targetLamin;
+      targetLamin = -90;
+    }
+    if (targetLamax > 90) {
+      targetLamin -= targetLamax - 90;
+      targetLamax = 90;
+    }
+  }
+
+  // 2. Kwantyzacja do siatki (dla optymalizacji cache na backendzie)
   const quantizeMin = (val: number) => Math.floor(val / gridSize) * gridSize;
   const quantizeMax = (val: number) => Math.ceil(val / gridSize) * gridSize;
 
+  let qLomin = quantizeMin(targetLomin);
+  let qLamin = quantizeMin(targetLamin);
+  let qLomax = quantizeMax(targetLomax);
+  let qLamax = quantizeMax(targetLamax);
+
+  // 3. Po kwantyzacji obszar mógł ponownie przekroczyć limit (np. z 400 do 484)
+  // W takim przypadku redukujemy go, usuwając zewnętrzne pasy siatki
+  while ((qLamax - qLamin) * (qLomax - qLomin) > maxArea) {
+    const qLatRange = qLamax - qLamin;
+    const qLonRange = qLomax - qLomin;
+
+    if (qLatRange > qLonRange) {
+      qLamin += gridSize;
+      if ((qLamax - qLamin) * (qLomax - qLomin) <= maxArea) break;
+      qLamax -= gridSize;
+    } else {
+      qLomin += gridSize;
+      if ((qLamax - qLamin) * (qLomax - qLomin) <= maxArea) break;
+      qLomax -= gridSize;
+    }
+
+    if (qLamin >= qLamax || qLomin >= qLomax) break;
+  }
+
+  // 4. Finalna weryfikacja granic fizycznych
   return {
-    lomin: quantizeMin(bounds.getWest()),
-    lamin: quantizeMin(bounds.getSouth()),
-    lomax: quantizeMax(bounds.getEast()),
-    lamax: quantizeMax(bounds.getNorth()),
+    lomin: qLomin,
+    lamin: Math.max(qLamin, -90),
+    lomax: qLomax,
+    lamax: Math.min(qLamax, 90),
+  };
+}
+
+/**
+ * Konwertuje obiekt bounding box na GeoJSON Polygon,
+ * aby umożliwić jego wizualizację na mapie.
+ */
+export function bboxToGeoJson(bbox: {
+  lomin: number;
+  lamin: number;
+  lomax: number;
+  lamax: number;
+}): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [bbox.lomin, bbox.lamin],
+              [bbox.lomax, bbox.lamin],
+              [bbox.lomax, bbox.lamax],
+              [bbox.lomin, bbox.lamax],
+              [bbox.lomin, bbox.lamin],
+            ],
+          ],
+        },
+        properties: {},
+      },
+    ],
   };
 }
 

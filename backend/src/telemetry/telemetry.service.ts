@@ -133,6 +133,11 @@ export class TelemetryService {
 
   /**
    * Resolves flight state and AeroAPI ID using a direct ICAO24 lookup.
+   *
+   * @param icao24 - 24-bit ICAO aircraft address in hex.
+   * @param existingFaFlightId - Optional pre-existing AeroAPI flight identifier.
+   * @returns Object containing the OpenSky state vector and the resolved AeroAPI flight ID.
+   * @throws {TelemetryNotFoundError} If no state vector is found or AeroAPI ID cannot be resolved.
    */
   private async resolveByIcao24(
     icao24: string,
@@ -183,6 +188,12 @@ export class TelemetryService {
 
   /**
    * Resolves flight state by matching AeroAPI's last known position to OpenSky state vectors in a spatial buffer.
+   * This is Strategy 2, used when ICAO24 lookup is not the primary entry point or fails.
+   *
+   * @param faFlightId - AeroAPI unique flight identifier.
+   * @param atcIdent - Optional ATC callsign for precise matching.
+   * @returns The matched OpenSky state vector.
+   * @throws {TelemetryNotFoundError} If spatial data is missing or no matching callsign is found in the buffer.
    */
   private async resolveBySpatialMatch(
     faFlightId: string,
@@ -242,6 +253,12 @@ export class TelemetryService {
 
   /**
    * Persists a state vector as a telemetry entry and calculates related spatial metrics.
+   *
+   * @param state - The OpenSky state vector tuple.
+   * @param faFlightId - The associated AeroAPI flight identifier.
+   * @returns Enriched response DTO containing persistence details and distance metrics.
+   * @throws {FlightNotFoundError} If the flight record does not exist in the database.
+   * @throws {BoundingBoxLimitError} If the state vector lacks valid geographic coordinates.
    */
   private async persistTelemetry(
     state: StateVectorTuple,

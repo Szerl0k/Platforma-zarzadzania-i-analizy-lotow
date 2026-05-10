@@ -20,6 +20,7 @@ interface RoutesState {
   routes: AirlineWithDestinations[];
   loading: boolean;
   error: string | null;
+  stale: boolean;
 }
 
 export function AirportPanel({
@@ -29,19 +30,21 @@ export function AirportPanel({
   onAirlineToggle,
   onToggleAll,
 }: AirportPanelProps) {
-  const [{ routes, loading, error }, setRoutesState] = useState<RoutesState>({
-    routes: [],
-    loading: true,
-    error: null,
-  });
+  const [{ routes, loading, error, stale }, setRoutesState] =
+    useState<RoutesState>({
+      routes: [],
+      loading: true,
+      error: null,
+      stale: false,
+    });
 
   useEffect(() => {
     let cancelled = false;
 
     getAirportRoutes(airport.icaoCode)
-      .then((data) => {
+      .then(({ routes, stale }) => {
         if (!cancelled)
-          setRoutesState({ routes: data, loading: false, error: null });
+          setRoutesState({ routes, loading: false, error: null, stale });
       })
       .catch(() => {
         if (!cancelled)
@@ -49,6 +52,7 @@ export function AirportPanel({
             routes: [],
             loading: false,
             error: "Nie udało się pobrać tras lotniczych.",
+            stale: false,
           });
       });
 
@@ -97,6 +101,15 @@ export function AirportPanel({
           </button>
         </div>
       </div>
+
+      {/* Stale data warning */}
+      {!loading && stale && (
+        <div className="px-3 py-2 border-b border-border-subtle shrink-0">
+          <Alert variant="info" title="UWAGA">
+            Dane tras mogą być nieaktualne — problem z połączeniem z AeroAPI.
+          </Alert>
+        </div>
+      )}
 
       {/* Airlines section header */}
       <div className="px-3 py-2 border-b border-border-subtle shrink-0 flex items-center justify-between gap-2">

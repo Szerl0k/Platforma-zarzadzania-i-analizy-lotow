@@ -3,6 +3,7 @@ import { Point } from "geojson";
 import { AppDataSource } from "../common/database/data-source";
 import { Airport } from "./entities/Airport";
 import { Airline } from "./entities/Airline";
+import { AirportRoute } from "./entities/AirportRoute";
 import { City } from "./entities/City";
 import { Country } from "./entities/Country";
 import {
@@ -15,6 +16,11 @@ import {
 export interface RouteEntry {
   airline: AirlineDTO;
   destinations: AirportDTO[];
+}
+
+export interface AirportRoutesResult {
+  routes: RouteEntry[];
+  stale: boolean;
 }
 
 export interface AirportDTO {
@@ -97,11 +103,19 @@ function airportRepo(): Repository<Airport> {
 function airlineRepo(): Repository<Airline> {
   return AppDataSource.getRepository(Airline);
 }
+function airportRouteRepo(): Repository<AirportRoute> {
+  return AppDataSource.getRepository(AirportRoute);
+}
 function cityRepo(): Repository<City> {
   return AppDataSource.getRepository(City);
 }
 function countryRepo(): Repository<Country> {
   return AppDataSource.getRepository(Country);
+}
+
+function getRoutesDbTtlMs(): number {
+  const days = parseInt(process.env.ROUTES_DB_TTL_DAYS ?? "7", 10);
+  return (Number.isFinite(days) && days > 0 ? days : 7) * 24 * 60 * 60 * 1000;
 }
 
 function normalizeIcao(code: string): string {
@@ -436,12 +450,109 @@ async function runConcurrent<T>(
 
 const routesCache = new Map<
   string,
-  { data: RouteEntry[]; expiresAt: number }
+  { data: RouteEntry[]; stale: boolean; expiresAt: number }
 >();
-const routesInFlight = new Map<string, Promise<RouteEntry[]>>();
+const routesInFlight = new Map<string, Promise<AirportRoutesResult>>();
 const ROUTES_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2h
 
-async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
+function setCachedRoutes(
+  icao: string,
+  data: RouteEntry[],
+  stale: boolean,
+): void {
+  routesCache.set(icao, {
+    data,
+    stale,
+    expiresAt: Date.now() + ROUTES_CACHE_TTL_MS,
+  });
+}
+
+async function getDbRouteFreshness(
+  icao: string,
+): Promise<{ hasRoutes: boolean; isFresh: boolean }> {
+  const row = await airportRouteRepo()
+    .createQueryBuilder("ar")
+    .select("MAX(ar.fetchedAt)", "maxFetchedAt")
+    .where("ar.originAirportCode = :icao", { icao })
+    .getRawOne<{ maxFetchedAt: string | null }>();
+
+  const maxFetchedAt = row?.maxFetchedAt ? new Date(row.maxFetchedAt) : null;
+  if (!maxFetchedAt) return { hasRoutes: false, isFresh: false };
+
+  const isFresh = maxFetchedAt.getTime() > Date.now() - getRoutesDbTtlMs();
+  return { hasRoutes: true, isFresh };
+}
+
+async function buildRoutesFromDb(icao: string): Promise<RouteEntry[]> {
+  const rows = await airportRouteRepo()
+    .createQueryBuilder("ar")
+    .innerJoinAndSelect("ar.airline", "airline")
+    .innerJoinAndSelect("ar.destinationAirport", "dest")
+    .leftJoinAndSelect("dest.city", "city")
+    .leftJoinAndSelect("city.country", "country")
+    .where("ar.originAirportCode = :icao", { icao })
+    .getMany();
+
+  const byAirline = new Map<
+    string,
+    { airline: Airline; destinations: Airport[] }
+  >();
+  for (const row of rows) {
+    if (!byAirline.has(row.airlineCode)) {
+      byAirline.set(row.airlineCode, {
+        airline: row.airline,
+        destinations: [],
+      });
+    }
+    byAirline.get(row.airlineCode)!.destinations.push(row.destinationAirport);
+  }
+
+  const result: RouteEntry[] = [];
+  for (const { airline, destinations } of byAirline.values()) {
+    result.push({
+      airline: serializeAirline(airline),
+      destinations: destinations.map(serializeAirport),
+    });
+  }
+  return result.sort((a, b) => a.airline.name.localeCompare(b.airline.name));
+}
+
+async function persistRoutesToDb(
+  icao: string,
+  routeMap: Map<string, Set<string>>,
+  airlineMap: Map<string, Airline>,
+  airportMap: Map<string, Airport>,
+): Promise<void> {
+  const fetchedAt = new Date();
+  const repo = airportRouteRepo();
+
+  const toInsert: {
+    originAirportCode: string;
+    airlineCode: string;
+    destinationAirportCode: string;
+    fetchedAt: Date;
+  }[] = [];
+
+  for (const [airlineIcao, destSet] of routeMap) {
+    if (!airlineMap.has(airlineIcao)) continue;
+    for (const destIcao of destSet) {
+      if (!airportMap.has(destIcao)) continue;
+      toInsert.push({
+        originAirportCode: icao,
+        airlineCode: airlineIcao,
+        destinationAirportCode: destIcao,
+        fetchedAt,
+      });
+    }
+  }
+
+  await repo.delete({ originAirportCode: icao });
+  if (toInsert.length > 0) {
+    await repo.insert(toInsert);
+  }
+}
+
+async function fetchRoutesFromAeroApi(icao: string): Promise<RouteEntry[]> {
   const today = new Date();
   const end = new Date(today);
   end.setDate(end.getDate() + 14);
@@ -453,24 +564,16 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
     destination_icao?: string | null;
     destination?: string | null;
   }[] = [];
+
   try {
     const response = await getAeroApiClient().getScheduledFlights(
       dateStart,
       dateEnd,
-      {
-        origin: icao,
-        max_pages: 10,
-      },
+      { origin: icao, max_pages: 10 },
     );
     rawSchedules = (response.scheduled ?? []) as typeof rawSchedules;
   } catch (err) {
-    if (err instanceof AeroAPIError && err.status === 404) {
-      routesCache.set(icao, {
-        data: [],
-        expiresAt: Date.now() + ROUTES_CACHE_TTL_MS,
-      });
-      return [];
-    }
+    if (err instanceof AeroAPIError && err.status === 404) return [];
     if (err instanceof AeroAPIError && err.status === 429) {
       throw new UpstreamError(
         "Przekroczono limit zapytań AeroAPI. Spróbuj ponownie za chwilę.",
@@ -532,8 +635,9 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
     5,
   );
 
-  const result: RouteEntry[] = [];
+  await persistRoutesToDb(icao, routeMap, airlineMap, airportMap);
 
+  const result: RouteEntry[] = [];
   for (const [opIcao, destSet] of routeMap) {
     const airline = airlineMap.get(opIcao);
     if (!airline) continue;
@@ -551,23 +655,46 @@ async function fetchAirportRoutes(icao: string): Promise<RouteEntry[]> {
   }
 
   result.sort((a, b) => a.airline.name.localeCompare(b.airline.name));
-  routesCache.set(icao, {
-    data: result,
-    expiresAt: Date.now() + ROUTES_CACHE_TTL_MS,
-  });
   return result;
 }
 
-export async function getAirportRoutes(code: string): Promise<RouteEntry[]> {
+async function resolveRoutes(icao: string): Promise<AirportRoutesResult> {
+  const { hasRoutes, isFresh } = await getDbRouteFreshness(icao);
+
+  if (hasRoutes && isFresh) {
+    const routes = await buildRoutesFromDb(icao);
+    setCachedRoutes(icao, routes, false);
+    return { routes, stale: false };
+  }
+
+  try {
+    const routes = await fetchRoutesFromAeroApi(icao);
+    setCachedRoutes(icao, routes, false);
+    return { routes, stale: false };
+  } catch (err) {
+    if (hasRoutes && err instanceof UpstreamError) {
+      const routes = await buildRoutesFromDb(icao);
+      setCachedRoutes(icao, routes, true);
+      return { routes, stale: true };
+    }
+    throw err;
+  }
+}
+
+export async function getAirportRoutes(
+  code: string,
+): Promise<AirportRoutesResult> {
   const icao = normalizeIcao(code);
 
   const cached = routesCache.get(icao);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
+  if (cached && cached.expiresAt > Date.now()) {
+    return { routes: cached.data, stale: cached.stale };
+  }
 
   const inFlight = routesInFlight.get(icao);
   if (inFlight) return inFlight;
 
-  const promise = fetchAirportRoutes(icao).finally(() =>
+  const promise = resolveRoutes(icao).finally(() =>
     routesInFlight.delete(icao),
   );
   routesInFlight.set(icao, promise);

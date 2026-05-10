@@ -8,21 +8,24 @@ import { BoundingBoxLimitError } from "./telemetry.errors";
  */
 export const TelemetryUtils = {
   /**
-   * Area limit (in square degrees) to secure API credit usage.
+   * Area limit in square degrees to secure API credit usage.
+   * A value of 400 corresponds to a 20x20 degree box.
    */
   MAX_AREA_SQ_DEGREES: 400,
 
   /**
    * Spatial buffer in degrees for matching AeroAPI position to OpenSky states.
+   * Creates a 3x3 degree search area centered on the aircraft.
    */
   SPATIAL_BUFFER_DEGREES: 1.5,
 
   /**
    * Creates a BoundingBox around a given coordinate point using the spatial buffer.
+   * Clamps results to valid geographic coordinate ranges.
    *
-   * @param lat - Latitude
-   * @param lon - Longitude
-   * @returns OpenSky compatible BoundingBox
+   * @param lat - Center latitude.
+   * @param lon - Center longitude.
+   * @returns OpenSky compatible BoundingBox object.
    */
   createBoundingBox(lat: number, lon: number): BoundingBox {
     return {
@@ -35,9 +38,10 @@ export const TelemetryUtils = {
 
   /**
    * Validates that the requested bounding box area does not exceed security limits.
+   * Calculated as (max_lat - min_lat) * (max_lon - min_lon).
    *
-   * @param query - Bounding box area coordinates.
-   * @throws {BoundingBoxLimitError} If area exceeds limits.
+   * @param query - Bounding box area coordinates from the request.
+   * @throws {BoundingBoxLimitError} If the area exceeds MAX_AREA_SQ_DEGREES.
    */
   validateAreaLimits(query: BoundingBoxAreaQuery): void {
     const latRange = query.lamax - query.lamin;
