@@ -7,6 +7,7 @@ import { globalErrorHandler } from "./common/middleware/errorHandler";
 import apiRouter from "./common/routes";
 import { logger } from "./common/utils/logger";
 import { doubleCsrfProtection } from "./common/middleware/csrf";
+import { getTrackingScheduler } from "./tracking/tracking.scheduler";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use(globalErrorHandler);
 AppDataSource.initialize()
   .then(() => {
     logger.info("Database connected successfully via TypeORM", null, true);
+    getTrackingScheduler().start();
     app.listen(port, () => {
       logger.info(`Backend server running on port ${port}`, null, true);
     });

@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+import { recordApiCall } from "../usage/recorder";
 import {
   AircraftTimeWindow,
   BoundingBox,
@@ -92,6 +93,7 @@ export class OpenSkyClient {
     params?: Record<string, string | number>,
   ): Promise<T> {
     const token = await this.getAccessToken();
+    const startedAt = Date.now();
 
     try {
       const res = await this.httpClient.get<T>(endpoint, {
@@ -100,8 +102,26 @@ export class OpenSkyClient {
         },
         params: params,
       });
+      recordApiCall({
+        provider: "opensky",
+        endpoint,
+        statusCode: res.status,
+        success: true,
+        durationMs: Date.now() - startedAt,
+      });
       return res.data;
     } catch (error) {
+      const status =
+        axios.isAxiosError(error) && typeof error.response?.status === "number"
+          ? error.response.status
+          : null;
+      recordApiCall({
+        provider: "opensky",
+        endpoint,
+        statusCode: status,
+        success: false,
+        durationMs: Date.now() - startedAt,
+      });
       this.handleAxiosError(
         error,
         `OpenSky API request fialed for endpoint: ${endpoint}`,

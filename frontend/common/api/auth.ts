@@ -62,3 +62,10 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await apiClient.get<AuthUser>("/users/me");
   return data;
 }
+
+export async function updateProfilePublic(value: boolean): Promise<AuthUser> {
+  const { data } = await apiClient.patch<AuthUser>("/users/me", {
+    profilePublic: value,
+  });
+  return data;
+}

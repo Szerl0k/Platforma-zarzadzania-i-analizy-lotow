@@ -10,7 +10,12 @@ import {
 } from "@/common/hooks/useAuth";
 import { PageShell, Spinner } from "@/common/components";
 
-export const ADMIN_PERMS = ["users:write", "roles:write", "permissions:write"];
+export const ADMIN_PERMS = [
+  "users:write",
+  "roles:write",
+  "permissions:write",
+  "api-usage:read",
+];
 
 const TABS: { href: string; label: string; perm: string }[] = [
   { href: "/admin/users", label: "Użytkownicy", perm: "users:write" },
@@ -19,6 +24,11 @@ const TABS: { href: string; label: string; perm: string }[] = [
     href: "/admin/permissions",
     label: "Uprawnienia",
     perm: "permissions:write",
+  },
+  {
+    href: "/admin/api-usage",
+    label: "Zużycie API",
+    perm: "api-usage:read",
   },
 ];
 

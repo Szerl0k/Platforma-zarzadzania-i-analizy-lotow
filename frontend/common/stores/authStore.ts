@@ -18,6 +18,7 @@ interface AuthState {
   ) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
+  setUser: (user: AuthUser) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -47,4 +48,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, loading: false });
     }
   },
+
+  setUser: (user) => set({ user }),
 }));

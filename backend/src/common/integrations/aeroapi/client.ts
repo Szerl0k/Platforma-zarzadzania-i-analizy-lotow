@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 
+import { recordApiCall } from "../usage/recorder";
 import {
   AeroAPIQueryParams,
   AeroAPIAirportFlightParams,
@@ -57,10 +58,29 @@ export class AeroAPIClient {
     endpoint: string,
     params?: AeroAPIQueryParams,
   ): Promise<T> {
+    const startedAt = Date.now();
     try {
       const res = await this.httpClient.get<T>(endpoint, { params });
+      recordApiCall({
+        provider: "aeroapi",
+        endpoint,
+        statusCode: res.status,
+        success: true,
+        durationMs: Date.now() - startedAt,
+      });
       return res.data;
     } catch (error) {
+      const status =
+        axios.isAxiosError(error) && typeof error.response?.status === "number"
+          ? error.response.status
+          : null;
+      recordApiCall({
+        provider: "aeroapi",
+        endpoint,
+        statusCode: status,
+        success: false,
+        durationMs: Date.now() - startedAt,
+      });
       this.handleAxiosError(error, endpoint);
     }
   }

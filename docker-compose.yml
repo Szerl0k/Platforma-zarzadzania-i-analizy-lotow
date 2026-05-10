@@ -7,7 +7,7 @@ services:
     platform: linux/amd64
     container_name: flight_management_db
     environment:
-      POSTGRES_DB: flight_db
+      POSTGRES_DB: flight_management
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -28,10 +28,12 @@ services:
     container_name: flight_management_backend
     ports: 
       - "5001:5001"
+    env_file:
+      - ./backend/.env
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=flight_db
+      - DB_NAME=flight_management
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - PORT=5001

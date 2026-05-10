@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthInitializer } from "@/common/hooks/useAuth";
 import { APP_NAME } from "@/common/config";
+import { ToastContainer } from "@/common/components";
 import Navbar from "./Navbar";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthInitializer>
           <Navbar />
           {children}
+          <ToastContainer />
         </AuthInitializer>
       </body>
     </html>
