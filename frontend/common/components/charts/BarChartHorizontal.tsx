@@ -22,9 +22,7 @@ export function BarChartHorizontal({
 }: BarChartHorizontalProps) {
   if (data.length === 0) {
     return (
-      <p className="font-mono text-xs uppercase text-ink-subtle">
-        Brak danych
-      </p>
+      <p className="font-mono text-xs uppercase text-ink-subtle">Brak danych</p>
     );
   }
   const max = Math.max(...data.map((d) => d.value), 1);

@@ -113,9 +113,12 @@ export async function untrackFlight(id: string): Promise<void> {
 export async function listFlightHistory(
   filters: HistoryFilters = {},
 ): Promise<FlightHistoryDTO[]> {
-  const { data } = await apiClient.get<FlightHistoryDTO[]>("/tracking/history", {
-    params: filters,
-  });
+  const { data } = await apiClient.get<FlightHistoryDTO[]>(
+    "/tracking/history",
+    {
+      params: filters,
+    },
+  );
   return data;
 }
 
@@ -131,10 +134,12 @@ export async function exportHistoryCsvUrl(): Promise<string> {
   return data;
 }
 
-export async function listNotifications(opts: {
-  unreadOnly?: boolean;
-  limit?: number;
-} = {}): Promise<NotificationDTO[]> {
+export async function listNotifications(
+  opts: {
+    unreadOnly?: boolean;
+    limit?: number;
+  } = {},
+): Promise<NotificationDTO[]> {
   const { data } = await apiClient.get<NotificationDTO[]>("/notifications", {
     params: {
       ...(opts.unreadOnly ? { unreadOnly: "true" } : {}),

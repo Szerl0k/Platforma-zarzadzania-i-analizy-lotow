@@ -35,12 +35,20 @@ interface ToggleProps {
   onChange: (next: boolean) => void;
 }
 
-function Toggle({ label, description, checked, disabled, onChange }: ToggleProps) {
+function Toggle({
+  label,
+  description,
+  checked,
+  disabled,
+  onChange,
+}: ToggleProps) {
   return (
     <label
       className={
         "flex items-center justify-between gap-4 border-2 border-ink p-3 cursor-pointer " +
-        (disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-[var(--color-lime)]/30")
+        (disabled
+          ? "opacity-60 cursor-not-allowed"
+          : "hover:bg-[var(--color-lime)]/30")
       }
     >
       <div className="min-w-0">

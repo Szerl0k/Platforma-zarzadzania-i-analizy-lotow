@@ -118,7 +118,10 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
       {/* Track this flight */}
       {flightDetails && user && (
         <div className="p-3 border-b-2 border-ink shrink-0">
-          <TrackThisFlightButton flightId={flightDetails.id} source="map_click" />
+          <TrackThisFlightButton
+            flightId={flightDetails.id}
+            source="map_click"
+          />
         </div>
       )}
 

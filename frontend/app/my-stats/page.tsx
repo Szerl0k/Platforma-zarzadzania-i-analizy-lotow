@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Card,
-  PageShell,
-  Spinner,
-  StatCard,
-} from "@/common/components";
+import { Alert, Card, PageShell, Spinner, StatCard } from "@/common/components";
 import { BarChartHorizontal } from "@/common/components/charts/BarChartHorizontal";
 import { BarChartVertical } from "@/common/components/charts/BarChartVertical";
 import {
@@ -112,8 +106,8 @@ export default function MyStatsPage() {
 
       {isEmpty && (
         <Alert variant="info" className="mb-6">
-          Brak danych — Twoje statystyki pojawią się tutaj po pierwszym śledzonym
-          locie.
+          Brak danych — Twoje statystyki pojawią się tutaj po pierwszym
+          śledzonym locie.
         </Alert>
       )}
 
@@ -143,9 +137,7 @@ export default function MyStatsPage() {
         <StatCard
           title="Najdłuższy lot"
           value={
-            stats.longestFlight
-              ? formatKm(stats.longestFlight.distanceKm)
-              : "—"
+            stats.longestFlight ? formatKm(stats.longestFlight.distanceKm) : "—"
           }
           sublabel={
             stats.longestFlight

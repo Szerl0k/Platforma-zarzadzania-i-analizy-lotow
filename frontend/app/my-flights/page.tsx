@@ -14,8 +14,16 @@ import {
   PageShell,
   Spinner,
 } from "@/common/components";
-import { useMyFlights, stopTracking, trackFlight } from "@/common/hooks/useTracking";
-import { previewTracking, type FlightDetailsDTO, type TrackedFlightDTO } from "@/common/api/tracking";
+import {
+  useMyFlights,
+  stopTracking,
+  trackFlight,
+} from "@/common/hooks/useTracking";
+import {
+  previewTracking,
+  type FlightDetailsDTO,
+  type TrackedFlightDTO,
+} from "@/common/api/tracking";
 
 type Bucket = TrackedFlightDTO["bucket"];
 
@@ -230,8 +238,12 @@ export default function MyFlightsPage() {
                               </p>
                             )}
                             <div className="font-mono text-[11px] uppercase tracking-widest text-ink-subtle mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                              <span>Wylot: {formatDateTime(f.scheduledOut)}</span>
-                              <span>Przylot: {formatDateTime(f.scheduledIn)}</span>
+                              <span>
+                                Wylot: {formatDateTime(f.scheduledOut)}
+                              </span>
+                              <span>
+                                Przylot: {formatDateTime(f.scheduledIn)}
+                              </span>
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">

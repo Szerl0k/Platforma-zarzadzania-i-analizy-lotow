@@ -136,7 +136,11 @@ export default function RankingsPage() {
       )}
 
       <div className="sticky bottom-4 mt-6">
-        <Card variant="elevated" padding="md" className="bg-[var(--color-lime)]/40">
+        <Card
+          variant="elevated"
+          padding="md"
+          className="bg-[var(--color-lime)]/40"
+        >
           {!user ? (
             <p className="font-mono text-xs uppercase tracking-widest text-ink">
               <Link href="/login" className="underline">

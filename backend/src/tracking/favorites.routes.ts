@@ -32,7 +32,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
 router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
   try {
-    await removeFavorite(req.userId ?? "", req.params.id ?? "");
+    await removeFavorite(req.userId ?? "", String(req.params.id ?? ""));
     res.status(204).send();
   } catch (err) {
     handleHttpError(err, res);

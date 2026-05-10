@@ -167,12 +167,7 @@ export function MapLayers({
               lime,
               ink,
             ],
-            "icon-halo-width": [
-              "case",
-              ["==", ["get", "tracked"], true],
-              4,
-              2,
-            ],
+            "icon-halo-width": ["case", ["==", ["get", "tracked"], true], 4, 2],
             "icon-halo-blur": 0,
           }}
         />

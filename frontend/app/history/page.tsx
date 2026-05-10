@@ -16,7 +16,11 @@ import {
   useFlightHistory,
   deleteFromHistory,
 } from "@/common/hooks/useTracking";
-import { exportHistoryCsvUrl, type FlightHistoryDTO, type HistoryFilters } from "@/common/api/tracking";
+import {
+  exportHistoryCsvUrl,
+  type FlightHistoryDTO,
+  type HistoryFilters,
+} from "@/common/api/tracking";
 
 const SORTS: { value: NonNullable<HistoryFilters["sort"]>; label: string }[] = [
   { value: "newest", label: "Od najnowszych" },
@@ -230,7 +234,9 @@ export default function HistoryPage() {
                     {(h.originCountry || h.destinationCountry) && (
                       <p className="font-mono text-[11px] uppercase tracking-widest text-ink-subtle mt-0.5">
                         {h.originCountry ?? ""}{" "}
-                        {h.destinationCountry ? `→ ${h.destinationCountry}` : ""}
+                        {h.destinationCountry
+                          ? `→ ${h.destinationCountry}`
+                          : ""}
                       </p>
                     )}
                     {h.airlineName && (
@@ -240,7 +246,9 @@ export default function HistoryPage() {
                     )}
                     <div className="font-mono text-[11px] uppercase tracking-widest text-ink-subtle mt-2 flex flex-wrap gap-x-4 gap-y-1">
                       <span>Data: {formatDate(h.travelDate)}</span>
-                      <span>Czas lotu: {formatDuration(h.durationMinutes)}</span>
+                      <span>
+                        Czas lotu: {formatDuration(h.durationMinutes)}
+                      </span>
                     </div>
                   </div>
                   <Button

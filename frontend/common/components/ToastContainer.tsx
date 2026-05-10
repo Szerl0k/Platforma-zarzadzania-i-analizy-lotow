@@ -20,7 +20,9 @@ export function ToastContainer() {
   const { newSinceLast } = useNotifications(enabled ? 30_000 : 0);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mounted, setMounted] = useState(false);
-  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
   const router = useRouter();
 
   useEffect(() => {

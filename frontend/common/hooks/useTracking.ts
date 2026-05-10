@@ -58,7 +58,8 @@ export function useMyFlights(pollIntervalMs = 30_000): UseMyFlightsResult {
   );
 
   const trackedFlightIdFor = useCallback(
-    (flightId: string) => flights.find((f) => f.flightId === flightId)?.id ?? null,
+    (flightId: string) =>
+      flights.find((f) => f.flightId === flightId)?.id ?? null,
     [flights],
   );
 
@@ -103,7 +104,9 @@ export function useFlightHistory(filters: HistoryFilters) {
       setItems(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd pobierania historii.");
+      setError(
+        err instanceof Error ? err.message : "Błąd pobierania historii.",
+      );
     } finally {
       setLoading(false);
     }

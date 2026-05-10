@@ -69,9 +69,7 @@ function ProviderCard({ stats }: { stats: ProviderUsageStats }) {
 
       <div className="flex justify-between font-mono text-xs text-ink-subtle">
         <span>{stats.percent.toFixed(1)}% wykorzystane</span>
-        <span>
-          pozostało {stats.remaining.toLocaleString("pl-PL")}
-        </span>
+        <span>pozostało {stats.remaining.toLocaleString("pl-PL")}</span>
       </div>
     </Card>
   );

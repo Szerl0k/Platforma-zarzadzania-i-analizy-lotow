@@ -161,9 +161,7 @@ export function DetailsPanel({
           loading={favStatus === "saving"}
           disabled={favStatus === "saved"}
         >
-          {favStatus === "saved"
-            ? "W ulubionych"
-            : "Dodaj do ulubionych"}
+          {favStatus === "saved" ? "W ulubionych" : "Dodaj do ulubionych"}
         </Button>
         {favMessage && (
           <Alert
@@ -171,8 +169,8 @@ export function DetailsPanel({
               favStatus === "saved"
                 ? "success"
                 : favStatus === "error"
-                ? "error"
-                : "info"
+                  ? "error"
+                  : "info"
             }
           >
             {favMessage}
@@ -212,7 +210,8 @@ function FlightOptionsList({ options }: { options: ProposalFlightOption[] }) {
           </div>
           <p className="font-mono text-[11px] text-ink-subtle">
             {formatTime(opt.scheduledDeparture)} →{" "}
-            {formatTime(opt.scheduledArrival)} · {formatDuration(opt.durationMinutes)}
+            {formatTime(opt.scheduledArrival)} ·{" "}
+            {formatDuration(opt.durationMinutes)}
           </p>
         </li>
       ))}

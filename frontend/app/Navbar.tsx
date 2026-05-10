@@ -319,9 +319,7 @@ function NavbarAuthed({ user, logout }: NavbarAuthedProps) {
                     notifications.slice(0, 8).map((n) => (
                       <button
                         key={n.id}
-                        onClick={() =>
-                          handleNotificationClick(n.id, n.link)
-                        }
+                        onClick={() => handleNotificationClick(n.id, n.link)}
                         className={
                           "w-full text-left px-4 py-3 border-b border-ink/20 last:border-b-0 cursor-pointer hover:bg-[var(--color-lime)]/30 " +
                           (!n.readAt ? "bg-[var(--color-lime)]/15" : "")

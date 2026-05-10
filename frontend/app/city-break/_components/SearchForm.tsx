@@ -1,16 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import {
-  Button,
-  FormField,
-  Input,
-} from "@/common/components";
+import { Button, FormField, Input } from "@/common/components";
 import type { Airport } from "@/common/api/airports";
-import type {
-  CityBreakSearchParams,
-  SortBy,
-} from "@/common/api/cityBreak";
+import type { CityBreakSearchParams, SortBy } from "@/common/api/cityBreak";
 import { OriginAutocomplete } from "./OriginAutocomplete";
 
 interface SearchFormProps {
