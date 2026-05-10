@@ -14,7 +14,7 @@ import {
   AeroAPIFlightPositionResponse,
 } from "./types";
 
-const SAFE_PATH_SEGMENT = /^[A-Za-z0-9_-]{1,32}$/;
+const SAFE_PATH_SEGMENT = /^[A-Za-z0-9._-]{1,64}$/;
 const SAFE_DATE_SEGMENT = /^\d{4}-\d{2}-\d{2}$/;
 
 function assertSafePathSegment(value: string, name: string): string {
