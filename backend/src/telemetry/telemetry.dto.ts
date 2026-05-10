@@ -33,8 +33,8 @@ export interface LocateFlightResponseDTO {
   icao24: string;
   /** AeroAPI unique flight identifier. */
   faFlightId: string;
-  /** Internal system UUID for the flight. */
-  internalFlightId: string; // UUID reference to main domain
+  /** Internal system UUID for the flight, or null if the flight could not be persisted. */
+  internalFlightId: string | null;
   /** Current geospatial location. */
   location: Point;
   /** Distance from origin airport in kilometers. */

@@ -318,6 +318,74 @@ describe("TelemetryService", () => {
       );
     });
 
+    it("should second-chance ingest by faFlightId when DB lookup misses, then persist telemetry", async () => {
+      const query = { icao24: "icao1" };
+      const mockState = createMockStateVector({
+        icao24: "icao1",
+        callsign: "CALL1",
+        lon: 20,
+        lat: 50,
+      });
+      mockOpenSkyClient.getAllStateVectors.mockResolvedValue({
+        time: 123456,
+        states: [mockState],
+      });
+      mockFlightsService.getFlightDetailsAndSave.mockResolvedValue({
+        faFlightId: "fa-missing",
+      } as unknown as FlightDetailsResponseDTO);
+      // First DB lookup misses (resolve step did not persist)
+      mockFlightsRepo.findByFaFlightId.mockResolvedValue(null);
+      // Second-chance ingestion succeeds
+      mockFlightsService.ingestByFaFlightId.mockResolvedValue({
+        id: "ingested-uuid",
+      } as unknown as Flight);
+      mockTelemetryRepo.save.mockResolvedValue({
+        id: "t-id",
+        icao24: "icao1",
+        flightId: "ingested-uuid",
+        timestamp: new Date("2026-05-10"),
+        location: { type: "Point", coordinates: [20, 50] },
+      } as unknown as FlightTelemetry);
+      mockTelemetryRepo.calculateDistances.mockResolvedValue({
+        distanceFromOriginKm: 10,
+        distanceToDestinationKm: 20,
+      });
+
+      const result = await service.locateAndSaveFlight(query);
+
+      expect(mockFlightsService.ingestByFaFlightId).toHaveBeenCalledWith(
+        "fa-missing",
+      );
+      expect(result.internalFlightId).toBe("ingested-uuid");
+      expect(mockTelemetryRepo.save).toHaveBeenCalled();
+    });
+
+    it("should return DTO with null internalFlightId when ingestion also fails (graceful degrade)", async () => {
+      const query = { icao24: "icao1" };
+      const mockState = createMockStateVector({
+        icao24: "icao1",
+        callsign: "CALL1",
+        lon: 20,
+        lat: 50,
+      });
+      mockOpenSkyClient.getAllStateVectors.mockResolvedValue({
+        time: 123456,
+        states: [mockState],
+      });
+      mockFlightsService.getFlightDetailsAndSave.mockResolvedValue({
+        faFlightId: "fa-orphan",
+      } as unknown as FlightDetailsResponseDTO);
+      mockFlightsRepo.findByFaFlightId.mockResolvedValue(null);
+      mockFlightsService.ingestByFaFlightId.mockResolvedValue(null);
+
+      const result = await service.locateAndSaveFlight(query);
+
+      expect(result.internalFlightId).toBeNull();
+      expect(result.icao24).toBe("icao1");
+      expect(result.faFlightId).toBe("fa-orphan");
+      expect(mockTelemetryRepo.save).not.toHaveBeenCalled();
+    });
+
     it("should throw TelemetryNotFoundError if callsign missing for ICAO lookup", async () => {
       const query = { icao24: "icao1" };
       const mockState = createMockStateVector({

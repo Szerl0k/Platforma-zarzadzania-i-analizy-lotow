@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Map as MapGL,
   NavigationControl,
@@ -12,7 +13,7 @@ import { useTelemetry, useLocateFlight } from "@/common/hooks/useTelemetry";
 import { useAirports } from "@/common/hooks/useAirports";
 import { useAirportRoutes } from "@/common/hooks/useAirportRoutes";
 import { useRouteAnimation } from "@/common/hooks/useRouteAnimation";
-import { useFlightPath } from "@/common/hooks/useFlights";
+import { useFlightPath, useFlightDetailsById } from "@/common/hooks/useFlights";
 import { useMyFlights } from "@/common/hooks/useTracking";
 import { useAuth } from "@/common/hooks/useAuth";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -40,6 +41,13 @@ import type {
 
 export default function TelemetryMapView() {
   const mapRef = useRef<MapRef>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // Capture once on mount; subsequent router.replace must not re-trigger the deeplink.
+  const [initialFlightId] = useState<string | null>(() =>
+    searchParams.get("flightId"),
+  );
+  const [deeplinkConsumed, setDeeplinkConsumed] = useState(false);
   const {
     flights,
     error,
@@ -70,6 +78,19 @@ export default function TelemetryMapView() {
   const { pathData } = useFlightPath(
     detailedTelemetry?.internalFlightId || null,
   );
+
+  // --- Deeplink: open `/telemetry?flightId=UUID` selects the flight on mount ---
+  const { data: deeplinkFlight } = useFlightDetailsById(
+    deeplinkConsumed ? null : initialFlightId,
+  );
+  const deeplinkLocateParams = useMemo(
+    () =>
+      !deeplinkConsumed && deeplinkFlight?.faFlightId
+        ? { faFlightId: deeplinkFlight.faFlightId }
+        : null,
+    [deeplinkConsumed, deeplinkFlight],
+  );
+  const { data: deeplinkLocate } = useLocateFlight(deeplinkLocateParams);
 
   const traveledPathGeoJson = useMemo<GeoJSON.FeatureCollection>(
     () =>
@@ -165,6 +186,33 @@ export default function TelemetryMapView() {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (deeplinkConsumed || !deeplinkLocate || !deeplinkFlight) return;
+    const [lon, lat] = deeplinkLocate.location.coordinates as [number, number];
+    const feature: GeoJSON.Feature<GeoJSON.Point> = {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [lon, lat] },
+      properties: {
+        icao24: deeplinkLocate.icao24,
+        callsign: deeplinkFlight.callsign,
+        altitude: null,
+        velocity: null,
+        heading: null,
+        onGround: false,
+      },
+    };
+    setSelectedFlight(feature);
+    setSelectedAirportData(null);
+    setHighlightedIcao(null);
+    mapRef.current?.flyTo({
+      center: [lon, lat],
+      zoom: 7,
+      duration: 1200,
+    });
+    setDeeplinkConsumed(true);
+    router.replace("/telemetry");
+  }, [deeplinkConsumed, deeplinkLocate, deeplinkFlight, router]);
 
   const handleMapLoad = useCallback(
     (e: MapEvent) => {

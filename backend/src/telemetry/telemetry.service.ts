@@ -257,20 +257,21 @@ export class TelemetryService {
    * @param state - The OpenSky state vector tuple.
    * @param faFlightId - The associated AeroAPI flight identifier.
    * @returns Enriched response DTO containing persistence details and distance metrics.
-   * @throws {FlightNotFoundError} If the flight record does not exist in the database.
+   *   When the flight cannot be persisted (AeroAPI returns no metadata), `internalFlightId`
+   *   is null and the row is not written to the telemetry table.
    * @throws {BoundingBoxLimitError} If the state vector lacks valid geographic coordinates.
    */
   private async persistTelemetry(
     state: StateVectorTuple,
     faFlightId: string,
   ): Promise<LocateFlightResponseDTO> {
-    const flightRecord =
+    let flightRecord =
       await this.flightsRepository.findByFaFlightId(faFlightId);
 
+    // Second-chance ingestion: if the upstream resolve step did not persist this
+    // flight (e.g. AeroAPI hiccup or callsign mismatch), fetch by faFlightId now.
     if (!flightRecord) {
-      throw new FlightNotFoundError(
-        `Flight with AeroAPI Id ${faFlightId} doesn't exist in the database.`,
-      );
+      flightRecord = await this.flightsService.ingestByFaFlightId(faFlightId);
     }
 
     const [
@@ -293,11 +294,28 @@ export class TelemetryService {
       );
     }
 
+    const location = {
+      type: "Point" as const,
+      coordinates: [longitude, latitude] as [number, number],
+    };
+
+    // Cannot persist telemetry without a flight FK; degrade gracefully so the client
+    // still receives ADS-B data without commercial details.
+    if (!flightRecord) {
+      return {
+        icao24,
+        faFlightId,
+        internalFlightId: null,
+        location,
+        persistedAt: new Date().toISOString(),
+      };
+    }
+
     const telemetryEntry = await this.telemetryRepository.save({
       icao24,
       flightId: flightRecord.id,
       timestamp: new Date(),
-      location: { type: "Point", coordinates: [longitude, latitude] },
+      location,
       altitude: altitude != null ? Math.round(altitude) : null,
       velocity: velocity ?? null,
       heading: heading ?? null,
