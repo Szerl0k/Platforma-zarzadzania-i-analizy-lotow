@@ -54,6 +54,12 @@ function NavbarPublic() {
           City Break
         </Link>
         <Link
+          href="/connections"
+          className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
+        >
+          Połączenia
+        </Link>
+        <Link
           href="/rankings"
           className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
         >
@@ -157,18 +163,14 @@ function NavbarAuthed({ user, logout }: NavbarAuthedProps) {
     setBellOpen(false);
     try {
       await markRead(id);
-    } catch {
-      // ignore
-    }
+    } catch {}
     if (link) router.push(link);
   }
 
   async function handleMarkAll() {
     try {
       await markAllRead();
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   const initial = user
@@ -202,6 +204,13 @@ function NavbarAuthed({ user, logout }: NavbarAuthedProps) {
           className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
         >
           City Break
+        </Link>
+
+        <Link
+          href="/connections"
+          className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
+        >
+          Połączenia
         </Link>
 
         {user && (

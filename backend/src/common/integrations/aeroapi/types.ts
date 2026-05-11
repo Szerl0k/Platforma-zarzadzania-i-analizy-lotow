@@ -1,5 +1,5 @@
 export interface AeroAPIQueryParams {
-  start?: string; // Format ISO 8601 (np. 2026-02-15T00:00:00Z)
+  start?: string;
   end?: string;
   max_pages?: number;
   cursor?: string;
@@ -11,8 +11,11 @@ export interface AeroAPIAirportFlightParams extends AeroAPIQueryParams {
 }
 
 export interface AeroAPIFlightsBetweenParams extends AeroAPIQueryParams {
-  type?: "Airline";
-  connection?: "nonstop" | "onestop";
+  type?:
+    | "arrivals"
+    | "departures"
+    | "scheduled_arrivals"
+    | "scheduled_departures";
 }
 
 export interface AeroAPISchedulesParams extends AeroAPIQueryParams {

@@ -840,3 +840,128 @@ export async function deleteAirline(code: string): Promise<void> {
     throw new NotFoundError(`Airline ${icao} not found`);
   }
 }
+
+export interface DirectRouteDTO {
+  airlineIcao: string | null;
+  airlineIata: string | null;
+  airlineName: string | null;
+}
+
+export interface ConnectingRouteDTO {
+  stopAirportIcao: string;
+  stopAirportIata: string | null;
+  stopAirportName: string | null;
+  stopCityName: string | null;
+  stopLatitude: number;
+  stopLongitude: number;
+}
+
+export interface RouteCheckResult {
+  originIcao: string;
+  destinationIcao: string;
+  direct: DirectRouteDTO[];
+  connecting: ConnectingRouteDTO[];
+}
+
+const routeCheckCache = new Map<
+  string,
+  { data: RouteCheckResult; expiresAt: number }
+>();
+const ROUTE_CHECK_TTL_MS = 30 * 60 * 1000;
+
+async function getDirectRoutesFromDb(
+  originIcao: string,
+  destIcao: string,
+): Promise<DirectRouteDTO[]> {
+  const rows = await airportRouteRepo()
+    .createQueryBuilder("ar")
+    .innerJoinAndSelect("ar.airline", "airline")
+    .where("ar.originAirportCode = :origin", { origin: originIcao })
+    .andWhere("ar.destinationAirportCode = :dest", { dest: destIcao })
+    .getMany();
+
+  return rows
+    .map((r) => ({
+      airlineIcao: r.airline.icaoCode,
+      airlineIata: r.airline.iataCode,
+      airlineName: r.airline.name,
+    }))
+    .sort((a, b) => (a.airlineName ?? "").localeCompare(b.airlineName ?? ""));
+}
+
+async function getConnectingRoutesFromDb(
+  originIcao: string,
+  destIcao: string,
+): Promise<ConnectingRouteDTO[]> {
+  const [leg1, leg2] = await Promise.all([
+    airportRouteRepo().find({
+      select: { destinationAirportCode: true },
+      where: { originAirportCode: originIcao },
+    }),
+    airportRouteRepo().find({
+      select: { originAirportCode: true },
+      where: { destinationAirportCode: destIcao },
+    }),
+  ]);
+
+  const leg1Dests = new Set(leg1.map((r) => r.destinationAirportCode));
+  const leg2Origins = new Set(leg2.map((r) => r.originAirportCode));
+
+  const stopCodes = [...leg1Dests].filter(
+    (code) => leg2Origins.has(code) && code !== originIcao && code !== destIcao,
+  );
+
+  if (stopCodes.length === 0) return [];
+
+  const stopAirports = await airportRepo().find({
+    where: { icaoCode: In(stopCodes) },
+    relations: ["city"],
+  });
+
+  return stopAirports
+    .map((a) => {
+      const { latitude, longitude } = extractCoordinates(a.location);
+      return {
+        stopAirportIcao: a.icaoCode,
+        stopAirportIata: a.iataCode,
+        stopAirportName: a.name,
+        stopCityName: a.city?.name ?? null,
+        stopLatitude: latitude,
+        stopLongitude: longitude,
+      };
+    })
+    .sort((a, b) =>
+      (a.stopCityName ?? a.stopAirportName ?? "").localeCompare(
+        b.stopCityName ?? b.stopAirportName ?? "",
+      ),
+    );
+}
+
+export async function getRouteCheck(
+  originCode: string,
+  destinationCode: string,
+): Promise<RouteCheckResult> {
+  const originIcao = normalizeIcao(originCode);
+  const destIcao = normalizeIcao(destinationCode);
+
+  const cacheKey = `${originIcao}:${destIcao}`;
+  const cached = routeCheckCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const [direct, connecting] = await Promise.all([
+    getDirectRoutesFromDb(originIcao, destIcao),
+    getConnectingRoutesFromDb(originIcao, destIcao),
+  ]);
+
+  const result: RouteCheckResult = {
+    originIcao,
+    destinationIcao: destIcao,
+    direct,
+    connecting,
+  };
+  routeCheckCache.set(cacheKey, {
+    data: result,
+    expiresAt: Date.now() + ROUTE_CHECK_TTL_MS,
+  });
+  return result;
+}

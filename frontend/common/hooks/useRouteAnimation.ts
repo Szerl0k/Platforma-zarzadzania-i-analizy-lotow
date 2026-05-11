@@ -18,12 +18,23 @@ export function useRouteAnimation(
   const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const routeCoords = routesGeoJson.features
+    const allCoords = routesGeoJson.features
       .filter(
         (f): f is GeoJSON.Feature<GeoJSON.LineString> =>
           f.geometry.type === "LineString",
       )
       .map((f) => f.geometry.coordinates);
+
+    const seen = new Set<string>();
+    const routeCoords = allCoords.filter((coords) => {
+      if (coords.length < 2) return false;
+      const first = coords[0];
+      const last = coords[coords.length - 1];
+      const key = `${first[0].toFixed(3)},${first[1].toFixed(3)}->${last[0].toFixed(3)},${last[1].toFixed(3)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);

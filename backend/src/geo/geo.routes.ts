@@ -8,6 +8,7 @@ import {
   getAirportRoutes,
   getOrFetchAirline,
   getOrFetchAirport,
+  getRouteCheck,
   listAirlines,
   listAirports,
   listAirportsInArea,
@@ -104,6 +105,26 @@ router.get(
     }
     const { routes, stale } = await getAirportRoutes(code);
     res.json({ routes, stale });
+  }),
+);
+
+router.get(
+  "/airports/:code/route-check",
+  asyncHandler(async (req, res) => {
+    const code = String(req.params.code ?? "").trim();
+    const destination = String(req.query.destination ?? "").trim();
+
+    if (!code) {
+      res.status(400).json({ error: "Airport code is required" });
+      return;
+    }
+    if (!destination) {
+      res.status(400).json({ error: "destination query param is required" });
+      return;
+    }
+
+    const result = await getRouteCheck(code, destination);
+    res.json(result);
   }),
 );
 
