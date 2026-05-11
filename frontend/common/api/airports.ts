@@ -127,3 +127,36 @@ export async function updateAirport(
 export async function deleteAirport(code: string): Promise<void> {
   await apiClient.delete(`/airports/${encodeURIComponent(code)}`);
 }
+
+export interface DirectRoute {
+  airlineIcao: string | null;
+  airlineIata: string | null;
+  airlineName: string | null;
+}
+
+export interface ConnectingRoute {
+  stopAirportIcao: string;
+  stopAirportIata: string | null;
+  stopAirportName: string | null;
+  stopCityName: string | null;
+  stopLatitude: number;
+  stopLongitude: number;
+}
+
+export interface RouteCheckResult {
+  originIcao: string;
+  destinationIcao: string;
+  direct: DirectRoute[];
+  connecting: ConnectingRoute[];
+}
+
+export async function getRouteCheck(
+  originCode: string,
+  destinationCode: string,
+): Promise<RouteCheckResult> {
+  const { data } = await apiClient.get<RouteCheckResult>(
+    `/airports/${encodeURIComponent(originCode)}/route-check`,
+    { params: { destination: destinationCode } },
+  );
+  return data;
+}
