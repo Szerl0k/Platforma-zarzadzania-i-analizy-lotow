@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from "nodemailer";
 import { InternalError } from "../common/errors/http-errors";
+import { logger } from "../common/utils/logger";
 
 export interface SmtpConfig {
   host: string;
@@ -60,9 +61,7 @@ function buildFlightHtmlBody(p: FlightNotificationPayload): string {
   const oldLine = p.oldValue
     ? `<p><strong>Poprzednio:</strong> ${escapeHtml(p.oldValue)}</p>`
     : "";
-  const newLine = p.newValue
-    ? `<p><strong>Aktualnie:</strong> ${escapeHtml(p.newValue)}</p>`
-    : "";
+  const newLine = p.newValue ? `<p><strong>Aktualnie:</strong> ${escapeHtml(p.newValue)}</p>` : "";
   return (
     `<p>Lot <strong>${escapeHtml(p.ident)}</strong> — ${CHANGE_LABELS[p.changeKind]}.</p>` +
     oldLine +
@@ -82,11 +81,29 @@ function escapeHtml(s: string): string {
 }
 
 export function createSmtpMailer(cfg: SmtpConfig): Mailer {
+  logger.info(
+    `Initializing SMTP Mailer: host=${cfg.host}, port=${cfg.port}, secure=${cfg.secure}, from=${cfg.from}`,
+  );
+
+  if (cfg.port === 587 && cfg.secure) {
+    logger.warn(
+      "SMTP_PORT 587 usually requires SMTP_SECURE=false (STARTTLS). Current config uses secure=true which might lead to 'wrong version number' error.",
+    );
+  }
+  if (cfg.port === 465 && !cfg.secure) {
+    logger.warn(
+      "SMTP_PORT 465 usually requires SMTP_SECURE=true (Implicit TLS). Current config uses secure=false.",
+    );
+  }
+
   const transport: Transporter = nodemailer.createTransport({
     host: cfg.host,
     port: cfg.port,
     secure: cfg.secure,
     auth: { user: cfg.user, pass: cfg.pass },
+    // requireTLS ensures that STARTTLS is used if secure is false (e.g., port 587).
+    // We disable it for port 1025 to keep local development (Mailhog/Maildev) simple.
+    requireTLS: !cfg.secure && cfg.port !== 1025,
   });
 
   return {
