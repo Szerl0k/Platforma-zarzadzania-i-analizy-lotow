@@ -21,9 +21,11 @@ export function useAirportRoutes(selectedAirport: Airport | null) {
     new Map(),
   );
 
+  const currentIcao = selectedAirport?.icaoCode ?? null;
+
   // Reset tras przy zmianie wybranego lotniska
-  if (selectedAirport?.icaoCode !== prevIcao) {
-    setPrevIcao(selectedAirport?.icaoCode ?? null);
+  if (currentIcao !== prevIcao) {
+    setPrevIcao(currentIcao);
     setSelectedRoutes(new Map());
   }
 
