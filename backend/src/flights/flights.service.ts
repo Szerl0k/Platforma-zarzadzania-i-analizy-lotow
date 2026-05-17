@@ -94,7 +94,10 @@ export class FlightsService {
       "destination.city.country",
       "operatingAirline",
     ]);
-    return FlightUtils.mapToDTO(reloadedFlight!, "database");
+    return FlightUtils.mapToDTO(
+      reloadedFlight!,
+      "database",
+    ) as FlightDetailsResponseDTO;
   }
 
   /**
@@ -125,7 +128,10 @@ export class FlightsService {
       "destination.city.country",
       "operatingAirline",
     ]);
-    return FlightUtils.mapToDTO(reloadedFlight!, "database");
+    return FlightUtils.mapToDTO(
+      reloadedFlight!,
+      "database",
+    ) as FlightDetailsResponseDTO;
   }
 
   /**
@@ -150,7 +156,7 @@ export class FlightsService {
     ]);
     if (!flight)
       throw new FlightNotFoundError(`Flight with ID ${id} not found`);
-    return FlightUtils.mapToDTO(flight, "database");
+    return FlightUtils.mapToDTO(flight, "database") as FlightDetailsResponseDTO;
   }
 
   /**
@@ -202,6 +208,195 @@ export class FlightsService {
   }
 
   /**
+   * Finds flights locally in the database matching the identifier and optionally a specific date range.
+   */
+  public async findFlightsLocally(
+    ident: string,
+    startDateStr?: string,
+    endDateStr?: string,
+  ): Promise<FlightDetailsResponseDTO[]> {
+    const normalizedIdent = await this.normalizeIdent(ident);
+
+    const queryBuilder = this.dataSource
+      .getRepository(Flight)
+      .createQueryBuilder("flight");
+    queryBuilder.leftJoinAndSelect("flight.status", "status");
+    queryBuilder.leftJoinAndSelect("flight.origin", "origin");
+    queryBuilder.leftJoinAndSelect("origin.city", "originCity");
+    queryBuilder.leftJoinAndSelect("originCity.country", "originCountry");
+    queryBuilder.leftJoinAndSelect("flight.destination", "destination");
+    queryBuilder.leftJoinAndSelect("destination.city", "destCity");
+    queryBuilder.leftJoinAndSelect("destCity.country", "destCountry");
+    queryBuilder.leftJoinAndSelect(
+      "flight.operatingAirline",
+      "operatingAirline",
+    );
+    queryBuilder.leftJoinAndSelect("flight.codeshares", "codeshares");
+
+    queryBuilder.where(
+      "(flight.callsign = :ident OR flight.ident_icao = :ident OR flight.ident_iata = :ident)",
+      { ident: normalizedIdent },
+    );
+
+    if (startDateStr || endDateStr) {
+      const start = startDateStr
+        ? new Date(`${startDateStr}T00:00:00Z`)
+        : new Date("1970-01-01T00:00:00Z");
+      const end = endDateStr
+        ? new Date(`${endDateStr}T23:59:59.999Z`)
+        : new Date("2099-12-31T23:59:59.999Z");
+
+      queryBuilder.andWhere(
+        "((flight.scheduled_out >= :start AND flight.scheduled_out <= :end) OR (flight.scheduled_in >= :start AND flight.scheduled_in <= :end))",
+        { start, end },
+      );
+    }
+
+    queryBuilder.orderBy("flight.scheduled_out", "DESC");
+    const flights = await queryBuilder.getMany();
+
+    return flights
+      .map((f) => FlightUtils.mapToDTO(f, "database"))
+      .filter((dto): dto is FlightDetailsResponseDTO => dto !== null);
+  }
+
+  /**
+   * Synchronizes flights from AeroAPI for a specific identifier and date range.
+   * If the range is exactly "today", it uses the /flights endpoint for real-time data.
+   * Otherwise, it utilizes the /schedules endpoint for broader historical/future coverage.
+   */
+  public async syncFlightsFromAeroApi(
+    ident: string,
+    startDateStr?: string,
+    endDateStr?: string,
+  ): Promise<FlightDetailsResponseDTO[]> {
+    const normalizedIdent = await this.normalizeIdent(ident);
+
+    const actualStartDateStr =
+      startDateStr || new Date().toISOString().split("T")[0];
+    const actualEndDateStr = endDateStr || actualStartDateStr;
+
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    // Determine if we should use the Schedules endpoint (historical/future)
+    // vs the Flights endpoint (real-time/recent +/- 2 days).
+    const isTodayOnly =
+      actualStartDateStr === todayStr && actualEndDateStr === todayStr;
+
+    if (!isTodayOnly) {
+      const parsed = FlightUtils.parseIdent(normalizedIdent);
+      if (parsed) {
+        const response = await this.aeroClient.getScheduledFlights(
+          actualStartDateStr,
+          actualEndDateStr,
+          {
+            airline: parsed.airline,
+            flight_number: parsed.flightNumber,
+            max_pages: 1,
+          },
+        );
+
+        if (!response.scheduled || response.scheduled.length === 0) {
+          return [];
+        }
+
+        const savedFlights: FlightDetailsResponseDTO[] = [];
+        for (const schedule of response.scheduled) {
+          const flight = await this.persistAeroSchedule(schedule);
+          const dto = FlightUtils.mapToDTO(flight, "AeroAPI");
+          if (dto) {
+            savedFlights.push(dto);
+          }
+        }
+        return savedFlights;
+      }
+    }
+
+    const startRange = new Date(`${actualStartDateStr}T00:00:00Z`);
+    const endRange = new Date(`${actualEndDateStr}T23:59:59Z`);
+
+    const response: AeroAPIStandardFlightsResponse =
+      await this.aeroClient.getFlightInfo(normalizedIdent, {
+        start: FlightUtils.formatAeroDate(startRange),
+        end: FlightUtils.formatAeroDate(endRange),
+        max_pages: 1,
+      });
+
+    if (!response.flights || response.flights.length === 0) {
+      return [];
+    }
+
+    const savedFlights: FlightDetailsResponseDTO[] = [];
+    for (const flightDetails of response.flights) {
+      const flight = await this.persistAeroFlight(flightDetails);
+      const dto = FlightUtils.mapToDTO(flight, "AeroAPI");
+      if (dto) {
+        savedFlights.push(dto);
+      }
+    }
+
+    return savedFlights;
+  }
+
+  /**
+   * Persists an AeroAPI schedule payload into the database.
+   */
+  private async persistAeroSchedule(
+    schedule: any, // AeroAPISchedule
+  ): Promise<Flight> {
+    return this.dataSource.transaction(async (manager) => {
+      const status = await this.flightsRepository.findOrCreateStatus(
+        "Scheduled",
+        manager,
+      );
+
+      const flightData: UpdateFlightDTO = {
+        identIcao: schedule.ident_icao || schedule.ident,
+        identIata: schedule.ident_iata,
+        operatingAirlineIcao: schedule.ident_icao
+          ? schedule.ident_icao.substring(0, 3)
+          : null,
+        callsign:
+          schedule.actual_ident || schedule.ident_icao || schedule.ident,
+        faFlightId: schedule.fa_flight_id || null,
+        originIcao: schedule.origin_icao || null,
+        destinationIcao: schedule.destination_icao || null,
+        statusId: status.id,
+        scheduledOut: schedule.scheduled_out,
+        scheduledIn: schedule.scheduled_in,
+      };
+
+      let flightRecord: Flight | null = null;
+      if (schedule.fa_flight_id) {
+        flightRecord = await this.flightsRepository.findByFaFlightId(
+          schedule.fa_flight_id,
+          FULL_FLIGHT_RELATIONS,
+          manager,
+        );
+      }
+
+      if (!flightRecord) {
+        flightRecord = await this.flightsRepository.create(
+          flightData as CreateFlightDTO,
+          manager,
+        );
+      } else {
+        await this.flightsRepository.update(
+          flightRecord.id,
+          flightData,
+          manager,
+        );
+      }
+
+      return (await this.flightsRepository.findById(
+        flightRecord.id,
+        FULL_FLIGHT_RELATIONS,
+        manager,
+      ))!;
+    });
+  }
+
+  /**
    * Orchestrates fetching flight details, prioritizing a local cache before hitting AeroAPI.
    * If a cache miss occurs, it fetches data from AeroAPI and synchronizes it with the local database.
    *
@@ -223,7 +418,10 @@ export class FlightsService {
     if (existingFlight) {
       const timeSinceUpdate = Date.now() - existingFlight.updatedAt.getTime();
       if (timeSinceUpdate < FlightUtils.CACHE_DURATION_MS) {
-        return FlightUtils.mapToDTO(existingFlight, "database");
+        return FlightUtils.mapToDTO(
+          existingFlight,
+          "database",
+        ) as FlightDetailsResponseDTO;
       }
     }
 
@@ -247,7 +445,7 @@ export class FlightsService {
 
     const flightDetails: AeroAPIFlightDetails = response.flights[0];
     const flight = await this.persistAeroFlight(flightDetails);
-    return FlightUtils.mapToDTO(flight, "AeroAPI");
+    return FlightUtils.mapToDTO(flight, "AeroAPI") as FlightDetailsResponseDTO;
   }
 
   /**
@@ -340,6 +538,7 @@ export class FlightsService {
       return (await this.flightsRepository.findById(
         flightRecord.id,
         FULL_FLIGHT_RELATIONS,
+        manager,
       ))!;
     });
   }

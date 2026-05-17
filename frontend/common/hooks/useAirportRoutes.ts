@@ -14,14 +14,20 @@ import {
  * @calledBy TelemetryMapView
  */
 export function useAirportRoutes(selectedAirport: Airport | null) {
+  const [prevIcao, setPrevIcao] = useState<string | null>(
+    selectedAirport?.icaoCode ?? null,
+  );
   const [selectedRoutes, setSelectedRoutes] = useState<Map<string, Airport[]>>(
     new Map(),
   );
 
+  const currentIcao = selectedAirport?.icaoCode ?? null;
+
   // Reset tras przy zmianie wybranego lotniska
-  useEffect(() => {
+  if (currentIcao !== prevIcao) {
+    setPrevIcao(currentIcao);
     setSelectedRoutes(new Map());
-  }, [selectedAirport?.icaoCode]);
+  }
 
   const toggleAirline = useCallback(
     (airlineIcao: string, destinations: Airport[]) => {

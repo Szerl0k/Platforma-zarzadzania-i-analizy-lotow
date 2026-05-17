@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ override: true });
+dotenv.config();
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 

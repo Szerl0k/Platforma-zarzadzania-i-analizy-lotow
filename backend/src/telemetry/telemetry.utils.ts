@@ -1,5 +1,5 @@
-import { BoundingBox } from "../common/integrations/opensky";
-import { BoundingBoxAreaQuery } from "./telemetry.dto";
+import { BoundingBox, StateVectorTuple } from "../common/integrations/opensky";
+import { BoundingBoxAreaQuery, MapFlightSummaryDTO } from "./telemetry.dto";
 import { BoundingBoxLimitError } from "./telemetry.errors";
 
 /**
@@ -18,6 +18,27 @@ export const TelemetryUtils = {
    * Creates a 3x3 degree search area centered on the aircraft.
    */
   SPATIAL_BUFFER_DEGREES: 1.5,
+
+  /**
+   * Maps an OpenSky state vector tuple to a MapFlightSummaryDTO.
+   *
+   * @param state - The state vector tuple from OpenSky.
+   * @returns A summarized DTO for map display.
+   */
+  mapStateVectorToSummaryDTO(state: StateVectorTuple): MapFlightSummaryDTO {
+    return {
+      icao24: state[0],
+      callsign: state[1] ? state[1].trim() : null,
+      location: {
+        type: "Point",
+        coordinates: [state[5]!, state[6]!],
+      },
+      altitude: state[7] ?? null,
+      velocity: state[9] ?? null,
+      heading: state[10] ?? null,
+      onGround: state[8],
+    };
+  },
 
   /**
    * Creates a BoundingBox around a given coordinate point using the spatial buffer.

@@ -1,8 +1,9 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import { FlightsService } from "./flights.service";
-import { FlightNotFoundError } from "../common/errors";
+import { asyncHandler } from "../common/utils/asyncHandler";
 import {
   FlightDetailsQuerySchema,
+  FlightListQuerySchema,
   CreateFlightSchema,
   UpdateFlightSchema,
 } from "./flights.dto";
@@ -10,13 +11,39 @@ import {
 const router = Router();
 const flightService = new FlightsService();
 
-function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>,
-) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    fn(req, res, next).catch(next);
-  };
-}
+/**
+ * Endpoint GET /flights/search
+ * Wyszukuje lokalnie w bazie na podstawie ident i date.
+ */
+router.get(
+  "/search",
+  asyncHandler(async (req, res) => {
+    const validatedQuery = FlightListQuerySchema.parse(req.query);
+    const result = await flightService.findFlightsLocally(
+      validatedQuery.ident,
+      validatedQuery.startDate,
+      validatedQuery.endDate,
+    );
+    res.json(result);
+  }),
+);
+
+/**
+ * Endpoint POST /flights/sync
+ * Pobiera listę lotów z AeroAPI i zapisuje do bazy, zwracając wyniki.
+ */
+router.post(
+  "/sync",
+  asyncHandler(async (req, res) => {
+    const validatedBody = FlightListQuerySchema.parse(req.body);
+    const result = await flightService.syncFlightsFromAeroApi(
+      validatedBody.ident,
+      validatedBody.startDate,
+      validatedBody.endDate,
+    );
+    res.json(result);
+  }),
+);
 
 /**
  * Endpoint GET /flights/details

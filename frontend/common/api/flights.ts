@@ -53,6 +53,36 @@ export interface FlightDetailsResponse {
 }
 
 export const flightApi = {
+  searchFlights: async (
+    ident: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<FlightDetailsResponse[]> => {
+    const { data } = await apiClient.get<FlightDetailsResponse[]>(
+      "/flights/search",
+      {
+        params: { ident, startDate, endDate },
+      },
+    );
+    return data;
+  },
+
+  syncFlights: async (
+    ident: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<FlightDetailsResponse[]> => {
+    const { data } = await apiClient.post<FlightDetailsResponse[]>(
+      "/flights/sync",
+      {
+        ident,
+        startDate,
+        endDate,
+      },
+    );
+    return data;
+  },
+
   getFlightDetails: async (ident: string): Promise<FlightDetailsResponse> => {
     const { data } = await apiClient.get<FlightDetailsResponse>(
       "/flights/details",

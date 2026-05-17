@@ -18,6 +18,7 @@ interface PanelContainerProps {
   handleCityPanelClose: () => void;
   handleAirlineToggle: (airlineIcao: string, destinations: Airport[]) => void;
   handleToggleAll: (allRoutes: AirlineWithDestinations[]) => void;
+  onLocate: (coords: [number, number]) => void;
 }
 
 /**
@@ -35,6 +36,7 @@ export function PanelContainer({
   handleCityPanelClose,
   handleAirlineToggle,
   handleToggleAll,
+  onLocate,
 }: PanelContainerProps) {
   // Panel width state (shared across all panels for consistency)
   const [panelWidth, setPanelWidth] = useState(320); // Default w-80 = 320px
@@ -121,6 +123,8 @@ export function PanelContainer({
             <FlightPanel
               properties={selectedFlight.properties as FlightFeatureProperties}
               onClose={handleFlightPanelClose}
+              onLocate={onLocate}
+              hideTrackingButton={true}
             />
           </div>
         )}
