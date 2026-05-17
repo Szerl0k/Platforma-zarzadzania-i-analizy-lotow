@@ -23,6 +23,10 @@ export interface LocateFlightResponseDTO {
   faFlightId: string;
   internalFlightId: string;
   location: Point;
+  altitude: number | null;
+  velocity: number | null;
+  heading: number | null;
+  onGround: boolean;
   distanceFromOriginKm?: number | null;
   distanceToDestinationKm?: number | null;
   persistedAt: string;

@@ -1,10 +1,16 @@
 "use client";
 
-import { Spinner, Alert, TrackThisFlightButton } from "@/common/components";
-import { useFlightDetailsById } from "@/common/hooks/useFlights";
+import {
+  Spinner,
+  Alert,
+  TrackThisFlightButton,
+  Button,
+} from "@/common/components";
+import { useFlightDetailsById, useFlightPath } from "@/common/hooks/useFlights";
 import { useLocateFlight } from "@/common/hooks/useTelemetry";
 import { useAuth } from "@/common/hooks/useAuth";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   calculateFlightDuration,
   formatDuration,
@@ -12,10 +18,163 @@ import {
   calculateTimeRemaining,
 } from "@/common/utils/flightUtils";
 import { getDirectionShort } from "@/common/utils/geoUtils";
+import { Map, Source, Layer, MapRef } from "react-map-gl/maplibre";
+import { useThemeColors } from "@/common/hooks/UseThemeColors";
+import "maplibre-gl/dist/maplibre-gl.css";
+
+function FlightPreviewMap({
+  flightId,
+  isLive,
+  telemetry,
+}: {
+  flightId: string;
+  isLive: boolean;
+  telemetry: any;
+}) {
+  const { pathData, isLoading } = useFlightPath(flightId);
+  const { navy, lime, ink } = useThemeColors();
+  const mapRef = useRef<MapRef>(null);
+
+  const traveledPathGeoJson = useMemo(
+    () =>
+      pathData?.traveled
+        ? {
+            type: "FeatureCollection" as const,
+            features: [
+              {
+                type: "Feature" as const,
+                geometry: pathData.traveled as any,
+                properties: {},
+              },
+            ],
+          }
+        : null,
+    [pathData],
+  );
+
+  const remainingPathGeoJson = useMemo(
+    () =>
+      pathData?.remaining
+        ? {
+            type: "FeatureCollection" as const,
+            features: [
+              {
+                type: "Feature" as const,
+                geometry: pathData.remaining as any,
+                properties: {},
+              },
+            ],
+          }
+        : null,
+    [pathData],
+  );
+
+  const positionGeoJson = useMemo(
+    () =>
+      telemetry?.location
+        ? {
+            type: "FeatureCollection" as const,
+            features: [
+              {
+                type: "Feature" as const,
+                geometry: telemetry.location,
+                properties: {},
+              },
+            ],
+          }
+        : null,
+    [telemetry],
+  );
+
+  useEffect(() => {
+    if (!mapRef.current || !pathData) return;
+
+    const coords: number[][] = [];
+    if (pathData.traveled?.coordinates) {
+      const g = pathData.traveled as any;
+      if (Array.isArray(g.coordinates)) coords.push(...g.coordinates);
+    }
+    if (pathData.remaining?.coordinates) {
+      const g = pathData.remaining as any;
+      if (Array.isArray(g.coordinates)) coords.push(...g.coordinates);
+    }
+
+    if (coords.length > 0) {
+      const minLng = Math.min(...coords.map((c) => c[0]));
+      const maxLng = Math.max(...coords.map((c) => c[0]));
+      const minLat = Math.min(...coords.map((c) => c[1]));
+      const maxLat = Math.max(...coords.map((c) => c[1]));
+
+      mapRef.current.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: 20, duration: 1000 },
+      );
+    }
+  }, [pathData]);
+
+  if (isLoading)
+    return (
+      <div className="h-32 w-full bg-ink/5 flex items-center justify-center border-y-2 border-ink">
+        <Spinner size="sm" />
+      </div>
+    );
+
+  return (
+    <div className="h-80 w-full border-y-2 border-ink relative overflow-hidden bg-ink/5">
+      <Map
+        ref={mapRef}
+        mapStyle="https://tiles.openfreemap.org/styles/positron"
+        initialViewState={{ longitude: 19.0, latitude: 52.0, zoom: 3 }}
+        attributionControl={false}
+      >
+        {traveledPathGeoJson && (
+          <Source id="traveled" type="geojson" data={traveledPathGeoJson}>
+            <Layer
+              id="traveled-line"
+              type="line"
+              paint={{ "line-color": navy, "line-width": 3 }}
+            />
+          </Source>
+        )}
+        {remainingPathGeoJson && (
+          <Source id="remaining" type="geojson" data={remainingPathGeoJson}>
+            <Layer
+              id="remaining-line"
+              type="line"
+              paint={{
+                "line-color": navy,
+                "line-width": 3,
+                "line-dasharray": [2, 1],
+              }}
+            />
+          </Source>
+        )}
+        {isLive && positionGeoJson && (
+          <Source id="position" type="geojson" data={positionGeoJson}>
+            <Layer
+              id="position-point"
+              type="circle"
+              paint={{
+                "circle-radius": 5,
+                "circle-color": lime,
+                "circle-stroke-color": ink,
+                "circle-stroke-width": 2,
+              }}
+            />
+          </Source>
+        )}
+      </Map>
+    </div>
+  );
+}
 
 interface FlightPanelProps {
-  properties: {
-    icao24: string;
+  initialFlightId?: string;
+  properties?: {
+    icao24?: string;
     callsign?: string;
     altitude?: number | null;
     velocity?: number | null;
@@ -23,11 +182,21 @@ interface FlightPanelProps {
     onGround?: boolean;
   };
   onClose: () => void;
+  showPreviewMap?: boolean;
+  onLocate?: (coords: [number, number]) => void;
+  hideTrackingButton?: boolean;
 }
 
-export function FlightPanel({ properties, onClose }: FlightPanelProps) {
+export function FlightPanel({
+  initialFlightId,
+  properties,
+  onClose,
+  showPreviewMap = false,
+  onLocate,
+  hideTrackingButton = false,
+}: FlightPanelProps) {
   const { user } = useAuth();
-  // Local state for "Time Left" to allow it to tick if needed, though minutes is fine for static render
+  const router = useRouter();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -35,19 +204,35 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
     return () => clearInterval(timer);
   }, []);
 
-  // Detailed telemetry fetch using ICAO24 (map click)
-  const locateParams = useMemo(
-    () => ({ icao24: properties.icao24 }),
-    [properties.icao24],
-  );
-  const { data: detailedTelemetry, loading: isLocating } =
-    useLocateFlight(locateParams);
+  // 1. First, attempt to fetch flight details if we have an initial ID (e.g. from Search)
+  const {
+    data: initialFlightDetails,
+    isLoading: isInitialLoading,
+    error: initialError,
+  } = useFlightDetailsById(initialFlightId || null);
 
+  // 2. Determine how to locate the flight for telemetry (OpenSky/PostGIS)
+  const locateParams = useMemo(() => {
+    if (properties?.icao24) return { icao24: properties.icao24 };
+    if (initialFlightDetails?.faFlightId)
+      return { faFlightId: initialFlightDetails.faFlightId };
+    return null;
+  }, [properties?.icao24, initialFlightDetails?.faFlightId]);
+
+  const {
+    data: detailedTelemetry,
+    loading: isLocating,
+    error: telError,
+  } = useLocateFlight(locateParams);
+
+  // 3. Final flight details: either from initial ID or discovered via telemetry's internal ID
   const {
     data: flightDetails,
     isLoading: isFlightLoading,
     error: flightError,
-  } = useFlightDetailsById(detailedTelemetry?.internalFlightId || null);
+  } = useFlightDetailsById(
+    initialFlightId || detailedTelemetry?.internalFlightId || null,
+  );
 
   const metrics = useMemo(() => {
     if (!flightDetails) return null;
@@ -85,10 +270,10 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
       estimatedDuration,
       timeLeft,
     };
-  }, [flightDetails]);
+  }, [flightDetails, now]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden w-full">
+    <div className="h-full flex flex-col overflow-hidden w-full bg-surface border-x-2 border-ink">
       {/* Header */}
       <div className="p-3 border-b-2 border-ink shrink-0">
         <div className="flex items-start justify-between gap-2">
@@ -97,12 +282,13 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
               Szczegóły lotu
             </p>
             <p className="font-mono font-bold text-base uppercase tracking-widest text-ink truncate">
-              {properties.callsign ||
-                detailedTelemetry?.faFlightId ||
-                "Brak callsign"}
+              {properties?.callsign ||
+                flightDetails?.callsign ||
+                "Ładowanie..."}
             </p>
             <p className="text-xs text-ink-muted font-mono mt-0.5">
-              ICAO24: {properties.icao24}
+              ICAO24:{" "}
+              {properties?.icao24 || detailedTelemetry?.icao24 || "Brak"}
             </p>
           </div>
           <button
@@ -115,13 +301,34 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
         </div>
       </div>
 
-      {/* Track this flight */}
-      {flightDetails && user && (
-        <div className="p-3 border-b-2 border-ink shrink-0">
-          <TrackThisFlightButton
-            flightId={flightDetails.id}
-            source="map_click"
-          />
+      {/* Track & Locate actions */}
+      {flightDetails && (
+        <div className="p-3 border-b-2 border-ink shrink-0 flex flex-wrap gap-2">
+          {user && !hideTrackingButton && (
+            <TrackThisFlightButton
+              flightId={flightDetails.id}
+              source="map_click"
+            />
+          )}
+          {flightDetails.isLive && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (onLocate && detailedTelemetry?.location) {
+                  const [lon, lat] = detailedTelemetry.location.coordinates as [
+                    number,
+                    number,
+                  ];
+                  onLocate([lon, lat]);
+                } else {
+                  router.push(`/telemetry?flightId=${flightDetails.id}`);
+                }
+              }}
+              className="flex-1 min-w-[140px]"
+            >
+              Pokaż na mapie
+            </Button>
+          )}
         </div>
       )}
 
@@ -131,7 +338,7 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
           <div className="flex items-center justify-between gap-2 mx-auto">
             {/* Origin */}
             <div className="flex flex-col items-center gap-1 min-w-[70px]">
-              <p className="text-sm font-mono text-ink-muted truncate max-w-[90px] leading-none mb-1 font-medium">
+              <p className="text-sm font-mono text-ink-muted truncate max-w-[90px] leading-none mb-1 font-medium text-center">
                 {flightDetails.origin?.city?.name || "???"}
               </p>
               <img
@@ -169,7 +376,7 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
 
             {/* Destination */}
             <div className="flex flex-col items-center gap-1 min-w-[70px]">
-              <p className="text-sm font-mono text-ink-muted truncate max-w-[90px] leading-none mb-1 font-medium">
+              <p className="text-sm font-mono text-ink-muted truncate max-w-[90px] leading-none mb-1 font-medium text-center">
                 {flightDetails.destination?.city?.name || "???"}
               </p>
               <img
@@ -190,6 +397,15 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
         </div>
       )}
 
+      {/* Preview Map integration */}
+      {showPreviewMap && flightDetails && (
+        <FlightPreviewMap
+          flightId={flightDetails.id}
+          isLive={flightDetails.isLive}
+          telemetry={detailedTelemetry}
+        />
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-8">
         {/* OpenSky & PostGIS Telemetry Data */}
@@ -206,34 +422,44 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
               Wysokość:
             </span>
             <span className="font-mono font-medium text-base">
-              {properties.altitude != null
+              {properties?.altitude != null
                 ? `${Math.round(properties.altitude)} m`
-                : "Brak"}
+                : detailedTelemetry?.altitude != null
+                  ? `${Math.round(detailedTelemetry.altitude)} m`
+                  : "Brak"}
             </span>
 
             <span className="text-ink-muted text-sm flex items-center">
               Prędkość:
             </span>
             <span className="font-mono font-medium text-base">
-              {properties.velocity != null
+              {properties?.velocity != null
                 ? `${Math.round(properties.velocity)} m/s`
-                : "Brak"}
+                : detailedTelemetry?.velocity != null
+                  ? `${Math.round(detailedTelemetry.velocity)} m/s`
+                  : "Brak"}
             </span>
 
             <span className="text-ink-muted text-sm flex items-center">
               Kierunek:
             </span>
             <span className="font-mono font-medium text-base">
-              {properties.heading != null
+              {properties?.heading != null
                 ? `${Math.round(properties.heading)}° | ${getDirectionShort(properties.heading)}`
-                : "Brak"}
+                : detailedTelemetry?.heading != null
+                  ? `${Math.round(detailedTelemetry.heading)}° | ${getDirectionShort(detailedTelemetry.heading)}`
+                  : "Brak"}
             </span>
 
             <span className="text-ink-muted text-sm flex items-center">
               Status ADS-B:
             </span>
             <span className="font-mono font-medium text-base">
-              {properties.onGround ? "Na ziemi" : "W locie"}
+              {(properties?.onGround ?? detailedTelemetry?.onGround)
+                ? "Na ziemi"
+                : flightDetails?.isLive
+                  ? "W locie"
+                  : "Na ziemi"}
             </span>
 
             {/* PostGIS distances */}
@@ -259,6 +485,12 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
               </>
             )}
           </div>
+
+          {telError && (
+            <Alert variant="info" className="mt-4 text-xs">
+              Brak aktywnego transpondera OpenSky.
+            </Alert>
+          )}
         </section>
 
         {/* AeroAPI Commercial Data */}
@@ -297,9 +529,6 @@ export function FlightPanel({ properties, onClose }: FlightPanelProps) {
                 <span className="font-medium text-base">
                   {flightDetails.identIata || "Brak"}
                 </span>
-
-                {/*<span className="text-ink-muted text-sm flex items-center">Identyfikator FA:</span>
-                  <span className="font-medium text-base">{flightDetails.faFlightId || "Brak"}</span>*/}
 
                 <span className="text-ink-muted text-sm flex items-center">
                   Callsign:

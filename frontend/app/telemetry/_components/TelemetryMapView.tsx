@@ -48,6 +48,7 @@ export default function TelemetryMapView() {
     searchParams.get("flightId"),
   );
   const [deeplinkConsumed, setDeeplinkConsumed] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const {
     flights,
     error,
@@ -188,7 +189,8 @@ export default function TelemetryMapView() {
   }, []);
 
   useEffect(() => {
-    if (deeplinkConsumed || !deeplinkLocate || !deeplinkFlight) return;
+    if (deeplinkConsumed || !deeplinkLocate || !deeplinkFlight || !mapLoaded)
+      return;
     const [lon, lat] = deeplinkLocate.location.coordinates as [number, number];
     const feature: GeoJSON.Feature<GeoJSON.Point> = {
       type: "Feature",
@@ -212,11 +214,12 @@ export default function TelemetryMapView() {
     });
     setDeeplinkConsumed(true);
     router.replace("/telemetry");
-  }, [deeplinkConsumed, deeplinkLocate, deeplinkFlight, router]);
+  }, [deeplinkConsumed, deeplinkLocate, deeplinkFlight, router, mapLoaded]);
 
   const handleMapLoad = useCallback(
     (e: MapEvent) => {
       const map = e.target;
+      setMapLoaded(true);
       applyPolishLabels(map);
       updateBoundingBox();
       loadTelemetryMapImages(map).catch((err) => {
@@ -325,6 +328,14 @@ export default function TelemetryMapView() {
   const onMouseEnter = useCallback(() => setCursor("pointer"), []);
   const onMouseLeave = useCallback(() => setCursor(""), []);
 
+  const handleLocate = useCallback((coords: [number, number]) => {
+    mapRef.current?.flyTo({
+      center: coords,
+      zoom: 10,
+      duration: 1200,
+    });
+  }, []);
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] w-full border-t-2 border-ink">
       <PanelContainer
@@ -338,6 +349,7 @@ export default function TelemetryMapView() {
         handleCityPanelClose={handleCityPanelClose}
         handleAirlineToggle={handleAirlineToggle}
         handleToggleAll={handleToggleAll}
+        onLocate={handleLocate}
       />
 
       {/* Map */}

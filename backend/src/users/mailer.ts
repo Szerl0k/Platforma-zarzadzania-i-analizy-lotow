@@ -61,7 +61,9 @@ function buildFlightHtmlBody(p: FlightNotificationPayload): string {
   const oldLine = p.oldValue
     ? `<p><strong>Poprzednio:</strong> ${escapeHtml(p.oldValue)}</p>`
     : "";
-  const newLine = p.newValue ? `<p><strong>Aktualnie:</strong> ${escapeHtml(p.newValue)}</p>` : "";
+  const newLine = p.newValue
+    ? `<p><strong>Aktualnie:</strong> ${escapeHtml(p.newValue)}</p>`
+    : "";
   return (
     `<p>Lot <strong>${escapeHtml(p.ident)}</strong> — ${CHANGE_LABELS[p.changeKind]}.</p>` +
     oldLine +

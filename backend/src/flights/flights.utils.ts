@@ -12,6 +12,18 @@ export const FlightUtils = {
   CACHE_DURATION_MS: 5 * 60 * 1000,
 
   /**
+   * Parses a normalized ICAO flight identifier into airline ICAO and flight number.
+   * @param ident - E.g. "LOT379"
+   */
+  parseIdent(ident: string): { airline: string; flightNumber: string } | null {
+    const match = ident.match(/^([A-Z]{3})(\d{1,4}[A-Z]?)$/);
+    if (match) {
+      return { airline: match[1], flightNumber: match[2] };
+    }
+    return null;
+  },
+
+  /**
    * Formats a Date object to a strict ISO8601 string without milliseconds,
    * as required by AeroAPI (e.g., 2026-04-15T23:00:00Z).
    *
@@ -30,10 +42,12 @@ export const FlightUtils = {
    * @returns A sanitized DTO for the frontend.
    */
   mapToDTO(
-    flight: Flight,
+    flight: Flight | null,
     source: "database" | "AeroAPI",
-  ): FlightDetailsResponseDTO {
-    const isLive = !flight.actualIn;
+  ): FlightDetailsResponseDTO | null {
+    if (!flight) return null;
+
+    const isLive = flight.status.name !== "Scheduled";
 
     return {
       id: flight.id,

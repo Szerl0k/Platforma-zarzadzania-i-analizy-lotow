@@ -117,18 +117,7 @@ export class TelemetryService {
         (state): state is StateVectorTuple =>
           state[5] !== null && state[6] !== null,
       )
-      .map((state) => ({
-        icao24: state[0],
-        callsign: state[1] ? state[1].trim() : null,
-        location: {
-          type: "Point",
-          coordinates: [state[5]!, state[6]!],
-        },
-        altitude: state[7] ?? null,
-        velocity: state[9] ?? null,
-        heading: state[10] ?? null,
-        onGround: state[8],
-      }));
+      .map((state) => TelemetryUtils.mapStateVectorToSummaryDTO(state));
   }
 
   /**
@@ -307,6 +296,10 @@ export class TelemetryService {
         faFlightId,
         internalFlightId: null,
         location,
+        altitude: altitude != null ? Math.round(altitude) : null,
+        velocity: velocity ?? null,
+        heading: heading ?? null,
+        onGround,
         persistedAt: new Date().toISOString(),
       };
     }
@@ -331,6 +324,10 @@ export class TelemetryService {
       faFlightId,
       internalFlightId: telemetryEntry.flightId,
       location: telemetryEntry.location,
+      altitude: telemetryEntry.altitude,
+      velocity: telemetryEntry.velocity,
+      heading: telemetryEntry.heading,
+      onGround: telemetryEntry.onGround,
       ...distances,
       persistedAt: telemetryEntry.timestamp.toISOString(),
     };
