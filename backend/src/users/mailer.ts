@@ -101,9 +101,6 @@ export function createSmtpMailer(cfg: SmtpConfig): Mailer {
     port: cfg.port,
     secure: cfg.secure,
     auth: { user: cfg.user, pass: cfg.pass },
-    // requireTLS ensures that STARTTLS is used if secure is false (e.g., port 587).
-    // We disable it for port 1025 to keep local development (Mailhog/Maildev) simple.
-    requireTLS: !cfg.secure && cfg.port !== 1025,
   });
 
   return {
