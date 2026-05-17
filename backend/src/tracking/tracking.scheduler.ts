@@ -1,4 +1,4 @@
-import cron from "node-cron";
+import * as cron from "node-cron";
 import { DataSource } from "typeorm";
 import { AppDataSource } from "../common/database/data-source";
 import { logger } from "../common/utils/logger";

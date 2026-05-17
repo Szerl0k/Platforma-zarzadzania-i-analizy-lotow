@@ -1,4 +1,4 @@
-import { StateVectorTuple } from "../common/integrations/opensky";
+import { BoundingBox, StateVectorTuple } from "../common/integrations/opensky";
 import { BoundingBoxAreaQuery, MapFlightSummaryDTO } from "./telemetry.dto";
 import { BoundingBoxLimitError } from "./telemetry.errors";
 
