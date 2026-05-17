@@ -213,9 +213,11 @@ export function FlightPanel({
 
   // 2. Determine how to locate the flight for telemetry (OpenSky/PostGIS)
   const locateParams = useMemo(() => {
-    if (properties?.icao24) return { icao24: properties.icao24 };
-    if (initialFlightDetails?.faFlightId)
-      return { faFlightId: initialFlightDetails.faFlightId };
+    const icao24 = properties?.icao24;
+    const faFlightId = initialFlightDetails?.faFlightId;
+
+    if (icao24) return { icao24 };
+    if (faFlightId) return { faFlightId };
     return null;
   }, [properties?.icao24, initialFlightDetails?.faFlightId]);
 
