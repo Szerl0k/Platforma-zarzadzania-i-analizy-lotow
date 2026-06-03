@@ -48,6 +48,12 @@ function NavbarPublic() {
           Telemetria
         </Link>
         <Link
+          href="/flight-search"
+          className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
+        >
+          Wyszukaj lot
+        </Link>
+        <Link
           href="/city-break"
           className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
         >
@@ -197,6 +203,13 @@ function NavbarAuthed({ user, logout }: NavbarAuthedProps) {
           className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
         >
           Telemetria
+        </Link>
+
+        <Link
+          href="/flight-search"
+          className="hidden sm:block font-mono text-xs uppercase tracking-widest text-ink hover:bg-[var(--color-lime)] px-2 py-1 transition-colors"
+        >
+          Wyszukaj lot
         </Link>
 
         <Link

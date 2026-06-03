@@ -12,7 +12,8 @@ import { isFlightTerminal } from "./tracking.service";
 import { TrackedFlight } from "./entities/TrackedFlight";
 
 const POLL_BATCH_LIMIT = 100;
-const CRON_EXPR = "*/3 * * * *";
+// Every hour
+const CRON_EXPR = "0 * * * *";
 
 export interface SchedulerDeps {
   repo?: TrackingRepository;

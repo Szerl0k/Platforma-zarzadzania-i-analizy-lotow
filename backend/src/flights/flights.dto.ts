@@ -8,6 +8,28 @@ export const FlightDetailsQuerySchema = z.object({
 
 export type FlightDetailsQuery = z.infer<typeof FlightDetailsQuerySchema>;
 
+export const FlightListQuerySchema = z.object({
+  ident: z
+    .string()
+    .min(1, "Kod identyfikacyjny lotu (ICAO/IATA) jest wymagany."),
+  startDate: z
+    .string()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}$/,
+      "Data początkowa musi być w formacie YYYY-MM-DD.",
+    )
+    .optional(),
+  endDate: z
+    .string()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}$/,
+      "Data końcowa musi być w formacie YYYY-MM-DD.",
+    )
+    .optional(),
+});
+
+export type FlightListQuery = z.infer<typeof FlightListQuerySchema>;
+
 export const CreateFlightSchema = z.object({
   identIcao: z.string().min(1),
   identIata: z.string().nullable().optional(),

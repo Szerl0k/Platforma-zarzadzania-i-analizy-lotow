@@ -45,9 +45,10 @@ jobs:
     name: Provision Infrastructure
     runs-on: ubuntu-22.04
     outputs:
-      name: "The FQDN of the database VM and backend URL"
+      name: "The FQDN of the database VM, backend and fronteend URL"
       vm_host: ${{ steps.get_outputs.outputs.vm_host }}
       backend_url: ${{ steps.get_outputs.outputs.backend_url }}
+      frontend_url: ${{ steps.get_outputs.outputs.frontend_url }}
 
 
     env:
@@ -81,6 +82,7 @@ jobs:
         run: |
           echo "vm_host=$(terraform output -raw database_fqdn)" >> $GITHUB_OUTPUT
           echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
       
 
   # Frontend
@@ -291,7 +293,7 @@ jobs:
               },
               {
                 "name": "APP_BASE_URL",
-                "value": "https://${{ needs.infrastructure.outputs.backend_url }}",
+                "value": "https://${{ needs.infrastructure.outputs.frontend_url }}",
                 "slotSetting": false
               }
             ]

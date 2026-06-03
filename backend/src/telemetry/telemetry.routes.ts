@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 
 import { TelemetryService } from "./telemetry.service";
 import { LocateFlightQuerySchema } from "./telemetry.dto";
@@ -8,24 +8,10 @@ import { BoundingBoxLimitError } from "./telemetry.errors";
 import { TelemetryNotFoundError } from "../common/errors";
 import { mapAreaRateLimiter } from "../common/middleware/rateLimiter";
 import { cacheMapArea } from "../common/middleware/cache";
+import { asyncHandler } from "../common/utils/asyncHandler";
 
 const router = Router();
 const telemetryService = new TelemetryService();
-
-/**
- * Hermetyzuje asynchroniczne funkcje obsługi żądań, automatycznie przekazując
- * nieprzechwycone wyjątki do globalnego middleware.
- *
- * @param fn - Asynchroniczna funkcja obsługi żądania Express.
- * @returns Funkcja middleware Express obsługująca błędy.
- */
-function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>,
-) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    fn(req, res, next).catch(next);
-  };
-}
 
 /**
  * Endpoint GET /telemetry/locate

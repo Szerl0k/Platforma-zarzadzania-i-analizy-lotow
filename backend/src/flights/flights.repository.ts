@@ -94,8 +94,10 @@ export class FlightsRepository {
   public async findById(
     id: string,
     relations: string[] = [],
+    manager?: EntityManager,
   ): Promise<Flight | null> {
-    return await this.repository.findOne({
+    const repo = this.getRepository(Flight, manager);
+    return await repo.findOne({
       where: { id } as FindOptionsWhere<Flight>,
       relations,
     });

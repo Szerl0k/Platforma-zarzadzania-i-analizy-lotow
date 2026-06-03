@@ -37,6 +37,14 @@ export interface LocateFlightResponseDTO {
   internalFlightId: string | null;
   /** Current geospatial location. */
   location: Point;
+  /** Barometric altitude in meters. */
+  altitude: number | null;
+  /** Ground speed in meters per second. */
+  velocity: number | null;
+  /** Magnetic heading in degrees. */
+  heading: number | null;
+  /** Indicates if the aircraft is on the ground. */
+  onGround: boolean;
   /** Distance from origin airport in kilometers. */
   distanceFromOriginKm?: number | null;
   /** Distance to destination airport in kilometers. */
