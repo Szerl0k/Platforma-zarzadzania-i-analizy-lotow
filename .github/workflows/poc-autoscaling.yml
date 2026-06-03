@@ -30,3 +30,16 @@ jobs:
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+
+  application:
+    name: Deploy PoC Application
+    needs: infrastructure
+    uses: ./.github/workflows/application-deployment.yml
+    with:
+      vm_host: ${{ needs.infrastructure.outputs.vm_host }}
+      backend_url: ${{ needs.infrastructure.outputs.backend_url }}
+      frontend_url: ${{ needs.infrastructure.outputs.frontend_url }}
+      resource_group_name: "poc-inz-rg"
+      backend_app_name: "poc-inz-backend-api"
+      frontend_app_name: "poc-inz-frontend-app"
+    secrets: inherit
