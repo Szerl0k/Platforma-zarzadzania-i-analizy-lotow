@@ -94,3 +94,63 @@ variable "ssh_public_key" {
   default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIHH2UZrqGrLmGndgtzrAvSFPPIFswh1k4/8xd0ygjsOzlejzwPkkV3Bgc9/l1aG6dWuCguFxWB6Ysh+7y3gTFt3IxhpFgfas8jxuUuVd/6OX6EfKzu4Qmei1ufc451XwCCS5ECZ2N221Oo8SN5UW3Ae1LCTxqOFMYDNSZCgeWIP+c0MkOwF8CqrSsMjOKvqGFVYthsQurtU9agBzyLVWriXD2oobohv95a/b95Q98hyxZfsR1uV+aed6ZyJzbMFwzljXUlmi9niiuVEJtFcV+L6kMQUOw7xGCP4vxRnjonxRqyQVpYWeF5Slwvfzv6SNq2SOuTxBmZFSJsQ7PmEEQNQqTVL4sv2ftRegMCeic5zoG+gG/REotpzSXnjXm3sRxhAg3vbC6AIVOicliOztUa9FbfAuSpWFGgg0OUKNdQaEQdISUJPVssDOf5JVUwpZZVYkVQ5rIrSjFh4DxQJUCaD7NpbWXHWevozMVU8qCHbbZ4CIitCzvy7rets+ianU= mmiik@DESKTOP-MJ"
 }
 
+variable "app_service_plan_sku" {
+  type        = string
+  description = "The SKU for the App Service Plan"
+  default     = "B1"
+}
+
+variable "enable_autoscaling" {
+  type        = bool
+  description = "Determine whether to deploy autoscale settings"
+  default     = false
+}
+
+variable "app_plan_name" {
+  type        = string
+  description = "Name of the App Service Plan"
+  default     = "dev-inz-app-plan"
+}
+
+variable "backend_app_name" {
+  type        = string
+  description = "Name of the backend App Service"
+  default     = "dev-inz-backend-api"
+}
+
+variable "frontend_app_name" {
+  type        = string
+  description = "Name of the frontend App Service"
+  default     = "dev-inz-frontend-app"
+}
+
+variable "data_subnet_name" {
+  type        = string
+  description = "Name of the data subnet"
+  default     = "dev-inz-data-subnet"
+}
+
+variable "app_service_subnet_name" {
+  type        = string
+  description = "Name of the app service subnet"
+  default     = "dev-inz-app-service-subnet"
+}
+
+variable "nat_gateway_name" {
+  type        = string
+  description = "Name of the NAT gateway"
+  default     = "dev-inz-nat-gateway"
+}
+
+variable "public_ip_domain_name_label" {
+  type        = string
+  description = "Domain name label for the public IP"
+  default     = "dev-inz-pzal-postgis"
+}
+
+variable "use_existing_data" {
+  type        = bool
+  description = "Toggle to use existing data sources vs provisioning ephemeral resources"
+  default     = true
+}
+

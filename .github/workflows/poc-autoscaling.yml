@@ -1,0 +1,32 @@
+name: poc-autoscaling
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  infrastructure:
+    name: Provision PoC Infrastructure
+    uses: ./.github/workflows/infrastructure-provisioning.yml
+    with:
+      tf_state_key: "poc.terraform.tfstate"
+      use_existing_data: false
+      enable_autoscaling: true
+      app_service_plan_sku: "S1"
+      resource_group_name: "poc-inz-rg"
+      vm_name: "poc-inz-postgis-vm"
+      app_plan_name: "poc-inz-app-plan"
+      backend_app_name: "poc-inz-backend-api"
+      frontend_app_name: "poc-inz-frontend-app"
+      data_subnet_name: "poc-inz-data-subnet"
+      app_service_subnet_name: "poc-inz-app-service-subnet"
+      nat_gateway_name: "poc-inz-nat-gateway"
+      public_ip_domain_name_label: "poc-inz-pzal-postgis"
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}

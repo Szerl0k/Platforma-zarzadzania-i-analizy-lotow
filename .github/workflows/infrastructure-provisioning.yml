@@ -1,0 +1,144 @@
+name: Reusable Infrastructure Provisioning
+on:
+  workflow_call:
+    inputs:
+      tf_state_key:
+        required: false
+        type: string
+        default: "terraform.tfstate"
+      use_existing_data:
+        required: false
+        type: boolean
+        default: true
+      enable_autoscaling:
+        required: false
+        type: boolean
+        default: false
+      app_service_plan_sku:
+        required: false
+        type: string
+        default: "B1"
+      resource_group_name:
+        required: false
+        type: string
+        default: "dev-inz-rg"
+      vm_name:
+        required: false
+        type: string
+        default: "dev-inz-postgis-vm"
+      app_plan_name:
+        required: false
+        type: string
+        default: "dev-inz-app-plan"
+      backend_app_name:
+        required: false
+        type: string
+        default: "dev-inz-backend-api"
+      frontend_app_name:
+        required: false
+        type: string
+        default: "dev-inz-frontend-app"
+      data_subnet_name:
+        required: false
+        type: string
+        default: "dev-inz-data-subnet"
+      app_service_subnet_name:
+        required: false
+        type: string
+        default: "dev-inz-app-service-subnet"
+      nat_gateway_name:
+        required: false
+        type: string
+        default: "dev-inz-nat-gateway"
+      public_ip_domain_name_label:
+        required: false
+        type: string
+        default: "dev-inz-pzal-postgis"
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      DB_PASSWORD:
+        required: true
+      SSH_PUBLIC_KEY:
+        required: true
+    outputs:
+      vm_host:
+        description: "The FQDN of the database VM"
+        value: ${{ jobs.provision.outputs.vm_host }}
+      backend_url:
+        description: "The backend URL"
+        value: ${{ jobs.provision.outputs.backend_url }}
+      frontend_url:
+        description: "The frontend URL"
+        value: ${{ jobs.provision.outputs.frontend_url }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  provision:
+    runs-on: ubuntu-22.04
+    outputs:
+      vm_host: ${{ steps.get_outputs.outputs.vm_host }}
+      backend_url: ${{ steps.get_outputs.outputs.backend_url }}
+      frontend_url: ${{ steps.get_outputs.outputs.frontend_url }}
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: "true"
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Init
+        working-directory: ./infrastructure/terraform/azure
+        run: |
+          terraform init -upgrade -backend-config="key=${{ inputs.tf_state_key }}"
+
+      - name: Terraform Apply
+        working-directory: ./infrastructure/terraform/azure
+        run: |
+          terraform apply -auto-approve \
+            -var="use_existing_data=${{ inputs.use_existing_data }}" \
+            -var="enable_autoscaling=${{ inputs.enable_autoscaling }}" \
+            -var="app_service_plan_sku=${{ inputs.app_service_plan_sku }}" \
+            -var="resource_group_name=${{ inputs.resource_group_name }}" \
+            -var="vm_name=${{ inputs.vm_name }}" \
+            -var="app_plan_name=${{ inputs.app_plan_name }}" \
+            -var="backend_app_name=${{ inputs.backend_app_name }}" \
+            -var="frontend_app_name=${{ inputs.frontend_app_name }}" \
+            -var="data_subnet_name=${{ inputs.data_subnet_name }}" \
+            -var="app_service_subnet_name=${{ inputs.app_service_subnet_name }}" \
+            -var="nat_gateway_name=${{ inputs.nat_gateway_name }}" \
+            -var="public_ip_domain_name_label=${{ inputs.public_ip_domain_name_label }}"
+
+      - name: Get Terraform Outputs
+        id: get_outputs
+        working-directory: ./infrastructure/terraform/azure
+        run: |
+          echo "vm_host=$(terraform output -raw database_fqdn)" >> $GITHUB_OUTPUT
+          echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT

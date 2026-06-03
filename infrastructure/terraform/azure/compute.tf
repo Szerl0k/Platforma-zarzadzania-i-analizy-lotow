@@ -56,8 +56,18 @@ resource "azurerm_linux_virtual_machine" "vm" {
 #   }
 # }
 
+resource "azurerm_managed_disk" "poc_data_disk" {
+  count                = var.use_existing_data ? 0 : 1
+  name                 = "${var.vm_name}-poc-data-disk"
+  location             = azurerm_resource_group.rg.location
+  resource_group_name  = azurerm_resource_group.rg.name
+  storage_account_type = "Premium_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = 32
+}
+
 resource "azurerm_virtual_machine_data_disk_attachment" "data_disk_attach" {
-  managed_disk_id    = data.azurerm_managed_disk.postgis-data.id
+  managed_disk_id    = var.use_existing_data ? data.azurerm_managed_disk.postgis-data[0].id : azurerm_managed_disk.poc_data_disk[0].id
   virtual_machine_id = azurerm_linux_virtual_machine.vm.id
   lun                = 0
   caching            = "ReadOnly"
@@ -66,17 +76,17 @@ resource "azurerm_virtual_machine_data_disk_attachment" "data_disk_attach" {
 
 # WEB APPS
 resource "azurerm_service_plan" "app_plan" {
-  name                = "dev-inz-app-plan"
+  name                = var.app_plan_name
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   os_type             = "Linux"
-  sku_name            = "B1"
+  sku_name            = var.app_service_plan_sku
 }
 
 # BACKEND
 resource "azurerm_linux_web_app" "backend" {
   location            = azurerm_resource_group.rg.location
-  name                = "dev-inz-backend-api"
+  name                = var.backend_app_name
   resource_group_name = azurerm_resource_group.rg.name
   service_plan_id     = azurerm_service_plan.app_plan.id
 
@@ -128,7 +138,7 @@ resource "azurerm_linux_web_app" "backend" {
 
 resource "azurerm_linux_web_app" "frontend" {
   location            = azurerm_resource_group.rg.location
-  name                = "dev-inz-frontend-app"
+  name                = var.frontend_app_name
   resource_group_name = azurerm_resource_group.rg.name
 
   service_plan_id = azurerm_service_plan.app_plan.id
@@ -152,5 +162,61 @@ resource "azurerm_linux_web_app" "frontend" {
     ignore_changes = [
       site_config.0.application_stack
     ]
+  }
+}
+
+resource "azurerm_monitor_autoscale_setting" "backend_autoscale" {
+  count               = var.enable_autoscaling ? 1 : 0
+  name                = "backend-autoscale-setting"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  target_resource_id  = azurerm_service_plan.app_plan.id
+
+  profile {
+    name = "CpuAutoscaleProfile"
+
+    capacity {
+      default = 1
+      minimum = 1
+      maximum = 5
+    }
+
+    rule {
+      metric_trigger {
+        metric_name        = "CpuPercentage"
+        metric_resource_id = azurerm_service_plan.app_plan.id
+        time_grain         = "PT1M"
+        statistic          = "Average"
+        time_window        = "PT3M" 
+        time_aggregation   = "Average"
+        operator           = "GreaterThan"
+        threshold          = 70 
+      }
+      scale_action {
+        direction = "Increase"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT5M"
+      }
+    }
+
+    rule {
+      metric_trigger {
+        metric_name        = "CpuPercentage"
+        metric_resource_id = azurerm_service_plan.app_plan.id
+        time_grain         = "PT1M"
+        statistic          = "Average"
+        time_window        = "PT5M"
+        time_aggregation   = "Average"
+        operator           = "LessThan"
+        threshold          = 30
+      }
+      scale_action {
+        direction = "Decrease"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT5M"
+      }
+    }
   }
 }

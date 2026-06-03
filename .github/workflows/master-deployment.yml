@@ -43,46 +43,13 @@ jobs:
 
   infrastructure:
     name: Provision Infrastructure
-    runs-on: ubuntu-22.04
-    outputs:
-      name: "The FQDN of the database VM, backend and fronteend URL"
-      vm_host: ${{ steps.get_outputs.outputs.vm_host }}
-      backend_url: ${{ steps.get_outputs.outputs.backend_url }}
-      frontend_url: ${{ steps.get_outputs.outputs.frontend_url }}
-
-
-    env:
-      # Terraform can read it automatically
-      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v3
-        with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Terraform Init, Plan and Apply
-        working-directory: ./infrastructure/terraform/azure
-        run: |
-          terraform init -upgrade
-          terraform apply -auto-approve
-
-      - name: Get Terraform Outputs
-        id: get_outputs
-        working-directory: ./infrastructure/terraform/azure
-        run: |
-          echo "vm_host=$(terraform output -raw database_fqdn)" >> $GITHUB_OUTPUT
-          echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
-          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+    uses: ./.github/workflows/infrastructure-provisioning.yml
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
       
 
   # Frontend

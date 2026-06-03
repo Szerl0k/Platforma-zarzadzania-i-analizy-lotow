@@ -6,14 +6,14 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "data_subnet" {
-  name                 = "dev-inz-data-subnet"
+  name                 = var.data_subnet_name
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = var.data_subnet_address_prefix
 }
 
 resource "azurerm_subnet" "app_service_subnet" {
-  name                 = "dev-inz-app-service-subnet"
+  name                 = var.app_service_subnet_name
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = var.app_service_subnet_address_prefix
@@ -73,7 +73,7 @@ resource "azurerm_public_ip" "pip" {
 
   allocation_method = "Static"
 
-  domain_name_label = "dev-inz-pzal-postgis"
+  domain_name_label = var.public_ip_domain_name_label
 
   sku = "Standard"
 }
@@ -93,16 +93,25 @@ resource "azurerm_network_interface" "postgis-nic" {
 
 # NAT GATEWAY FOR STABLE OUTBOUND IP
 resource "azurerm_nat_gateway" "nat_gw" {
-  name                    = "dev-inz-nat-gateway"
+  name                    = var.nat_gateway_name
   location                = azurerm_resource_group.rg.location
   resource_group_name     = azurerm_resource_group.rg.name
   sku_name                = "Standard"
   idle_timeout_in_minutes = 4
 }
 
+resource "azurerm_public_ip" "poc_nat_pip" {
+  count               = var.use_existing_data ? 0 : 1
+  name                = "${var.nat_gateway_name}-pip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
 resource "azurerm_nat_gateway_public_ip_association" "nat_pip_assoc" {
   nat_gateway_id       = azurerm_nat_gateway.nat_gw.id
-  public_ip_address_id = data.azurerm_public_ip.nat_pip.id
+  public_ip_address_id = var.use_existing_data ? data.azurerm_public_ip.nat_pip[0].id : azurerm_public_ip.poc_nat_pip[0].id
 }
 
 resource "azurerm_subnet_nat_gateway_association" "subnet_nat_assoc" {
