@@ -58,7 +58,7 @@ jobs:
     needs: infrastructure
     uses: ./.github/workflows/application-deployment.yml
     with:
-      skip_docker_build: ${{ inputs.skip_docker_build }}
+      skip_docker_build: ${{ inputs.skip_docker_build == true }}
       vm_host: ${{ needs.infrastructure.outputs.vm_host }}
       backend_url: ${{ needs.infrastructure.outputs.backend_url }}
       frontend_url: ${{ needs.infrastructure.outputs.frontend_url }}
