@@ -167,7 +167,26 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Validate
+      - name: Check Formatting
+        run: terraform fmt -check
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@6
+        with:
+          cache: true
+
+      - name: Show version of TFLint
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run TFLint
+        run: tflint -f compact
+
+      - name: Terraform Init & Validate
         working-directory: ./infrastructure/terraform/azure
         run: |
           terraform init -backend=false

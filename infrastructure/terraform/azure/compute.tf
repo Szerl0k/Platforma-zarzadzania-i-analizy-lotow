@@ -61,6 +61,7 @@ resource "azurerm_managed_disk" "poc_data_disk" {
   name                 = "${var.vm_name}-poc-data-disk"
   location             = azurerm_resource_group.rg.location
   resource_group_name  = azurerm_resource_group.rg.name
+  zone                 = "1"
   storage_account_type = "Premium_LRS"
   create_option        = "Empty"
   disk_size_gb         = 32
@@ -187,10 +188,10 @@ resource "azurerm_monitor_autoscale_setting" "backend_autoscale" {
         metric_resource_id = azurerm_service_plan.app_plan.id
         time_grain         = "PT1M"
         statistic          = "Average"
-        time_window        = "PT3M" 
+        time_window        = "PT3M"
         time_aggregation   = "Average"
         operator           = "GreaterThan"
-        threshold          = 70 
+        threshold          = 70
       }
       scale_action {
         direction = "Increase"
