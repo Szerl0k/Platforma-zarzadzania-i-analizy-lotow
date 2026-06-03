@@ -2,6 +2,11 @@ name: Reusable Infrastructure Provisioning
 on:
   workflow_call:
     inputs:
+      terraform_action:
+        description: "The terraform command to execute (apply or destroy)"
+        required: false
+        type: string
+        default: "apply"
       tf_state_key:
         required: false
         type: string
@@ -118,10 +123,10 @@ jobs:
         run: |
           terraform init -upgrade -backend-config="key=${{ inputs.tf_state_key }}"
 
-      - name: Terraform Apply
+      - name: Terraform Execute
         working-directory: ./infrastructure/terraform/azure
         run: |
-          terraform apply -auto-approve \
+          terraform ${{ inputs.terraform_action }} -auto-approve \
             -var="use_existing_data=${{ inputs.use_existing_data }}" \
             -var="enable_autoscaling=${{ inputs.enable_autoscaling }}" \
             -var="app_service_plan_sku=${{ inputs.app_service_plan_sku }}" \
@@ -136,6 +141,7 @@ jobs:
             -var="public_ip_domain_name_label=${{ inputs.public_ip_domain_name_label }}"
 
       - name: Get Terraform Outputs
+        if: ${{ inputs.terraform_action == 'apply' }}
         id: get_outputs
         working-directory: ./infrastructure/terraform/azure
         run: |
