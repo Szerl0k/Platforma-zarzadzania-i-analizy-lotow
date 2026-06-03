@@ -30,6 +30,6 @@ output "backend_url" {
 
 output "nat_gateway_public_ip" {
   description = "The static outbound IP address used by the backend App Service"
-  value       = data.azurerm_public_ip.nat_pip.ip_address
+  value       = var.use_existing_data ? data.azurerm_public_ip.nat_pip[0].ip_address : azurerm_public_ip.poc_nat_pip[0].ip_address
 }
 
