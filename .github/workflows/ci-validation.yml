@@ -106,7 +106,7 @@ jobs:
 
       - name: Run Unit Tests
         working-directory: ./backend
-        run: npm test
+        run: npm run test:coverage
 
 
   frontend-ci:
