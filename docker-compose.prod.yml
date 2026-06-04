@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: deploy/Dockerfile
+      target: prod
+    container_name: flight_management_backend
+    ports:
+      - "5001:5001"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flight_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - PORT=5001
+      - JWT_SECRET=flight-mgmt-jwt-secret-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - CORS_ORIGIN=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes: !reset []
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: deploy/Dockerfile
+      target: prod
+    container_name: flight_management_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=/api
+      - INTERNAL_API_URL=http://backend:5001
+    depends_on:
+      - backend
+    volumes: !reset []

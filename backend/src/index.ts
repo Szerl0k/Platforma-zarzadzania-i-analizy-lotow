@@ -8,11 +8,10 @@ import apiRouter from "./common/routes";
 import { logger } from "./common/utils/logger";
 import { doubleCsrfProtection } from "./common/middleware/csrf";
 import { getTrackingScheduler } from "./tracking/tracking.scheduler";
-
-dotenv.config();
+import { env } from "./config/env";
 
 const app = express();
-const port = process.env.PORT || 5001;
+const port = env.PORT;
 
 // Trust the first hop (Azure Load Balancer / Reverse Proxy)
 // Required for express-rate-limit to accurately identify client IPs.
@@ -20,7 +19,7 @@ app.set("trust proxy", 1);
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: env.CORS_ORIGIN,
     credentials: true,
   }),
 );
