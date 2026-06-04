@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const isProd = process.env.NODE_ENV === "production";
 
-if (isProd && !process.env.INTERNAL_API_URL) {
-  throw new Error(
-    "CRITICAL: INTERNAL_API_URL environment variable is required in production",
-  );
-}
+/*
+Fast-Fail pattern is intentionally not implemented here in case INTERNAL_API_URL is missing during the production build.
+This variable is dynamically injected later during the Azure App Service deployment process via App Settings.
+*/
 
 const internalApiUrl = process.env.INTERNAL_API_URL || "http://localhost:5001";
 
