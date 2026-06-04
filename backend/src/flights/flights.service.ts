@@ -217,43 +217,11 @@ export class FlightsService {
   ): Promise<FlightDetailsResponseDTO[]> {
     const normalizedIdent = await this.normalizeIdent(ident);
 
-    const queryBuilder = this.dataSource
-      .getRepository(Flight)
-      .createQueryBuilder("flight");
-    queryBuilder.leftJoinAndSelect("flight.status", "status");
-    queryBuilder.leftJoinAndSelect("flight.origin", "origin");
-    queryBuilder.leftJoinAndSelect("origin.city", "originCity");
-    queryBuilder.leftJoinAndSelect("originCity.country", "originCountry");
-    queryBuilder.leftJoinAndSelect("flight.destination", "destination");
-    queryBuilder.leftJoinAndSelect("destination.city", "destCity");
-    queryBuilder.leftJoinAndSelect("destCity.country", "destCountry");
-    queryBuilder.leftJoinAndSelect(
-      "flight.operatingAirline",
-      "operatingAirline",
+    const flights = await this.flightsRepository.findFlightsByIdentAndDateRange(
+      normalizedIdent,
+      startDateStr,
+      endDateStr,
     );
-    queryBuilder.leftJoinAndSelect("flight.codeshares", "codeshares");
-
-    queryBuilder.where(
-      "(flight.callsign = :ident OR flight.ident_icao = :ident OR flight.ident_iata = :ident)",
-      { ident: normalizedIdent },
-    );
-
-    if (startDateStr || endDateStr) {
-      const start = startDateStr
-        ? new Date(`${startDateStr}T00:00:00Z`)
-        : new Date("1970-01-01T00:00:00Z");
-      const end = endDateStr
-        ? new Date(`${endDateStr}T23:59:59.999Z`)
-        : new Date("2099-12-31T23:59:59.999Z");
-
-      queryBuilder.andWhere(
-        "((flight.scheduled_out >= :start AND flight.scheduled_out <= :end) OR (flight.scheduled_in >= :start AND flight.scheduled_in <= :end))",
-        { start, end },
-      );
-    }
-
-    queryBuilder.orderBy("flight.scheduled_out", "DESC");
-    const flights = await queryBuilder.getMany();
 
     return flights
       .map((f) => FlightUtils.mapToDTO(f, "database"))

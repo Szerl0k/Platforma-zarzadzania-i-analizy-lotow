@@ -39,15 +39,18 @@ export class FlightsRepository {
     manager?: EntityManager,
   ): Promise<Flight> {
     const repo = this.getRepository(Flight, manager);
-    const flight = repo.create({
-      ...data,
-      scheduledOut: data.scheduledOut ? new Date(data.scheduledOut) : null,
-      estimatedOut: data.estimatedOut ? new Date(data.estimatedOut) : null,
-      actualOut: data.actualOut ? new Date(data.actualOut) : null,
-      scheduledIn: data.scheduledIn ? new Date(data.scheduledIn) : null,
-      estimatedIn: data.estimatedIn ? new Date(data.estimatedIn) : null,
-      actualIn: data.actualIn ? new Date(data.actualIn) : null,
-    } as Partial<Flight>);
+    const {
+      scheduledOut,
+      estimatedOut,
+      actualOut,
+      scheduledIn,
+      estimatedIn,
+      actualIn,
+      ...primitiveData
+    } = data;
+
+    const flight = repo.create(primitiveData as Partial<Flight>);
+    flight.updateSchedule(data);
     return await repo.save(flight);
   }
 
@@ -62,32 +65,19 @@ export class FlightsRepository {
     });
     if (!flight) return null;
 
-    const updateData: Partial<Flight> = {
-      ...data,
-    } as unknown as Partial<Flight>;
+    flight.updateSchedule(data);
 
-    if (data.scheduledOut !== undefined)
-      updateData.scheduledOut = data.scheduledOut
-        ? new Date(data.scheduledOut)
-        : null;
-    if (data.estimatedOut !== undefined)
-      updateData.estimatedOut = data.estimatedOut
-        ? new Date(data.estimatedOut)
-        : null;
-    if (data.actualOut !== undefined)
-      updateData.actualOut = data.actualOut ? new Date(data.actualOut) : null;
-    if (data.scheduledIn !== undefined)
-      updateData.scheduledIn = data.scheduledIn
-        ? new Date(data.scheduledIn)
-        : null;
-    if (data.estimatedIn !== undefined)
-      updateData.estimatedIn = data.estimatedIn
-        ? new Date(data.estimatedIn)
-        : null;
-    if (data.actualIn !== undefined)
-      updateData.actualIn = data.actualIn ? new Date(data.actualIn) : null;
+    const {
+      scheduledOut,
+      estimatedOut,
+      actualOut,
+      scheduledIn,
+      estimatedIn,
+      actualIn,
+      ...primitiveData
+    } = data;
 
-    Object.assign(flight, updateData);
+    Object.assign(flight, primitiveData);
     return await repo.save(flight);
   }
 
@@ -124,6 +114,50 @@ export class FlightsRepository {
       relations,
       order: { updatedAt: "DESC" },
     });
+  }
+
+  /**
+   * Retrieves flights matching a given identifier within an optional date range.
+   */
+  public async findFlightsByIdentAndDateRange(
+    ident: string,
+    startDateStr?: string,
+    endDateStr?: string,
+  ): Promise<Flight[]> {
+    const queryBuilder = this.repository.createQueryBuilder("flight");
+
+    queryBuilder
+      .leftJoinAndSelect("flight.status", "status")
+      .leftJoinAndSelect("flight.origin", "origin")
+      .leftJoinAndSelect("origin.city", "originCity")
+      .leftJoinAndSelect("originCity.country", "originCountry")
+      .leftJoinAndSelect("flight.destination", "destination")
+      .leftJoinAndSelect("destination.city", "destCity")
+      .leftJoinAndSelect("destCity.country", "destCountry")
+      .leftJoinAndSelect("flight.operatingAirline", "operatingAirline")
+      .leftJoinAndSelect("flight.codeshares", "codeshares");
+
+    queryBuilder.where(
+      "(flight.callsign = :ident OR flight.ident_icao = :ident OR flight.ident_iata = :ident)",
+      { ident },
+    );
+
+    if (startDateStr || endDateStr) {
+      const start = startDateStr
+        ? new Date(`${startDateStr}T00:00:00Z`)
+        : new Date("1970-01-01T00:00:00Z");
+      const end = endDateStr
+        ? new Date(`${endDateStr}T23:59:59.999Z`)
+        : new Date("2099-12-31T23:59:59.999Z");
+
+      queryBuilder.andWhere(
+        "((flight.scheduled_out >= :start AND flight.scheduled_out <= :end) OR (flight.scheduled_in >= :start AND flight.scheduled_in <= :end))",
+        { start, end },
+      );
+    }
+
+    queryBuilder.orderBy("flight.scheduled_out", "DESC");
+    return await queryBuilder.getMany();
   }
 
   public async find(options?: FindManyOptions<Flight>): Promise<Flight[]> {
