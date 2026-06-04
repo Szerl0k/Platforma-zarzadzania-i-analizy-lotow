@@ -62,7 +62,7 @@ on:
       persistent_workspace_name:
         required: false
         type: string
-        default: "dev-inz-persistent-logs"
+        default: "pzal-log-analytics"
       persistent_workspace_rg:
         required: false
         type: string
