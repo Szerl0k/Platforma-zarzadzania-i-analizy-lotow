@@ -191,7 +191,9 @@ describe("FlightsService", () => {
     it("should return mapped DTOs from repository", async () => {
       (findAirlineInDb as jest.Mock).mockResolvedValue(null);
       const mockFlight = { id: "123" };
-      mockFlightsRepo.findFlightsByIdentAndDateRange = jest.fn().mockResolvedValue([mockFlight]);
+      mockFlightsRepo.findFlightsByIdentAndDateRange = jest
+        .fn()
+        .mockResolvedValue([mockFlight]);
 
       jest
         .spyOn(FlightUtils, "mapToDTO")
@@ -203,11 +205,9 @@ describe("FlightsService", () => {
         "2023-01-02",
       );
       expect(result).toEqual([{ id: "123" }]);
-      expect(mockFlightsRepo.findFlightsByIdentAndDateRange).toHaveBeenCalledWith(
-        "LOT123",
-        "2023-01-01",
-        "2023-01-02",
-      );
+      expect(
+        mockFlightsRepo.findFlightsByIdentAndDateRange,
+      ).toHaveBeenCalledWith("LOT123", "2023-01-01", "2023-01-02");
     });
   });
 
