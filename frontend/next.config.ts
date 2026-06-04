@@ -2,7 +2,9 @@
 const isProd = process.env.NODE_ENV === "production";
 
 if (isProd && !process.env.INTERNAL_API_URL) {
-  throw new Error("CRITICAL: INTERNAL_API_URL environment variable is required in production");
+  throw new Error(
+    "CRITICAL: INTERNAL_API_URL environment variable is required in production",
+  );
 }
 
 const internalApiUrl = process.env.INTERNAL_API_URL || "http://localhost:5001";
