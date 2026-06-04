@@ -65,7 +65,7 @@ class Logger {
     this.writeToFile(formatted);
   }
 
-  public warn(message: string, detail?: unknown) : void {
+  public warn(message: string, detail?: unknown): void {
     const formatted = this.formatMessage(LogLevel.WARN, message, detail);
     console.warn(formatted);
     this.writeToFile(formatted);
