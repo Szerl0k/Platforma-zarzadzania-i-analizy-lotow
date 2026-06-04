@@ -139,4 +139,43 @@ export class Flight extends BaseEntity {
 
   @OneToMany(() => FlightTelemetry, (telemetry) => telemetry.flight)
   telemetry!: FlightTelemetry[];
+
+  /**
+   * Encapsulates the logic for updating flight schedule timestamps.
+   */
+  public updateSchedule(timestamps: {
+    scheduledOut?: Date | string | null;
+    estimatedOut?: Date | string | null;
+    actualOut?: Date | string | null;
+    scheduledIn?: Date | string | null;
+    estimatedIn?: Date | string | null;
+    actualIn?: Date | string | null;
+  }): void {
+    if (timestamps.scheduledOut !== undefined) {
+      this.scheduledOut = timestamps.scheduledOut ? new Date(timestamps.scheduledOut) : null;
+    }
+    if (timestamps.estimatedOut !== undefined) {
+      this.estimatedOut = timestamps.estimatedOut ? new Date(timestamps.estimatedOut) : null;
+    }
+    if (timestamps.actualOut !== undefined) {
+      this.actualOut = timestamps.actualOut ? new Date(timestamps.actualOut) : null;
+    }
+    if (timestamps.scheduledIn !== undefined) {
+      this.scheduledIn = timestamps.scheduledIn ? new Date(timestamps.scheduledIn) : null;
+    }
+    if (timestamps.estimatedIn !== undefined) {
+      this.estimatedIn = timestamps.estimatedIn ? new Date(timestamps.estimatedIn) : null;
+    }
+    if (timestamps.actualIn !== undefined) {
+      this.actualIn = timestamps.actualIn ? new Date(timestamps.actualIn) : null;
+    }
+  }
+
+  /**
+   * Domain-specific query method to determine if the flight is currently delayed.
+   */
+  public isDelayed(): boolean {
+    return (this.departureDelay !== null && this.departureDelay > 0) || 
+           (this.arrivalDelay !== null && this.arrivalDelay > 0);
+  }
 }
