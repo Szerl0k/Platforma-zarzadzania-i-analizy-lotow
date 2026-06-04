@@ -20,11 +20,6 @@ const envSchema = z
           "CRITICAL: PORT environment variable is required in production",
         );
       }
-      if (!env.CORS_ORIGIN) {
-        throw new Error(
-          "CRITICAL: CORS_ORIGIN environment variable is required in production",
-        );
-      }
     }
 
     return {
