@@ -22,6 +22,7 @@ describe("FlightsRepository", () => {
       findOne: jest.fn(),
       find: jest.fn(),
       delete: jest.fn(),
+      createQueryBuilder: jest.fn(),
     } as unknown as jest.Mocked<Repository<Flight>>;
 
     mockFlightStatusRepo = {
@@ -261,6 +262,83 @@ describe("FlightsRepository", () => {
         order: { updatedAt: "DESC" },
       });
       expect(result).toEqual(flight);
+    });
+  });
+
+  describe("findFlightsByIdentAndDateRange", () => {
+    let mockQueryBuilder: any;
+
+    beforeEach(() => {
+      mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([{ id: "1" }]),
+      };
+      mockFlightRepo.createQueryBuilder = jest
+        .fn()
+        .mockReturnValue(mockQueryBuilder) as any;
+    });
+
+    it("should query flights by ident only if no dates provided", async () => {
+      const result = await repository.findFlightsByIdentAndDateRange("LOT123");
+      expect(mockFlightRepo.createQueryBuilder).toHaveBeenCalledWith("flight");
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        "(flight.callsign = :ident OR flight.ident_icao = :ident OR flight.ident_iata = :ident)",
+        { ident: "LOT123" },
+      );
+      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        "flight.scheduled_out",
+        "DESC",
+      );
+      expect(result).toEqual([{ id: "1" }]);
+    });
+
+    it("should include date range query if both dates provided", async () => {
+      await repository.findFlightsByIdentAndDateRange(
+        "LOT123",
+        "2026-06-01",
+        "2026-06-03",
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        "((flight.scheduled_out >= :start AND flight.scheduled_out <= :end) OR (flight.scheduled_in >= :start AND flight.scheduled_in <= :end))",
+        {
+          start: new Date("2026-06-01T00:00:00Z"),
+          end: new Date("2026-06-03T23:59:59.999Z"),
+        },
+      );
+    });
+
+    it("should include date range query with default start date if only endDateStr provided", async () => {
+      await repository.findFlightsByIdentAndDateRange(
+        "LOT123",
+        undefined,
+        "2026-06-03",
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          start: new Date("1970-01-01T00:00:00Z"),
+          end: new Date("2026-06-03T23:59:59.999Z"),
+        },
+      );
+    });
+
+    it("should include date range query with default end date if only startDateStr provided", async () => {
+      await repository.findFlightsByIdentAndDateRange(
+        "LOT123",
+        "2026-06-01",
+        undefined,
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          start: new Date("2026-06-01T00:00:00Z"),
+          end: new Date("2099-12-31T23:59:59.999Z"),
+        },
+      );
     });
   });
 
