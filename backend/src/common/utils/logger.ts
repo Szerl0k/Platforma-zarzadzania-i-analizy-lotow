@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs from "fs";
 import path from "path";
 
@@ -18,7 +19,7 @@ class Logger {
     this.ensureLogDir();
   }
 
-  private ensureLogDir() {
+  private ensureLogDir(): void {
     if (!fs.existsSync(this.logDir)) {
       fs.mkdirSync(this.logDir, { recursive: true });
     }
@@ -41,7 +42,10 @@ class Logger {
     return `[${timestamp}] [${level}] ${message}${detailStr}`;
   }
 
-  private writeToFile(message: string) {
+  private writeToFile(message: string): void {
+    if (process.env.NODE_ENV === "production") {
+      return;
+    }
     try {
       fs.appendFileSync(this.logFile, message + "\n");
     } catch (err) {
@@ -49,31 +53,31 @@ class Logger {
     }
   }
 
-  public writeRawLog(message: string) {
+  public writeRawLog(message: string): void {
     this.writeToFile(message);
   }
 
-  public info(message: string, detail?: unknown, logToConsole = false) {
+  public info(message: string, detail?: unknown, logToConsole = false): void {
     const formatted = this.formatMessage(LogLevel.INFO, message, detail);
-    if (logToConsole) {
+    if (logToConsole || process.env.NODE_ENV === "production") {
       console.log(formatted);
     }
     this.writeToFile(formatted);
   }
 
-  public warn(message: string, detail?: unknown) {
+  public warn(message: string, detail?: unknown): void {
     const formatted = this.formatMessage(LogLevel.WARN, message, detail);
     console.warn(formatted);
     this.writeToFile(formatted);
   }
 
-  public error(message: string, detail?: unknown) {
+  public error(message: string, detail?: unknown): void {
     const formatted = this.formatMessage(LogLevel.ERROR, message, detail);
     console.error(formatted);
     this.writeToFile(formatted);
   }
 
-  public fatal(message: string, detail?: unknown) {
+  public fatal(message: string, detail?: unknown): void {
     const formatted = this.formatMessage(LogLevel.FATAL, message, detail);
     console.error(formatted);
     this.writeToFile(formatted);

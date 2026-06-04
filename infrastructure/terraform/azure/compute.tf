@@ -90,6 +90,7 @@ resource "azurerm_linux_web_app" "backend" {
   name                = var.backend_app_name
   resource_group_name = azurerm_resource_group.rg.name
   service_plan_id     = azurerm_service_plan.app_plan.id
+  https_only          = true
 
   virtual_network_subnet_id = azurerm_subnet.app_service_subnet.id
 
@@ -141,6 +142,7 @@ resource "azurerm_linux_web_app" "frontend" {
   location            = azurerm_resource_group.rg.location
   name                = var.frontend_app_name
   resource_group_name = azurerm_resource_group.rg.name
+  https_only          = true
 
   service_plan_id = azurerm_service_plan.app_plan.id
 
@@ -219,5 +221,25 @@ resource "azurerm_monitor_autoscale_setting" "backend_autoscale" {
         cooldown  = "PT5M"
       }
     }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "backend_diag" {
+  name                       = "backend-diagnostics"
+  target_resource_id         = azurerm_linux_web_app.backend.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.persistent_logs.id
+
+  enabled_log {
+    category = "AppServiceConsoleLogs"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "frontend_diag" {
+  name                       = "frontend-diagnostics"
+  target_resource_id         = azurerm_linux_web_app.frontend.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.persistent_logs.id
+
+  enabled_log {
+    category = "AppServiceConsoleLogs"
   }
 }

@@ -9,3 +9,8 @@ data "azurerm_public_ip" "nat_pip" {
   name                = var.data_nat_pip
   resource_group_name = var.data_resource_group
 }
+
+data "azurerm_log_analytics_workspace" "persistent_logs" {
+  name                = var.persistent_workspace_name
+  resource_group_name = var.persistent_workspace_rg
+}

@@ -184,6 +184,7 @@ update_param "jit" "off"
 # 7. SERVICE RESTART AND DATABASE INITIALIZATION
 echo "Starting PostgreSQL"
 systemctl start postgresql
+systemctl restart postgresql
 
 if [ "$IS_NEW_DATABASE" = true ]; then
     echo "Initializing new database schema and user credentials..."
