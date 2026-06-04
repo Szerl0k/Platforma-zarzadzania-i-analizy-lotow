@@ -188,19 +188,11 @@ describe("FlightsService", () => {
   });
 
   describe("findFlightsLocally", () => {
-    it("should return mapped DTOs based on queryBuilder", async () => {
+    it("should return mapped DTOs from repository", async () => {
       (findAirlineInDb as jest.Mock).mockResolvedValue(null);
       const mockFlight = { id: "123" };
-      const getMany = jest.fn().mockResolvedValue([mockFlight]);
-      mockDataSource.getRepository = jest.fn(() => ({
-        createQueryBuilder: jest.fn(() => ({
-          leftJoinAndSelect: jest.fn().mockReturnThis(),
-          where: jest.fn().mockReturnThis(),
-          andWhere: jest.fn().mockReturnThis(),
-          orderBy: jest.fn().mockReturnThis(),
-          getMany,
-        })),
-      })) as never;
+      mockFlightsRepo.findFlightsByIdentAndDateRange = jest.fn().mockResolvedValue([mockFlight]);
+
       jest
         .spyOn(FlightUtils, "mapToDTO")
         .mockReturnValue({ id: "123" } as unknown as never);
@@ -211,7 +203,11 @@ describe("FlightsService", () => {
         "2023-01-02",
       );
       expect(result).toEqual([{ id: "123" }]);
-      expect(getMany).toHaveBeenCalled();
+      expect(mockFlightsRepo.findFlightsByIdentAndDateRange).toHaveBeenCalledWith(
+        "LOT123",
+        "2023-01-01",
+        "2023-01-02",
+      );
     });
   });
 

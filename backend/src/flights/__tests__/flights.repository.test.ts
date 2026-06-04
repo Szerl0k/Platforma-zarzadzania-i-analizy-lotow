@@ -77,6 +77,7 @@ describe("FlightsRepository", () => {
       const flight = {
         id: "1",
         ...(data as unknown as object),
+        updateSchedule: jest.fn(),
       } as unknown as import("../entities/Flight").Flight;
 
       mockFlightRepo.create.mockReturnValue(flight);
@@ -96,6 +97,7 @@ describe("FlightsRepository", () => {
       } as never;
       const flight = {
         id: "1",
+        updateSchedule: jest.fn(),
       } as unknown as import("../entities/Flight").Flight;
 
       mockFlightRepo.create.mockReturnValue(flight);
@@ -118,6 +120,7 @@ describe("FlightsRepository", () => {
     it("should update and save the flight with specific dates", async () => {
       const flight = {
         id: "1",
+        updateSchedule: jest.fn(),
       } as unknown as import("../entities/Flight").Flight;
       mockFlightRepo.findOne.mockResolvedValue(flight);
       mockFlightRepo.save.mockResolvedValue(flight);
@@ -144,6 +147,7 @@ describe("FlightsRepository", () => {
     it("should update and set dates to null when falsy", async () => {
       const flight = {
         id: "1",
+        updateSchedule: jest.fn(),
       } as unknown as import("../entities/Flight").Flight;
       mockFlightRepo.findOne.mockResolvedValue(flight);
       mockFlightRepo.save.mockResolvedValue(flight);
@@ -159,8 +163,7 @@ describe("FlightsRepository", () => {
 
       const result = await repository.update("1", data);
 
-      expect(flight.scheduledOut).toBeNull();
-      expect(flight.actualIn).toBeNull();
+      expect(flight.updateSchedule).toHaveBeenCalledWith(data);
       expect(mockFlightRepo.save).toHaveBeenCalledWith(flight);
     });
 
@@ -168,6 +171,7 @@ describe("FlightsRepository", () => {
       const flight = {
         id: "1",
         scheduledOut: new Date(),
+        updateSchedule: jest.fn(),
       } as unknown as import("../entities/Flight").Flight;
       mockFlightRepo.findOne.mockResolvedValue(flight);
       mockFlightRepo.save.mockResolvedValue(flight);
