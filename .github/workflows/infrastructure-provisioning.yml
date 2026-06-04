@@ -59,6 +59,14 @@ on:
         required: false
         type: string
         default: "dev-inz-pzal-postgis"
+      persistent_workspace_name:
+        required: false
+        type: string
+        default: "dev-inz-persistent-logs"
+      persistent_workspace_rg:
+        required: false
+        type: string
+        default: "dev-data-rg"
     secrets:
       AZURE_CLIENT_ID:
         required: true
@@ -138,7 +146,9 @@ jobs:
             -var="data_subnet_name=${{ inputs.data_subnet_name }}" \
             -var="app_service_subnet_name=${{ inputs.app_service_subnet_name }}" \
             -var="nat_gateway_name=${{ inputs.nat_gateway_name }}" \
-            -var="public_ip_domain_name_label=${{ inputs.public_ip_domain_name_label }}"
+            -var="public_ip_domain_name_label=${{ inputs.public_ip_domain_name_label }}" \
+            -var="persistent_workspace_name=${{ inputs.persistent_workspace_name }}" \
+            -var="persistent_workspace_rg=${{ inputs.persistent_workspace_rg }}"
 
       - name: Get Terraform Outputs
         if: ${{ inputs.terraform_action == 'apply' }}

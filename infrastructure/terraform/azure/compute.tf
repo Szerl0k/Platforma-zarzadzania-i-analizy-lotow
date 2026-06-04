@@ -221,3 +221,23 @@ resource "azurerm_monitor_autoscale_setting" "backend_autoscale" {
     }
   }
 }
+
+resource "azurerm_monitor_diagnostic_setting" "backend_diag" {
+  name                       = "backend-diagnostics"
+  target_resource_id         = azurerm_linux_web_app.backend.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.persistent_logs.id
+
+  enabled_log {
+    category = "AppServiceConsoleLogs"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "frontend_diag" {
+  name                       = "frontend-diagnostics"
+  target_resource_id         = azurerm_linux_web_app.frontend.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.persistent_logs.id
+
+  enabled_log {
+    category = "AppServiceConsoleLogs"
+  }
+}

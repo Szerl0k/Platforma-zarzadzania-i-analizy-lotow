@@ -154,3 +154,15 @@ variable "use_existing_data" {
   default     = true
 }
 
+variable "persistent_workspace_name" {
+  type        = string
+  description = "Name of the persistent log analytics workspace"
+  default     = "pzal-log-analytics"
+}
+
+variable "persistent_workspace_rg" {
+  type        = string
+  description = "Resource group for the persistent log analytics workspace"
+  default     = "dev-data-rg"
+}
+
