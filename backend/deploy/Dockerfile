@@ -17,7 +17,7 @@ RUN npm run build
 
 # Prod stage
 FROM base AS prod
-ENV NODE_ENV=prod
+ENV NODE_ENV=production
 
 # Install OpenSSH, set root password, and generate host keys for Azure SSH
 RUN apk add --no-cache openssh \
