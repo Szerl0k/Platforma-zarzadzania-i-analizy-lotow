@@ -152,22 +152,34 @@ export class Flight extends BaseEntity {
     actualIn?: Date | string | null;
   }): void {
     if (timestamps.scheduledOut !== undefined) {
-      this.scheduledOut = timestamps.scheduledOut ? new Date(timestamps.scheduledOut) : null;
+      this.scheduledOut = timestamps.scheduledOut
+        ? new Date(timestamps.scheduledOut)
+        : null;
     }
     if (timestamps.estimatedOut !== undefined) {
-      this.estimatedOut = timestamps.estimatedOut ? new Date(timestamps.estimatedOut) : null;
+      this.estimatedOut = timestamps.estimatedOut
+        ? new Date(timestamps.estimatedOut)
+        : null;
     }
     if (timestamps.actualOut !== undefined) {
-      this.actualOut = timestamps.actualOut ? new Date(timestamps.actualOut) : null;
+      this.actualOut = timestamps.actualOut
+        ? new Date(timestamps.actualOut)
+        : null;
     }
     if (timestamps.scheduledIn !== undefined) {
-      this.scheduledIn = timestamps.scheduledIn ? new Date(timestamps.scheduledIn) : null;
+      this.scheduledIn = timestamps.scheduledIn
+        ? new Date(timestamps.scheduledIn)
+        : null;
     }
     if (timestamps.estimatedIn !== undefined) {
-      this.estimatedIn = timestamps.estimatedIn ? new Date(timestamps.estimatedIn) : null;
+      this.estimatedIn = timestamps.estimatedIn
+        ? new Date(timestamps.estimatedIn)
+        : null;
     }
     if (timestamps.actualIn !== undefined) {
-      this.actualIn = timestamps.actualIn ? new Date(timestamps.actualIn) : null;
+      this.actualIn = timestamps.actualIn
+        ? new Date(timestamps.actualIn)
+        : null;
     }
   }
 
@@ -175,7 +187,9 @@ export class Flight extends BaseEntity {
    * Domain-specific query method to determine if the flight is currently delayed.
    */
   public isDelayed(): boolean {
-    return (this.departureDelay !== null && this.departureDelay > 0) || 
-           (this.arrivalDelay !== null && this.arrivalDelay > 0);
+    return (
+      (this.departureDelay !== null && this.departureDelay > 0) ||
+      (this.arrivalDelay !== null && this.arrivalDelay > 0)
+    );
   }
 }

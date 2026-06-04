@@ -126,7 +126,8 @@ export class FlightsRepository {
   ): Promise<Flight[]> {
     const queryBuilder = this.repository.createQueryBuilder("flight");
 
-    queryBuilder.leftJoinAndSelect("flight.status", "status")
+    queryBuilder
+      .leftJoinAndSelect("flight.status", "status")
       .leftJoinAndSelect("flight.origin", "origin")
       .leftJoinAndSelect("origin.city", "originCity")
       .leftJoinAndSelect("originCity.country", "originCountry")
