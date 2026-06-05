@@ -15,7 +15,7 @@ interface AuthState {
     email: string,
     password: string,
     nickname?: string,
-  ) => Promise<void>;
+  ) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   setUser: (user: AuthUser) => void;
@@ -31,8 +31,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   register: async (email, password, nickname?) => {
-    const user = await apiRegister(email, password, nickname);
-    set({ user });
+    // No session is created on registration; the user must verify their e-mail
+    // first, so we do not set the authenticated user here.
+    return apiRegister(email, password, nickname);
   },
 
   logout: async () => {

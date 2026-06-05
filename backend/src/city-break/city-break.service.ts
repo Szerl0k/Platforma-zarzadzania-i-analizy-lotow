@@ -7,7 +7,11 @@ import {
   AeroAPIError,
   AeroAPISchedule,
 } from "../common/integrations/aeroapi";
-import { findAirportInDb } from "../geo/geo.service";
+import type { GeoLookupPort } from "../common/contracts/geo-lookup.port";
+import {
+  resolveService,
+  PORT_TOKENS,
+} from "../common/contracts/service-registry";
 import {
   BadRequestError,
   NotFoundError,
@@ -75,10 +79,13 @@ function durationMinutes(
   return diff > 0 ? diff : null;
 }
 
-async function resolveOriginIcao(input: string): Promise<string> {
+async function resolveOriginIcao(
+  input: string,
+  geo: GeoLookupPort,
+): Promise<string> {
   const code = normalizeCode(input);
   if (/^[A-Z]{3,4}$/.test(code)) {
-    const direct = await findAirportInDb(code);
+    const direct = await geo.findAirport(code);
     if (direct) return direct.icaoCode;
   }
   // Fall back: maybe user typed the city name — search the DB.
@@ -247,17 +254,32 @@ function wrapAeroError(err: unknown): never {
 
 export class CityBreakService {
   private readonly aeroClient = getAeroApiClient();
+  private readonly geoOverride?: GeoLookupPort;
+
+  constructor(geo?: GeoLookupPort) {
+    this.geoOverride = geo;
+  }
+
+  /**
+   * Airport resolution via the GeoLookupPort contract (composition root, or
+   * injected in tests) so city-break does not import geo.service.
+   */
+  private get geo(): GeoLookupPort {
+    return (
+      this.geoOverride ?? resolveService<GeoLookupPort>(PORT_TOKENS.GeoLookup)
+    );
+  }
 
   public async searchProposals(
     params: SearchCityBreakQuery,
   ): Promise<CityBreakProposalDTO[]> {
-    const originIcao = await resolveOriginIcao(params.origin);
+    const originIcao = await resolveOriginIcao(params.origin, this.geo);
     const cacheKey = searchCacheKey(originIcao, params);
     const cached = searchCache.get<CityBreakProposalDTO[]>(cacheKey);
     if (cached) return cached;
 
     const { start, end } = clampWindow(params.dateFrom, params.dateTo);
-    const originAirport = await findAirportInDb(originIcao);
+    const originAirport = await this.geo.findAirport(originIcao);
     if (!originAirport) {
       throw new NotFoundError(
         `Lotnisko origin ${originIcao} nie znalezione w bazie.`,
@@ -300,7 +322,7 @@ export class CityBreakService {
     params: ProposalDetailsQuery,
   ): Promise<ProposalDetailsDTO> {
     const destIcao = normalizeCode(destinationIcao);
-    const originIcao = await resolveOriginIcao(params.origin);
+    const originIcao = await resolveOriginIcao(params.origin, this.geo);
     const cacheKey = detailsCacheKey(params, destIcao);
     const cached = detailsCache.get<ProposalDetailsDTO>(cacheKey);
     if (cached) return cached;

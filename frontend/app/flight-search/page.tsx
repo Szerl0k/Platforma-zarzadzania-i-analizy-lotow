@@ -12,7 +12,7 @@ import {
   Spinner,
 } from "@/common/components";
 import { flightApi, FlightDetailsResponse } from "@/common/api/flights";
-import { FlightPanel } from "@/common/components/Map/FlightPanel";
+import { FlightPanel } from "@/features/flights/flight-panel";
 import { extractError } from "@/common/utils/errorUtils";
 import { formatTime } from "@/common/utils/dateUtils";
 

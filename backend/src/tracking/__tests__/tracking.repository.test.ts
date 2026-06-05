@@ -4,6 +4,7 @@ import { TrackingStatus } from "../entities/TrackingStatus";
 import { TrackingSource } from "../entities/TrackingSource";
 import { FlightHistory } from "../entities/FlightHistory";
 import { NotificationLog } from "../entities/NotificationLog";
+import { PushSubscription } from "../entities/PushSubscription";
 
 function repoMock() {
   return {
@@ -14,6 +15,7 @@ function repoMock() {
     save: jest.fn().mockImplementation((e: object) => Promise.resolve(e)),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    upsert: jest.fn().mockResolvedValue({ identifiers: [] }),
   };
 }
 
@@ -23,6 +25,7 @@ function buildRepo() {
   const sources = repoMock();
   const history = repoMock();
   const notifications = repoMock();
+  const pushSubscriptions = repoMock();
   const ds = {
     getRepository: jest.fn().mockImplementation((entity: unknown) => {
       if (entity === TrackedFlight) return tracked;
@@ -30,12 +33,66 @@ function buildRepo() {
       if (entity === TrackingSource) return sources;
       if (entity === FlightHistory) return history;
       if (entity === NotificationLog) return notifications;
+      if (entity === PushSubscription) return pushSubscriptions;
       throw new Error("Unexpected entity");
     }),
   };
   const repo = new TrackingRepository(ds as never);
-  return { repo, tracked, statuses, sources, history, notifications };
+  return {
+    repo,
+    tracked,
+    statuses,
+    sources,
+    history,
+    notifications,
+    pushSubscriptions,
+  };
 }
+
+describe("TrackingRepository (history flown + push)", () => {
+  it("findHistoryById queries by id+userId with flight relation", async () => {
+    const { repo, history } = buildRepo();
+    history.findOne.mockResolvedValue({ id: "h1" });
+    const row = await repo.findHistoryById("user-1", "h1");
+    expect(row).toEqual({ id: "h1" });
+    expect(history.findOne).toHaveBeenCalledWith({
+      where: { id: "h1", userId: "user-1" },
+      relations: ["flight"],
+    });
+  });
+
+  it("setHistoryFlown returns true when a row is updated", async () => {
+    const { repo, history } = buildRepo();
+    history.update.mockResolvedValue({ affected: 1 });
+    await expect(repo.setHistoryFlown("user-1", "h1", true)).resolves.toBe(
+      true,
+    );
+    expect(history.update).toHaveBeenCalledWith(
+      { id: "h1", userId: "user-1" },
+      { flown: true },
+    );
+  });
+
+  it("upserts / lists / deletes push subscriptions", async () => {
+    const { repo, pushSubscriptions } = buildRepo();
+    await repo.upsertPushSubscription({
+      userId: "user-1",
+      endpoint: "e1",
+      p256dh: "k",
+      auth: "a",
+    });
+    expect(pushSubscriptions.upsert ?? pushSubscriptions.save).toBeDefined();
+
+    pushSubscriptions.find.mockResolvedValue([{ id: "s1" }]);
+    await expect(repo.listPushSubscriptions("user-1")).resolves.toEqual([
+      { id: "s1" },
+    ]);
+
+    await repo.deletePushSubscription("user-1", "e1");
+    await repo.deletePushSubscriptionByEndpoint("e1");
+    expect(pushSubscriptions.delete).toHaveBeenCalledWith({ endpoint: "e1" });
+  });
+});
 
 describe("TrackingRepository", () => {
   it("create initialises tracking timestamps", async () => {

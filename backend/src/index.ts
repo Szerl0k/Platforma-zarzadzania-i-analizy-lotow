@@ -8,7 +8,12 @@ import apiRouter from "./common/routes";
 import { logger } from "./common/utils/logger";
 import { doubleCsrfProtection } from "./common/middleware/csrf";
 import { getTrackingScheduler } from "./tracking/tracking.scheduler";
+import { registerServices } from "./common/contracts/register-services";
 import { env } from "./config/env";
+
+// Composition root: bind domain services to the application ports before any
+// request or scheduler tick resolves them.
+registerServices();
 
 const app = express();
 const port = env.PORT;

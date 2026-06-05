@@ -19,6 +19,7 @@ import {
   deleteUser,
   listRoles,
   listUsers,
+  setUserBlocked,
 } from "@/common/api/admin";
 
 const PAGE_SIZE = 20;
@@ -85,6 +86,16 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleToggleBlock(target: AdminUser) {
+    setError(null);
+    try {
+      await setUserBlocked(target.id, !target.blocked);
+      await fetchUsers();
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -142,6 +153,9 @@ export default function AdminUsersPage() {
                   Utworzony
                 </th>
                 <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest">
+                  Status
+                </th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest">
                   Akcje
                 </th>
               </tr>
@@ -149,14 +163,14 @@ export default function AdminUsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
+                  <td colSpan={6} className="px-4 py-12 text-center">
                     <Spinner size="md" />
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-12 text-center font-mono text-xs uppercase text-ink-subtle"
                   >
                     Brak wyników
@@ -201,14 +215,28 @@ export default function AdminUsersPage() {
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3">
+                        <Badge variant={u.blocked ? "danger" : "success"}>
+                          {u.blocked ? "ZABLOKOWANY" : "AKTYWNY"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
                         {!isSelf && (
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => setDeleteTarget(u)}
-                          >
-                            Usuń
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleToggleBlock(u)}
+                            >
+                              {u.blocked ? "Odblokuj" : "Zablokuj"}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => setDeleteTarget(u)}
+                            >
+                              Usuń
+                            </Button>
+                          </div>
                         )}
                       </td>
                     </tr>

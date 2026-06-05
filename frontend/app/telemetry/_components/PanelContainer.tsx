@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { AirportPanel } from "@/common/components/Map/AirportPanel";
 import { CityAirportsPanel } from "@/common/components/Map/CityAirportsPanel";
-import { FlightPanel } from "@/common/components/Map/FlightPanel";
+import { FlightPanel } from "@/features/flights/flight-panel";
 import type { Airport, AirlineWithDestinations } from "@/common/api/airports";
 import type { FlightFeatureProperties } from "@/app/telemetry/_utils/telemetryMapHelpers";
 

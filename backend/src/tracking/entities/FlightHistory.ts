@@ -31,6 +31,9 @@ export class FlightHistory extends BaseEntity {
   @Column({ type: "date", name: "travel_date" })
   travelDate!: string;
 
+  @Column({ type: "boolean", default: false })
+  flown!: boolean;
+
   @Column({ type: "varchar", length: 10, nullable: true, name: "seat_number" })
   seatNumber!: string | null;
 

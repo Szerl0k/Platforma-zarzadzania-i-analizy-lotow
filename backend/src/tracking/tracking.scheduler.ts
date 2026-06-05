@@ -2,7 +2,11 @@ import * as cron from "node-cron";
 import { DataSource } from "typeorm";
 import { AppDataSource } from "../common/database/data-source";
 import { logger } from "../common/utils/logger";
-import { FlightsService } from "../flights/flights.service";
+import type { FlightLookupPort } from "../common/contracts/flight-lookup.port";
+import {
+  resolveService,
+  PORT_TOKENS,
+} from "../common/contracts/service-registry";
 import { Flight } from "../flights/entities/Flight";
 import { User } from "../users/entities/User";
 import { UserPreferences } from "../users/entities/UserPreferences";
@@ -12,12 +16,13 @@ import { isFlightTerminal } from "./tracking.service";
 import { TrackedFlight } from "./entities/TrackedFlight";
 
 const POLL_BATCH_LIMIT = 100;
-// Every hour
-const CRON_EXPR = "0 * * * *";
+// Poll interval is configurable so deployments can tune it to their external
+// API quotas (OpenSky / AeroAPI). Set TRACKING_POLL_CRON to override.
+const CRON_EXPR = process.env.TRACKING_POLL_CRON ?? "*/3 * * * *";
 
 export interface SchedulerDeps {
   repo?: TrackingRepository;
-  flightsService?: FlightsService;
+  flightsService?: FlightLookupPort;
   notifications?: NotificationsService;
   dataSource?: DataSource;
   now?: () => Date;
@@ -27,14 +32,16 @@ export class TrackingScheduler {
   private isRunning = false;
   private task: cron.ScheduledTask | null = null;
   private readonly repo: TrackingRepository;
-  private readonly flightsService: FlightsService;
+  private readonly flightsService: FlightLookupPort;
   private readonly notifications: NotificationsService;
   private readonly dataSource: DataSource;
   private readonly now: () => Date;
 
   constructor(deps: SchedulerDeps = {}) {
     this.repo = deps.repo ?? new TrackingRepository();
-    this.flightsService = deps.flightsService ?? new FlightsService();
+    this.flightsService =
+      deps.flightsService ??
+      resolveService<FlightLookupPort>(PORT_TOKENS.FlightLookup);
     this.notifications = deps.notifications ?? new NotificationsService();
     this.dataSource = deps.dataSource ?? AppDataSource;
     this.now = deps.now ?? (() => new Date());
@@ -163,26 +170,40 @@ export class TrackingScheduler {
       tracked.userId,
       tracked.flightId,
     );
-    if (!existing) {
-      const travelDate = (flight.actualOut ?? flight.scheduledOut ?? this.now())
-        .toISOString()
-        .slice(0, 10);
-      const wasDelayed =
-        flight.departureDelay != null ? flight.departureDelay >= 15 * 60 : null;
-      const delayMinutes =
-        flight.departureDelay != null
-          ? Math.round(flight.departureDelay / 60)
-          : null;
-      await this.repo.createHistory({
-        userId: tracked.userId,
-        flightId: tracked.flightId,
-        travelDate,
-        wasDelayed,
-        delayMinutes,
-      });
-    }
 
-    await this.repo.markStopped(tracked.id, this.now());
+    // Archiving a terminal flight is a two-step business transaction: create the
+    // history entry and mark the tracked flight stopped — atomically.
+    await this.dataSource.transaction(async (manager) => {
+      if (!existing) {
+        const travelDate = (
+          flight.actualOut ??
+          flight.scheduledOut ??
+          this.now()
+        )
+          .toISOString()
+          .slice(0, 10);
+        const wasDelayed =
+          flight.departureDelay != null
+            ? flight.departureDelay >= 15 * 60
+            : null;
+        const delayMinutes =
+          flight.departureDelay != null
+            ? Math.round(flight.departureDelay / 60)
+            : null;
+        await this.repo.createHistory(
+          {
+            userId: tracked.userId,
+            flightId: tracked.flightId,
+            travelDate,
+            wasDelayed,
+            delayMinutes,
+          },
+          manager,
+        );
+      }
+
+      await this.repo.markStopped(tracked.id, this.now(), manager);
+    });
   }
 }
 

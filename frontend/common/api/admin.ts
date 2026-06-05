@@ -4,6 +4,7 @@ import type { AuthRole, AuthUser } from "./auth";
 export interface AdminUser extends Omit<AuthUser, "permissions"> {
   updatedAt: string;
   lastLogin: string | null;
+  blocked: boolean;
 }
 
 export interface ListUsersParams {
@@ -46,6 +47,16 @@ export async function assignUserRole(
 
 export async function deleteUser(userId: string): Promise<void> {
   await apiClient.delete(`/users/${userId}`);
+}
+
+export async function setUserBlocked(
+  userId: string,
+  blocked: boolean,
+): Promise<AdminUser> {
+  const { data } = await apiClient.patch<AdminUser>(
+    `/users/${userId}/${blocked ? "block" : "unblock"}`,
+  );
+  return data;
 }
 
 export async function listRoles(): Promise<AuthRole[]> {
@@ -98,6 +109,31 @@ export async function revokeRolePermission(
 
 export async function listPermissions(): Promise<Permission[]> {
   const { data } = await apiClient.get<Permission[]>("/permissions");
+  return data;
+}
+
+export type ServiceState = "up" | "down" | "not_configured";
+
+export interface ServiceHealth {
+  status: ServiceState;
+  detail?: string;
+}
+
+export interface HealthReport {
+  status: "ok" | "degraded";
+  timestamp: string;
+  services: {
+    database: ServiceHealth;
+    aeroapi: ServiceHealth;
+    opensky: ServiceHealth;
+    smtp: ServiceHealth;
+  };
+}
+
+export async function getHealth(): Promise<HealthReport> {
+  const { data } = await apiClient.get<HealthReport>("/health", {
+    validateStatus: (s) => s === 200 || s === 503,
+  });
   return data;
 }
 

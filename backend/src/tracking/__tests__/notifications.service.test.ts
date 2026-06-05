@@ -49,12 +49,17 @@ function makeDataSource(opts: {
   const updateMock =
     opts.updateStatusChange ?? jest.fn().mockResolvedValue(undefined);
   const statusChangeRepo = { save: saveMock, update: updateMock };
+  const getRepository = jest.fn().mockImplementation((entity: unknown) => {
+    if (entity === FlightChangeType) return changeTypeRepo;
+    if (entity === FlightStatusChange) return statusChangeRepo;
+    throw new Error(`Unexpected entity: ${String(entity)}`);
+  });
   return {
-    getRepository: jest.fn().mockImplementation((entity: unknown) => {
-      if (entity === FlightChangeType) return changeTypeRepo;
-      if (entity === FlightStatusChange) return statusChangeRepo;
-      throw new Error(`Unexpected entity: ${String(entity)}`);
-    }),
+    getRepository,
+    transaction: jest.fn(
+      async (cb: (m: { getRepository: jest.Mock }) => unknown) =>
+        cb({ getRepository }),
+    ),
   };
 }
 
@@ -228,7 +233,11 @@ describe("NotificationsService.recordAndDispatch", () => {
       expect.objectContaining({ ident: "LOT123", changeKind: "delay" }),
     );
     expect(repo.insertNotification).toHaveBeenCalled();
-    expect(repo.updateLastNotifiedAt).toHaveBeenCalledWith("tracked-1", now);
+    expect(repo.updateLastNotifiedAt).toHaveBeenCalledWith(
+      "tracked-1",
+      now,
+      expect.anything(),
+    );
   });
 
   it("respects per-kind preferences (delay disabled)", async () => {

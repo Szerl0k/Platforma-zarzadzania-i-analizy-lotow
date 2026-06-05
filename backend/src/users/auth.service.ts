@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt, { SignOptions } from "jsonwebtoken";
+import { EntityManager } from "typeorm";
 import { AppDataSource } from "../common/database/data-source";
 import { User } from "./entities/User";
 import { Role } from "./entities/Role";
@@ -10,9 +11,16 @@ import { RolePermission } from "./entities/RolePermission";
 import {
   BadRequestError,
   ConflictError,
+  ForbiddenError,
   InternalError,
   UnauthorizedError,
 } from "../common/errors/http-errors";
+import { assertStrongPassword } from "./password-policy";
+import {
+  generateVerificationTokenRaw,
+  hashVerificationToken,
+  VERIFICATION_TOKEN_TTL_MS,
+} from "./email-verification.service";
 
 export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
 export const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -52,6 +60,12 @@ export interface AuthResult {
   rawRefreshToken: string;
 }
 
+export interface RegisterResult {
+  user: UserResponse;
+  /** Raw (unhashed) verification token — the route uses it to send the e-mail. */
+  rawVerificationToken: string;
+}
+
 export function hashRefreshToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -68,8 +82,9 @@ export function signAccessToken(userId: string, roleId: number): string {
 export async function createRefreshTokenRecord(
   userId: string,
   now: Date = new Date(),
+  manager: EntityManager = AppDataSource.manager,
 ): Promise<string> {
-  const repo = AppDataSource.getRepository(RefreshToken);
+  const repo = manager.getRepository(RefreshToken);
   const rawToken = crypto.randomBytes(40).toString("hex");
 
   const token = repo.create({
@@ -82,9 +97,12 @@ export async function createRefreshTokenRecord(
   return rawToken;
 }
 
-export async function buildUserResponse(user: User): Promise<UserResponse> {
-  const roleRepo = AppDataSource.getRepository(Role);
-  const rpRepo = AppDataSource.getRepository(RolePermission);
+export async function buildUserResponse(
+  user: User,
+  manager: EntityManager = AppDataSource.manager,
+): Promise<UserResponse> {
+  const roleRepo = manager.getRepository(Role);
+  const rpRepo = manager.getRepository(RolePermission);
 
   const role = await roleRepo.findOne({ where: { id: user.roleId } });
   const rolePermissions = await rpRepo.find({
@@ -124,7 +142,7 @@ function assertString(value: unknown, field: string): string {
 export async function registerUser(
   input: RegisterInput,
   now: Date = new Date(),
-): Promise<AuthResult> {
+): Promise<RegisterResult> {
   if (
     !input.email ||
     !input.password ||
@@ -140,65 +158,71 @@ export async function registerUser(
   if (!EMAIL_REGEX.test(email)) {
     throw new BadRequestError("Invalid email format");
   }
-  if (password.length < 6) {
-    throw new BadRequestError("Password must be at least 6 characters");
-  }
+  assertStrongPassword(password);
 
   const nickname =
     typeof input.nickname === "string" && input.nickname.length > 0
       ? input.nickname
       : null;
 
-  const userRepo = AppDataSource.getRepository(User);
-  const roleRepo = AppDataSource.getRepository(Role);
-  const prefsRepo = AppDataSource.getRepository(UserPreferences);
-
-  const existing = await userRepo.findOne({ where: { email } });
-  if (existing) {
-    throw new ConflictError("Email already registered");
-  }
-
-  const defaultRole = await roleRepo.findOne({ where: { name: "user" } });
-  if (!defaultRole) {
-    throw new InternalError("Default role not found");
-  }
-
   const passwordHash = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
+  const rawVerificationToken = generateVerificationTokenRaw();
 
-  const user = userRepo.create({
-    email,
-    passwordHash,
-    nickname,
-    emailVerified: false,
-    profilePublic: false,
-    roleId: defaultRole.id,
-    createdAt: now,
-    updatedAt: now,
+  // User and default preferences are created as a single atomic unit. No session
+  // is issued: the account must be activated via the e-mailed verification link
+  // before the user can log in.
+  return AppDataSource.transaction(async (manager) => {
+    const userRepo = manager.getRepository(User);
+    const roleRepo = manager.getRepository(Role);
+    const prefsRepo = manager.getRepository(UserPreferences);
+
+    const existing = await userRepo.findOne({ where: { email } });
+    if (existing) {
+      throw new ConflictError("Email already registered");
+    }
+
+    const defaultRole = await roleRepo.findOne({ where: { name: "user" } });
+    if (!defaultRole) {
+      throw new InternalError("Default role not found");
+    }
+
+    const user = userRepo.create({
+      email,
+      passwordHash,
+      nickname,
+      emailVerified: false,
+      verificationToken: hashVerificationToken(rawVerificationToken),
+      verificationTokenExpires: new Date(
+        now.getTime() + VERIFICATION_TOKEN_TTL_MS,
+      ),
+      profilePublic: false,
+      roleId: defaultRole.id,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await userRepo.save(user);
+
+    const preferences = prefsRepo.create({
+      userId: user.id,
+      emailNotifications: true,
+      pushNotifications: false,
+      notifyOnDelay: true,
+      notifyOnGateChange: true,
+      notifyOnStatusChange: true,
+      delayThresholdMinutes: 15,
+      timezone: "UTC",
+      distanceUnit: "km",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await prefsRepo.save(preferences);
+
+    const userResponse = await buildUserResponse(user, manager);
+
+    return { user: userResponse, rawVerificationToken };
   });
-
-  await userRepo.save(user);
-
-  const preferences = prefsRepo.create({
-    userId: user.id,
-    emailNotifications: true,
-    pushNotifications: false,
-    notifyOnDelay: true,
-    notifyOnGateChange: true,
-    notifyOnStatusChange: true,
-    delayThresholdMinutes: 15,
-    timezone: "UTC",
-    distanceUnit: "km",
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  await prefsRepo.save(preferences);
-
-  const accessToken = signAccessToken(user.id, user.roleId);
-  const rawRefreshToken = await createRefreshTokenRecord(user.id, now);
-  const userResponse = await buildUserResponse(user);
-
-  return { user: userResponse, accessToken, rawRefreshToken };
 }
 
 export async function loginUser(
@@ -222,14 +246,32 @@ export async function loginUser(
     throw new UnauthorizedError("Invalid email or password");
   }
 
-  user.lastLogin = now;
-  await userRepo.save(user);
+  if (user.blocked) {
+    throw new ForbiddenError(
+      "Konto zostało zablokowane. Skontaktuj się z administratorem.",
+    );
+  }
 
-  const accessToken = signAccessToken(user.id, user.roleId);
-  const rawRefreshToken = await createRefreshTokenRecord(user.id, now);
-  const userResponse = await buildUserResponse(user);
+  if (!user.emailVerified) {
+    throw new ForbiddenError(
+      "Konto nie zostało aktywowane. Sprawdź skrzynkę e-mail i kliknij link aktywacyjny.",
+    );
+  }
 
-  return { user: userResponse, accessToken, rawRefreshToken };
+  return AppDataSource.transaction(async (manager) => {
+    user.lastLogin = now;
+    await manager.getRepository(User).save(user);
+
+    const accessToken = signAccessToken(user.id, user.roleId);
+    const rawRefreshToken = await createRefreshTokenRecord(
+      user.id,
+      now,
+      manager,
+    );
+    const userResponse = await buildUserResponse(user, manager);
+
+    return { user: userResponse, accessToken, rawRefreshToken };
+  });
 }
 
 export async function rotateRefreshToken(
@@ -254,19 +296,33 @@ export async function rotateRefreshToken(
     throw new UnauthorizedError("Invalid or expired refresh token");
   }
 
-  await refreshTokenRepo.remove(stored);
-
   const userRepo = AppDataSource.getRepository(User);
   const user = await userRepo.findOne({ where: { id: stored.userId } });
   if (!user) {
     throw new UnauthorizedError("User not found");
   }
+  if (user.blocked) {
+    await refreshTokenRepo.remove(stored);
+    throw new UnauthorizedError("Konto zostało zablokowane.");
+  }
 
-  const accessToken = signAccessToken(user.id, user.roleId);
-  const newRefreshToken = await createRefreshTokenRecord(user.id, now);
-  const userResponse = await buildUserResponse(user);
+  return AppDataSource.transaction(async (manager) => {
+    await manager.getRepository(RefreshToken).delete({ id: stored.id });
 
-  return { user: userResponse, accessToken, rawRefreshToken: newRefreshToken };
+    const accessToken = signAccessToken(user.id, user.roleId);
+    const newRefreshToken = await createRefreshTokenRecord(
+      user.id,
+      now,
+      manager,
+    );
+    const userResponse = await buildUserResponse(user, manager);
+
+    return {
+      user: userResponse,
+      accessToken,
+      rawRefreshToken: newRefreshToken,
+    };
+  });
 }
 
 export async function logoutUser(

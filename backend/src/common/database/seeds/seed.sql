@@ -15583,14 +15583,17 @@ INSERT INTO public.airports VALUES ('SBNT', NULL, 'Augusto Severo Airport', 1610
 INSERT INTO public.permissions ("name", "resource", "action", "description") VALUES
     ('roles:write', 'roles', 'write', 'Manage roles and role permissions'),
     ('permissions:write', 'permissions', 'write', 'Manage permissions'),
-    ('api-usage:read', 'api-usage', 'read', 'View external API usage stats')
+    ('api-usage:read', 'api-usage', 'read', 'View external API usage stats'),
+    ('flights:write', 'flights', 'write', 'Create and update flight records'),
+    ('flights:delete', 'flights', 'delete', 'Delete flight records'),
+    ('users:block', 'users', 'block', 'Block and unblock user accounts')
 ON CONFLICT ("name") DO NOTHING;
 
 INSERT INTO public.role_permissions ("role_id", "permission_id", "granted_at")
 SELECT r.id, p.id, NOW()
 FROM public.roles r, public.permissions p
 WHERE r.name = 'admin'
-  AND p.name IN ('roles:write', 'permissions:write', 'api-usage:read')
+  AND p.name IN ('roles:write', 'permissions:write', 'api-usage:read', 'flights:write', 'flights:delete', 'users:block')
   AND NOT EXISTS (
       SELECT 1 FROM public.role_permissions rp
       WHERE rp.role_id = r.id AND rp.permission_id = p.id

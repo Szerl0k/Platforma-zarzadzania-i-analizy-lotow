@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { FlightsService } from "./flights.service";
 import { asyncHandler } from "../common/utils/asyncHandler";
+import { authenticate, authorize } from "../common/middleware/auth";
 import {
   FlightDetailsQuerySchema,
   FlightListQuerySchema,
@@ -88,6 +89,8 @@ router.get(
  */
 router.post(
   "/",
+  authenticate,
+  authorize("flights:write"),
   asyncHandler(async (req, res) => {
     const validatedBody = CreateFlightSchema.parse(req.body);
     const result = await flightService.createFlight(validatedBody);
@@ -101,6 +104,8 @@ router.post(
  */
 router.put(
   "/:id",
+  authenticate,
+  authorize("flights:write"),
   asyncHandler(async (req, res) => {
     const validatedBody = UpdateFlightSchema.parse(req.body);
     const result = await flightService.updateFlight(
@@ -117,6 +122,8 @@ router.put(
  */
 router.delete(
   "/:id",
+  authenticate,
+  authorize("flights:delete"),
   asyncHandler(async (req, res) => {
     await flightService.deleteFlight(req.params.id as string);
     res.status(204).send();

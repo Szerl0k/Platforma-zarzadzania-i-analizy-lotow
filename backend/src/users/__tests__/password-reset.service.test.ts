@@ -60,7 +60,7 @@ describe("password-reset.service", () => {
   it("rejects invalid reset token", async () => {
     userRepo.findOne.mockResolvedValue(null);
     await expect(
-      resetPassword({ token: "abc", password: "secret123" }),
+      resetPassword({ token: "abc", password: "Secret123!" }),
     ).rejects.toBeInstanceOf(BadRequestError);
   });
 
@@ -72,7 +72,7 @@ describe("password-reset.service", () => {
     userRepo.findOne.mockResolvedValue(user);
     mockedHash.mockResolvedValue("new-password-hash");
 
-    await resetPassword({ token: "raw", password: "secret123" });
+    await resetPassword({ token: "raw", password: "Secret123!" });
 
     expect(userRepo.save).toHaveBeenCalledWith(user);
     expect(refreshRepo.delete).toHaveBeenCalledWith({ userId: user.id });

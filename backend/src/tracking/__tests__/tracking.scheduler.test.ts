@@ -43,13 +43,20 @@ function buildScheduler(
   const prefsRepo = {
     findOne: jest.fn().mockResolvedValue(opts.prefs ?? makePreferences()),
   };
+  const getRepository = jest.fn().mockImplementation((entity: unknown) => {
+    if (entity === Flight) return flightRepo;
+    if (entity === User) return userRepo;
+    if (entity === UserPreferences) return prefsRepo;
+    throw new Error(`Unexpected entity: ${String(entity)}`);
+  });
   const dataSource = {
-    getRepository: jest.fn().mockImplementation((entity: unknown) => {
-      if (entity === Flight) return flightRepo;
-      if (entity === User) return userRepo;
-      if (entity === UserPreferences) return prefsRepo;
-      throw new Error(`Unexpected entity: ${String(entity)}`);
-    }),
+    getRepository,
+    // archiveTerminal wraps its writes in a transaction; the mocked repo methods
+    // ignore the passed manager, so we just invoke the callback.
+    transaction: jest.fn(
+      async (cb: (m: { getRepository: jest.Mock }) => unknown) =>
+        cb({ getRepository }),
+    ),
   };
 
   const notifications = {
@@ -106,10 +113,12 @@ describe("TrackingScheduler", () => {
         wasDelayed: true,
         delayMinutes: 30,
       }),
+      expect.anything(),
     );
     expect(repo.markStopped).toHaveBeenCalledWith(
       "tracked-1",
       expect.any(Date),
+      expect.anything(),
     );
   });
 

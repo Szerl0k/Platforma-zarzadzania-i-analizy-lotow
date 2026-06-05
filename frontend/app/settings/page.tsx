@@ -18,6 +18,11 @@ import {
 } from "@/common/api/preferences";
 import { updateProfilePublic } from "@/common/api/auth";
 import { useAuth } from "@/common/hooks/useAuth";
+import {
+  enableWebPush,
+  disableWebPush,
+  isPushSupported,
+} from "@/common/utils/webPush";
 
 function extractError(err: unknown): string {
   if (err && typeof err === "object" && "message" in err) {
@@ -80,6 +85,28 @@ export default function SettingsPage() {
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+  const pushSupported = isPushSupported();
+
+  async function handlePushToggle(next: boolean) {
+    if (!prefs) return;
+    setPushBusy(true);
+    setError(null);
+    try {
+      if (next) {
+        await enableWebPush();
+      } else {
+        await disableWebPush();
+      }
+      const updated = await updateMyPreferences({ pushNotifications: next });
+      setPrefs(updated);
+      setSavedAt(Date.now());
+    } catch (err) {
+      setError(extractError(err));
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   async function togglePrivacy(next: boolean) {
     setSavingPrivacy(true);
@@ -191,6 +218,23 @@ export default function SettingsPage() {
             onChange={(v) => patch({ notifyOnStatusChange: v })}
           />
         </div>
+      </Card>
+
+      <Card variant="default" padding="md" className="mb-6">
+        <p className="font-mono text-xs uppercase tracking-widest text-ink mb-3">
+          Powiadomienia push (przeglądarka)
+        </p>
+        <Toggle
+          label="Włącz powiadomienia push"
+          description={
+            pushSupported
+              ? "Powiadomienia w przeglądarce o zmianach śledzonych lotów (Web Push)."
+              : "Twoja przeglądarka nie obsługuje powiadomień push."
+          }
+          checked={prefs.pushNotifications}
+          disabled={pushBusy || !pushSupported}
+          onChange={handlePushToggle}
+        />
       </Card>
 
       {user && (

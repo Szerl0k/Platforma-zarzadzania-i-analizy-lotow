@@ -34,13 +34,26 @@ export async function register(
   email: string,
   password: string,
   nickname?: string,
-): Promise<AuthUser> {
-  const { data } = await apiClient.post<{ user: AuthUser }>("/auth/register", {
-    email,
-    password,
-    nickname,
-  });
-  return data.user;
+): Promise<{ message: string }> {
+  // Registration no longer establishes a session — the account must be
+  // activated via the e-mailed verification link before logging in.
+  const { data } = await apiClient.post<{ user: AuthUser; message: string }>(
+    "/auth/register",
+    { email, password, nickname },
+  );
+  return { message: data.message };
+}
+
+export async function verifyEmail(token: string): Promise<{ message: string }> {
+  const { data } = await apiClient.post<{ message: string }>(
+    "/auth/verify-email",
+    { token },
+  );
+  return data;
+}
+
+export async function resendVerification(email: string): Promise<void> {
+  await apiClient.post("/auth/resend-verification", { email });
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

@@ -5,6 +5,7 @@ import { useAuth } from "@/common/hooks/useAuth";
 import { APP_NAME } from "@/common/config";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { validatePassword } from "@/common/utils/passwordPolicy";
 import {
   Alert,
   Button,
@@ -23,6 +24,7 @@ export default function RegisterPage() {
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -37,23 +39,32 @@ export default function RegisterPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError("Hasla nie sa identyczne");
+      setError("Hasła nie są identyczne");
       return;
     }
 
-    if (password.length < 6) {
-      setError("Haslo musi miec co najmniej 6 znakow");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
     setLoading(true);
     try {
-      await register(email, password, nickname || undefined);
-      router.push("/");
+      const { message } = await register(
+        email,
+        password,
+        nickname || undefined,
+      );
+      // Registration does not log the user in — they must activate via e-mail.
+      setSuccessMessage(
+        message ??
+          "Konto utworzone. Sprawdź skrzynkę e-mail i kliknij link aktywacyjny.",
+      );
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ?? "Nie udalo sie utworzyc konta";
+          ?.error ?? "Nie udało się utworzyć konta";
       setError(message);
     } finally {
       setLoading(false);
@@ -73,68 +84,86 @@ export default function RegisterPage() {
       </div>
 
       <Card variant="elevated" padding="lg">
-        {error && (
-          <div className="mb-5">
-            <Alert variant="error">{error}</Alert>
+        {successMessage ? (
+          <div className="space-y-5">
+            <Alert variant="success">{successMessage}</Alert>
+            <Link
+              href="/login"
+              className="block text-center font-mono text-[11px] uppercase tracking-widest text-ink underline decoration-2 underline-offset-4 hover:bg-[var(--color-lime)] px-1"
+            >
+              Przejdź do logowania
+            </Link>
           </div>
+        ) : (
+          <>
+            {error && (
+              <div className="mb-5">
+                <Alert variant="error">{error}</Alert>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <FormField label="E-mail" htmlFor="email">
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="twoj@email.com"
+                />
+              </FormField>
+
+              <FormField label="Nazwa uzytkownika" htmlFor="nickname" optional>
+                <Input
+                  id="nickname"
+                  type="text"
+                  autoComplete="nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                />
+              </FormField>
+
+              <FormField
+                label="Haslo"
+                htmlFor="password"
+                hint="Min. 8 znaków: mała i wielka litera, cyfra, znak specjalny"
+              >
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Powtorz haslo" htmlFor="confirmPassword">
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </FormField>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                loading={loading}
+                className="w-full"
+                rightIcon={<span aria-hidden>&rarr;</span>}
+              >
+                {loading ? "Rejestracja" : "Zaloz konto"}
+              </Button>
+            </form>
+          </>
         )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <FormField label="E-mail" htmlFor="email">
-            <Input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="twoj@email.com"
-            />
-          </FormField>
-
-          <FormField label="Nazwa uzytkownika" htmlFor="nickname" optional>
-            <Input
-              id="nickname"
-              type="text"
-              autoComplete="nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-            />
-          </FormField>
-
-          <FormField label="Haslo" htmlFor="password" hint="Min. 6 znakow">
-            <Input
-              id="password"
-              type="password"
-              required
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </FormField>
-
-          <FormField label="Powtorz haslo" htmlFor="confirmPassword">
-            <Input
-              id="confirmPassword"
-              type="password"
-              required
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </FormField>
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            loading={loading}
-            className="w-full"
-            rightIcon={<span aria-hidden>&rarr;</span>}
-          >
-            {loading ? "Rejestracja" : "Zaloz konto"}
-          </Button>
-        </form>
       </Card>
 
       <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-muted text-center">

@@ -28,6 +28,7 @@ export interface FlightNotificationPayload {
 
 export interface Mailer {
   sendPasswordReset(to: string, resetLink: string): Promise<void>;
+  sendVerificationEmail(to: string, verifyLink: string): Promise<void>;
   sendFlightNotification(
     to: string,
     payload: FlightNotificationPayload,
@@ -120,6 +121,23 @@ export function createSmtpMailer(cfg: SmtpConfig): Mailer {
           `<p>Open the following link to set a new password (valid for 1 hour):</p>` +
           `<p><a href="${resetLink}">${resetLink}</a></p>` +
           "<p>If you did not request this, you can ignore this email.</p>",
+      });
+    },
+
+    async sendVerificationEmail(to: string, verifyLink: string): Promise<void> {
+      await transport.sendMail({
+        from: cfg.from,
+        to,
+        subject: "PZAL · Potwierdź swój adres e-mail",
+        text:
+          "Dziękujemy za rejestrację w PZAL.\n\n" +
+          `Aby aktywować konto, otwórz poniższy link (ważny 24 godziny):\n${verifyLink}\n\n` +
+          "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.",
+        html:
+          "<p>Dziękujemy za rejestrację w PZAL.</p>" +
+          "<p>Aby aktywować konto, otwórz poniższy link (ważny 24 godziny):</p>" +
+          `<p><a href="${verifyLink}">${verifyLink}</a></p>` +
+          "<p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>",
       });
     },
 

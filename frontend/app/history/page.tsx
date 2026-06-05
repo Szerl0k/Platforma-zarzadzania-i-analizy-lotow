@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Badge,
@@ -18,6 +19,7 @@ import {
 } from "@/common/hooks/useTracking";
 import {
   exportHistoryCsvUrl,
+  markHistoryFlown,
   type FlightHistoryDTO,
   type HistoryFilters,
 } from "@/common/api/tracking";
@@ -48,6 +50,8 @@ function formatDuration(min: number | null): string {
 }
 
 export default function HistoryPage() {
+  const router = useRouter();
+  const [flownBusyId, setFlownBusyId] = useState<string | null>(null);
   const [sort, setSort] = useState<HistoryFilters["sort"]>("newest");
   const [year, setYear] = useState<string>("");
   const [airlineIcao, setAirlineIcao] = useState<string>("");
@@ -85,6 +89,23 @@ export default function HistoryPage() {
     } finally {
       setRemoveBusy(false);
     }
+  }
+
+  async function handleToggleFlown(h: FlightHistoryDTO) {
+    setFlownBusyId(h.id);
+    try {
+      await markHistoryFlown(h.id, !h.flown);
+      await refresh();
+    } catch {
+      // surfaced via list refresh; keep UI resilient
+    } finally {
+      setFlownBusyId(null);
+    }
+  }
+
+  function handleShowRoute(h: FlightHistoryDTO) {
+    if (!h.flightId) return;
+    router.push(`/telemetry?flightId=${encodeURIComponent(h.flightId)}`);
   }
 
   async function handleExport() {
@@ -222,6 +243,7 @@ export default function HistoryPage() {
                       <p className="font-mono font-bold text-base uppercase tracking-widest text-ink">
                         {h.ident || "?"}
                       </p>
+                      {h.flown && <Badge variant="success">Odbyty</Badge>}
                       {h.wasDelayed && (
                         <Badge variant="danger">
                           Opóźnienie {h.delayMinutes ?? "?"} min
@@ -251,13 +273,31 @@ export default function HistoryPage() {
                       </span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => setRemoveTarget(h)}
-                  >
-                    Usuń
-                  </Button>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      variant={h.flown ? "secondary" : "primary"}
+                      loading={flownBusyId === h.id}
+                      onClick={() => handleToggleFlown(h)}
+                    >
+                      {h.flown ? "Odznacz odbyty" : "Oznacz jako odbyty"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={!h.flightId}
+                      onClick={() => handleShowRoute(h)}
+                    >
+                      Pokaż trasę
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setRemoveTarget(h)}
+                    >
+                      Usuń
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}

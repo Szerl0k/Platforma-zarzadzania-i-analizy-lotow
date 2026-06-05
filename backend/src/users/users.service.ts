@@ -3,6 +3,7 @@ import { AppDataSource } from "../common/database/data-source";
 import { User } from "./entities/User";
 import { Role } from "./entities/Role";
 import { RolePermission } from "./entities/RolePermission";
+import { RefreshToken } from "./entities/RefreshToken";
 import {
   BadRequestError,
   ForbiddenError,
@@ -14,6 +15,7 @@ export interface SafeUser {
   email: string;
   nickname: string | null;
   emailVerified: boolean;
+  blocked: boolean;
   profilePublic: boolean;
   lastLogin: Date | null;
   roleId: number;
@@ -57,6 +59,7 @@ export function sanitizeUser(user: User): SafeUser {
     email: user.email,
     nickname: user.nickname,
     emailVerified: user.emailVerified,
+    blocked: user.blocked,
     profilePublic: user.profilePublic,
     lastLogin: user.lastLogin,
     roleId: user.roleId,
@@ -202,6 +205,39 @@ export async function assignRole(
     throw new NotFoundError("User not found");
   }
   return sanitizeUser(reloaded);
+}
+
+export async function setUserBlocked(
+  targetUserId: string,
+  blocked: boolean,
+  requesterUserId: string,
+  now: Date = new Date(),
+): Promise<SafeUser> {
+  if (targetUserId === requesterUserId) {
+    throw new ForbiddenError("Nie możesz zablokować własnego konta.");
+  }
+
+  const userRepo = AppDataSource.getRepository(User);
+  const user = await userRepo.findOne({
+    where: { id: targetUserId },
+    relations: ["role"],
+  });
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+
+  user.blocked = blocked;
+  user.updatedAt = now;
+  await userRepo.save(user);
+
+  // Revoke active sessions immediately when blocking.
+  if (blocked) {
+    await AppDataSource.getRepository(RefreshToken).delete({
+      userId: targetUserId,
+    });
+  }
+
+  return sanitizeUser(user);
 }
 
 export async function getPublicProfile(

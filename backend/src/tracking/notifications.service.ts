@@ -15,6 +15,7 @@ import { FlightStatusChange } from "../flights/entities/FlightStatusChange";
 import { FlightChangeType } from "../flights/entities/FlightChangeType";
 import { TrackedFlight } from "./entities/TrackedFlight";
 import { TrackingRepository } from "./tracking.repository";
+import { sendPushToUser } from "./web-push.service";
 
 const THROTTLE_MS = 5 * 60 * 1000;
 
@@ -192,20 +193,40 @@ export class NotificationsService {
       }
     }
 
-    await this.repo.insertNotification({
-      userId: user.id,
-      trackedFlightId: tracked.id,
-      flightStatusChangeId: statusChange.id,
-      type: change.kind,
-      title: titleFor(change.kind, ident),
-      body: change.description,
-      link,
-    });
+    // Browser Web Push — network I/O, kept outside the DB transaction below.
+    if (prefs.pushNotifications) {
+      try {
+        await sendPushToUser(this.repo, user.id, {
+          title: titleFor(change.kind, ident),
+          body: change.description,
+          url: link,
+        });
+      } catch (err) {
+        logger.error("Failed to send web push notification", err);
+      }
+    }
 
-    await this.dataSource
-      .getRepository(FlightStatusChange)
-      .update(statusChange.id, { notificationSent: emailSent });
-    await this.repo.updateLastNotifiedAt(tracked.id, now);
+    // The in-app notification, the notificationSent flag and the throttle
+    // timestamp describe one logical fact — persist them atomically.
+    await this.dataSource.transaction(async (manager) => {
+      await this.repo.insertNotification(
+        {
+          userId: user.id,
+          trackedFlightId: tracked.id,
+          flightStatusChangeId: statusChange.id,
+          type: change.kind,
+          title: titleFor(change.kind, ident),
+          body: change.description,
+          link,
+        },
+        manager,
+      );
+
+      await manager
+        .getRepository(FlightStatusChange)
+        .update(statusChange.id, { notificationSent: emailSent });
+      await this.repo.updateLastNotifiedAt(tracked.id, now, manager);
+    });
 
     return { emailSent, inAppLogged: true, throttled: false };
   }

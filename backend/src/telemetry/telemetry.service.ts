@@ -14,8 +14,11 @@ import { AppDataSource } from "../common/database/data-source";
 import { DataSource } from "typeorm";
 import { BoundingBoxLimitError } from "./telemetry.errors";
 import { FlightNotFoundError, TelemetryNotFoundError } from "../common/errors";
-import { FlightsService } from "../flights/flights.service";
-import { FlightsRepository } from "../flights/flights.repository";
+import type { FlightLookupPort } from "../common/contracts/flight-lookup.port";
+import {
+  resolveService,
+  PORT_TOKENS,
+} from "../common/contracts/service-registry";
 import { TelemetryUtils } from "./telemetry.utils";
 import { TelemetryRepository } from "./telemetry.repository";
 
@@ -26,16 +29,28 @@ import { TelemetryRepository } from "./telemetry.repository";
 export class TelemetryService {
   private readonly aeroClient = getAeroApiClient();
   private readonly openSkyClient = getOpenSkyClient();
-  private readonly flightsService: FlightsService;
-  private readonly flightsRepository: FlightsRepository;
   private readonly telemetryRepository: TelemetryRepository;
   private readonly dataSource: DataSource;
+  private readonly flightsOverride?: FlightLookupPort;
 
-  constructor(dataSource: DataSource = AppDataSource) {
+  constructor(
+    dataSource: DataSource = AppDataSource,
+    flights?: FlightLookupPort,
+  ) {
     this.dataSource = dataSource;
-    this.flightsService = new FlightsService(dataSource);
-    this.flightsRepository = new FlightsRepository(dataSource);
     this.telemetryRepository = new TelemetryRepository(dataSource);
+    this.flightsOverride = flights;
+  }
+
+  /**
+   * Flight data via the FlightLookupPort contract (composition root, or injected
+   * in tests) so telemetry never imports the flights module's service.
+   */
+  private get flights(): FlightLookupPort {
+    return (
+      this.flightsOverride ??
+      resolveService<FlightLookupPort>(PORT_TOKENS.FlightLookup)
+    );
   }
 
   /**
@@ -155,7 +170,7 @@ export class TelemetryService {
 
       try {
         const flightDetails =
-          await this.flightsService.getFlightDetailsAndSave(callsign);
+          await this.flights.getFlightDetailsAndSave(callsign);
         faFlightId = flightDetails.faFlightId || undefined;
       } catch (error: unknown) {
         if (error instanceof FlightNotFoundError) {
@@ -254,13 +269,12 @@ export class TelemetryService {
     state: StateVectorTuple,
     faFlightId: string,
   ): Promise<LocateFlightResponseDTO> {
-    let flightRecord =
-      await this.flightsRepository.findByFaFlightId(faFlightId);
+    let flightRecord = await this.flights.findByFaFlightId(faFlightId);
 
     // Second-chance ingestion: if the upstream resolve step did not persist this
     // flight (e.g. AeroAPI hiccup or callsign mismatch), fetch by faFlightId now.
     if (!flightRecord) {
-      flightRecord = await this.flightsService.ingestByFaFlightId(faFlightId);
+      flightRecord = await this.flights.ingestByFaFlightId(faFlightId);
     }
 
     const [

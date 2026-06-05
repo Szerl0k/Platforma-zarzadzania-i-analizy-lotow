@@ -14,7 +14,9 @@ import { UserPreferences } from "../entities/UserPreferences";
 import { RefreshToken } from "../entities/RefreshToken";
 import { RolePermission } from "../entities/RolePermission";
 import {
+  BadRequestError,
   ConflictError,
+  ForbiddenError,
   InternalError,
   UnauthorizedError,
 } from "../../common/errors/http-errors";
@@ -26,9 +28,19 @@ import {
   makeRefreshToken,
 } from "./test-utils";
 
-jest.mock("../../common/database/data-source", () => ({
-  AppDataSource: { getRepository: jest.fn() },
-}));
+jest.mock("../../common/database/data-source", () => {
+  const getRepository = jest.fn();
+  return {
+    AppDataSource: {
+      getRepository,
+      manager: { getRepository },
+      transaction: jest.fn(
+        async (cb: (m: { getRepository: jest.Mock }) => unknown) =>
+          cb({ getRepository }),
+      ),
+    },
+  };
+});
 jest.mock("bcrypt");
 jest.mock("jsonwebtoken");
 
@@ -74,20 +86,26 @@ describe("auth.service", () => {
 
     const result = await registerUser({
       email: "john@example.com",
-      password: "secret123",
+      password: "Secret123!",
       nickname: "john",
     });
 
     expect(userRepo.save).toHaveBeenCalledWith(user);
     expect(prefsRepo.save).toHaveBeenCalled();
-    expect(result.accessToken).toBe("access-token");
+    expect(typeof result.rawVerificationToken).toBe("string");
     expect(result.user.email).toBe("john@example.com");
+  });
+
+  it("rejects weak passwords", async () => {
+    await expect(
+      registerUser({ email: "john@example.com", password: "secret123" }),
+    ).rejects.toBeInstanceOf(BadRequestError);
   });
 
   it("throws ConflictError when email exists", async () => {
     userRepo.findOne.mockResolvedValue(makeUser());
     await expect(
-      registerUser({ email: "john@example.com", password: "secret123" }),
+      registerUser({ email: "john@example.com", password: "Secret123!" }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
@@ -95,12 +113,21 @@ describe("auth.service", () => {
     userRepo.findOne.mockResolvedValue(null);
     roleRepo.findOne.mockResolvedValue(null);
     await expect(
-      registerUser({ email: "john@example.com", password: "secret123" }),
+      registerUser({ email: "john@example.com", password: "Secret123!" }),
     ).rejects.toBeInstanceOf(InternalError);
   });
 
+  it("rejects login for unverified account", async () => {
+    const user = makeUser({ emailVerified: false });
+    userRepo.findOne.mockResolvedValue(user);
+    mockedCompare.mockResolvedValue(true);
+    await expect(
+      loginUser({ email: "john@example.com", password: "Secret123!" }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
   it("logs in user", async () => {
-    const user = makeUser();
+    const user = makeUser({ emailVerified: true });
     userRepo.findOne.mockResolvedValue(user);
     mockedCompare.mockResolvedValue(true);
     roleRepo.findOne.mockResolvedValue(makeRole());
@@ -109,7 +136,7 @@ describe("auth.service", () => {
 
     const result = await loginUser({
       email: "john@example.com",
-      password: "secret123",
+      password: "Secret123!",
     });
 
     expect(userRepo.save).toHaveBeenCalledWith(user);
@@ -135,7 +162,7 @@ describe("auth.service", () => {
 
     const result = await rotateRefreshToken("raw-token");
 
-    expect(refreshTokenRepo.remove).toHaveBeenCalledWith(stored);
+    expect(refreshTokenRepo.delete).toHaveBeenCalledWith({ id: stored.id });
     expect(result.accessToken).toBe("access-token");
   });
 

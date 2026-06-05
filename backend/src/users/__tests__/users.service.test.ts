@@ -8,6 +8,7 @@ import {
   getCurrentUser,
   getPublicProfile,
   listUsers,
+  setUserBlocked,
   updateCurrentUser,
 } from "../users.service";
 import { makeRepo, makeRole, makeRolePermission, makeUser } from "./test-utils";
@@ -46,6 +47,27 @@ describe("users.service", () => {
     ]);
     const result = await getCurrentUser("user-1");
     expect(result.permissions).toEqual(["users:write"]);
+  });
+
+  it("blocks a user and revokes their refresh tokens", async () => {
+    const user = makeUser({ id: "target", blocked: false });
+    userRepo.findOne.mockResolvedValue(user);
+    const result = await setUserBlocked("target", true, "admin");
+    expect(result.blocked).toBe(true);
+    expect(userRepo.save).toHaveBeenCalledWith(user);
+  });
+
+  it("refuses to block your own account", async () => {
+    await expect(setUserBlocked("me", true, "me")).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+  });
+
+  it("throws NotFound when blocking a missing user", async () => {
+    userRepo.findOne.mockResolvedValue(null);
+    await expect(setUserBlocked("ghost", true, "admin")).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 
   it("updates current user fields", async () => {

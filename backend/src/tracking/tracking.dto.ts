@@ -23,6 +23,25 @@ export const HistoryQuerySchema = z.object({
 });
 export type HistoryQueryDTO = z.infer<typeof HistoryQuerySchema>;
 
+export const MarkFlownSchema = z.object({
+  flown: z.boolean(),
+});
+export type MarkFlownDTO = z.infer<typeof MarkFlownSchema>;
+
+export const PushSubscribeSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1),
+  }),
+});
+export type PushSubscribeDTO = z.infer<typeof PushSubscribeSchema>;
+
+export const PushUnsubscribeSchema = z.object({
+  endpoint: z.string().url(),
+});
+export type PushUnsubscribeDTO = z.infer<typeof PushUnsubscribeSchema>;
+
 export const NotificationListQuerySchema = z.object({
   unreadOnly: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -57,6 +76,7 @@ export interface TrackedFlightDTO {
 
 export interface FlightHistoryDTO {
   id: string;
+  flightId: string | null;
   travelDate: string;
   ident: string | null;
   airlineName: string | null;
@@ -67,6 +87,7 @@ export interface FlightHistoryDTO {
   durationMinutes: number | null;
   wasDelayed: boolean | null;
   delayMinutes: number | null;
+  flown: boolean;
 }
 
 export interface NotificationDTO {

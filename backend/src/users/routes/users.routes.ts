@@ -7,6 +7,7 @@ import {
   getCurrentUser,
   getPublicProfile,
   listUsers,
+  setUserBlocked,
   updateCurrentUser,
 } from "../users.service";
 
@@ -66,6 +67,40 @@ router.patch(
       const user = await assignRole(
         req.params.id as string,
         req.body.roleId,
+        req.userId ?? "",
+      );
+      res.json(user);
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
+
+router.patch(
+  "/:id/block",
+  authorize("users:block"),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user = await setUserBlocked(
+        req.params.id as string,
+        true,
+        req.userId ?? "",
+      );
+      res.json(user);
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
+
+router.patch(
+  "/:id/unblock",
+  authorize("users:block"),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user = await setUserBlocked(
+        req.params.id as string,
+        false,
         req.userId ?? "",
       );
       res.json(user);

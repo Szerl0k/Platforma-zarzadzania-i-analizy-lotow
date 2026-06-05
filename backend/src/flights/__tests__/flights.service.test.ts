@@ -51,7 +51,13 @@ describe("FlightsService", () => {
     mockFlightsRepo = new FlightsRepository(
       mockDataSource,
     ) as jest.Mocked<FlightsRepository>;
-    service = new FlightsService(mockDataSource, mockFlightsRepo);
+    // FlightsService now resolves geo data via the GeoLookupPort; inject one
+    // backed by the existing geo.service mock so expectations stay the same.
+    const testGeo = {
+      findAirport: jest.fn(),
+      findAirline: findAirlineInDb as jest.Mock,
+    };
+    service = new FlightsService(mockDataSource, mockFlightsRepo, testGeo);
   });
 
   describe("createFlight", () => {

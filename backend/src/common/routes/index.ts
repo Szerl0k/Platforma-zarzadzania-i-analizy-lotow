@@ -18,12 +18,14 @@ import rankingsRoutes from "../../stats/rankings.routes";
 import apiUsageRoutes from "../integrations/usage/usage.routes";
 import { generateCsrfToken } from "../middleware/csrf";
 import { apiRateLimiter } from "../middleware/rateLimiter";
+import { buildHealthReport } from "../health/health.service";
 
 const apiRouter = Router();
 
-// Health
-apiRouter.get("/health", (_req, res) => {
-  res.json({ status: "OK", message: "Backend is running" });
+// Health — actively pings the database and reports external-service status.
+apiRouter.get("/health", async (_req, res) => {
+  const report = await buildHealthReport();
+  res.status(report.status === "ok" ? 200 : 503).json(report);
 });
 
 // CSRF token endpoint — client must call this before any state-changing request

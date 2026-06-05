@@ -9,8 +9,7 @@ import {
   OpenSkyStateVectorsResponse,
 } from "../../common/integrations/opensky";
 import { TelemetryRepository } from "../telemetry.repository";
-import { FlightsRepository } from "../../flights/flights.repository";
-import { FlightsService } from "../../flights/flights.service";
+import type { FlightLookupPort } from "../../common/contracts/flight-lookup.port";
 import { TelemetryNotFoundError } from "../../common/errors";
 import { BoundingBoxLimitError } from "../telemetry.errors";
 import { DataSource } from "typeorm";
@@ -27,8 +26,6 @@ import {
 jest.mock("../../common/integrations/aeroapi");
 jest.mock("../../common/integrations/opensky");
 jest.mock("../telemetry.repository");
-jest.mock("../../flights/flights.repository");
-jest.mock("../../flights/flights.service");
 jest.mock("../../common/database/data-source");
 
 describe("TelemetryService", () => {
@@ -36,8 +33,8 @@ describe("TelemetryService", () => {
   let mockAeroClient: jest.Mocked<AeroAPIClient>;
   let mockOpenSkyClient: jest.Mocked<OpenSkyClient>;
   let mockTelemetryRepo: jest.Mocked<TelemetryRepository>;
-  let mockFlightsRepo: jest.Mocked<FlightsRepository>;
-  let mockFlightsService: jest.Mocked<FlightsService>;
+  // Flights are accessed through the FlightLookupPort, injected as a mock.
+  let mockFlights: jest.Mocked<FlightLookupPort>;
 
   beforeEach(() => {
     mockAeroClient = {
@@ -52,15 +49,19 @@ describe("TelemetryService", () => {
     (getAeroApiClient as jest.Mock).mockReturnValue(mockAeroClient);
     (getOpenSkyClient as jest.Mock).mockReturnValue(mockOpenSkyClient);
 
-    service = new TelemetryService({} as unknown as DataSource);
+    mockFlights = {
+      searchFlight: jest.fn(),
+      getFlightDetailsAndSave: jest.fn(),
+      getFlightPath: jest.fn(),
+      ingestByFaFlightId: jest.fn(),
+      findByFaFlightId: jest.fn(),
+    } as unknown as jest.Mocked<FlightLookupPort>;
+
+    service = new TelemetryService({} as unknown as DataSource, mockFlights);
 
     const serviceInternal = service as unknown as Record<string, unknown>;
     mockTelemetryRepo =
       serviceInternal.telemetryRepository as jest.Mocked<TelemetryRepository>;
-    mockFlightsRepo =
-      serviceInternal.flightsRepository as jest.Mocked<FlightsRepository>;
-    mockFlightsService =
-      serviceInternal.flightsService as jest.Mocked<FlightsService>;
   });
 
   describe("getFlightsInArea", () => {
@@ -148,10 +149,10 @@ describe("TelemetryService", () => {
         time: 123456,
         states: [mockState],
       });
-      mockFlightsService.getFlightDetailsAndSave.mockResolvedValue({
+      mockFlights.getFlightDetailsAndSave.mockResolvedValue({
         faFlightId: "fa1",
       } as unknown as FlightDetailsResponseDTO);
-      mockFlightsRepo.findByFaFlightId.mockResolvedValue({
+      mockFlights.findByFaFlightId.mockResolvedValue({
         id: "flight-uuid",
       } as unknown as Flight);
       mockTelemetryRepo.save.mockResolvedValue({
@@ -210,7 +211,7 @@ describe("TelemetryService", () => {
       });
 
       // Repositories
-      mockFlightsRepo.findByFaFlightId.mockResolvedValue({
+      mockFlights.findByFaFlightId.mockResolvedValue({
         id: "f-uuid",
       } as Flight);
       mockTelemetryRepo.save.mockResolvedValue({
@@ -247,10 +248,10 @@ describe("TelemetryService", () => {
         time: 123456,
         states: [mockState],
       });
-      mockFlightsService.getFlightDetailsAndSave.mockResolvedValue({
+      mockFlights.getFlightDetailsAndSave.mockResolvedValue({
         faFlightId: "fa1",
       } as unknown as FlightDetailsResponseDTO);
-      mockFlightsRepo.findByFaFlightId.mockResolvedValue({
+      mockFlights.findByFaFlightId.mockResolvedValue({
         id: "f-uuid",
       } as Flight);
 
@@ -325,13 +326,13 @@ describe("TelemetryService", () => {
         time: 123456,
         states: [mockState],
       });
-      mockFlightsService.getFlightDetailsAndSave.mockResolvedValue({
+      mockFlights.getFlightDetailsAndSave.mockResolvedValue({
         faFlightId: "fa-missing",
       } as unknown as FlightDetailsResponseDTO);
       // First DB lookup misses (resolve step did not persist)
-      mockFlightsRepo.findByFaFlightId.mockResolvedValue(null);
+      mockFlights.findByFaFlightId.mockResolvedValue(null);
       // Second-chance ingestion succeeds
-      mockFlightsService.ingestByFaFlightId.mockResolvedValue({
+      mockFlights.ingestByFaFlightId.mockResolvedValue({
         id: "ingested-uuid",
       } as unknown as Flight);
       mockTelemetryRepo.save.mockResolvedValue({
@@ -348,9 +349,7 @@ describe("TelemetryService", () => {
 
       const result = await service.locateAndSaveFlight(query);
 
-      expect(mockFlightsService.ingestByFaFlightId).toHaveBeenCalledWith(
-        "fa-missing",
-      );
+      expect(mockFlights.ingestByFaFlightId).toHaveBeenCalledWith("fa-missing");
       expect(result.internalFlightId).toBe("ingested-uuid");
       expect(mockTelemetryRepo.save).toHaveBeenCalled();
     });
@@ -367,11 +366,11 @@ describe("TelemetryService", () => {
         time: 123456,
         states: [mockState],
       });
-      mockFlightsService.getFlightDetailsAndSave.mockResolvedValue({
+      mockFlights.getFlightDetailsAndSave.mockResolvedValue({
         faFlightId: "fa-orphan",
       } as unknown as FlightDetailsResponseDTO);
-      mockFlightsRepo.findByFaFlightId.mockResolvedValue(null);
-      mockFlightsService.ingestByFaFlightId.mockResolvedValue(null);
+      mockFlights.findByFaFlightId.mockResolvedValue(null);
+      mockFlights.ingestByFaFlightId.mockResolvedValue(null);
 
       const result = await service.locateAndSaveFlight(query);
 

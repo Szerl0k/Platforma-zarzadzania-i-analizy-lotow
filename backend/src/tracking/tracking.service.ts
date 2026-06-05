@@ -5,8 +5,12 @@ import {
   ConflictError,
   NotFoundError,
 } from "../common/errors/http-errors";
-import { FlightsService } from "../flights/flights.service";
-import { FlightDetailsResponseDTO } from "../flights/flights.dto";
+import type { FlightLookupPort } from "../common/contracts/flight-lookup.port";
+import {
+  resolveService,
+  PORT_TOKENS,
+} from "../common/contracts/service-registry";
+import type { FlightDetailsResponseDTO } from "../flights/flights.dto";
 import { Flight } from "../flights/entities/Flight";
 import { TrackingRepository } from "./tracking.repository";
 import { TrackedFlight } from "./entities/TrackedFlight";
@@ -27,12 +31,36 @@ const TERMINAL_STATUS_NAMES = [
 
 const ARRIVING_SOON_WINDOW_MS = 30 * 60 * 1000;
 
+/**
+ * Maximum number of flights a single user may actively track at once.
+ * Defaults to 20 (product scenario), overridable via MAX_ACTIVE_TRACKED_FLIGHTS.
+ */
+export const MAX_ACTIVE_TRACKED_FLIGHTS = (() => {
+  const parsed = Number(process.env.MAX_ACTIVE_TRACKED_FLIGHTS);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 20;
+})();
+
 export class TrackingService {
+  private readonly flightsOverride?: FlightLookupPort;
+
   constructor(
     private readonly repo: TrackingRepository = new TrackingRepository(),
-    private readonly flightsService: FlightsService = new FlightsService(),
+    flights?: FlightLookupPort,
     private readonly dataSource: DataSource = AppDataSource,
-  ) {}
+  ) {
+    this.flightsOverride = flights;
+  }
+
+  /**
+   * Flight data via the FlightLookupPort contract (composition root, or injected
+   * in tests) so tracking does not import the flights module's service.
+   */
+  private get flightsService(): FlightLookupPort {
+    return (
+      this.flightsOverride ??
+      resolveService<FlightLookupPort>(PORT_TOKENS.FlightLookup)
+    );
+  }
 
   // ---------- Track flight by flight number / ICAO ----------
 
@@ -76,6 +104,14 @@ export class TrackingService {
     );
     if (existing) {
       throw new ConflictError("Już śledzisz ten lot.");
+    }
+
+    const activeCount = await this.repo.countActiveByUser(userId);
+    if (activeCount >= MAX_ACTIVE_TRACKED_FLIGHTS) {
+      throw new BadRequestError(
+        `Osiągnięto limit ${MAX_ACTIVE_TRACKED_FLIGHTS} aktywnie śledzonych lotów. ` +
+          "Zakończ śledzenie innego lotu, aby dodać nowy.",
+      );
     }
 
     const flight = await this.dataSource.getRepository(Flight).findOne({
@@ -180,6 +216,32 @@ export class TrackingService {
   async deleteHistory(userId: string, id: string): Promise<void> {
     const ok = await this.repo.deleteHistoryById(userId, id);
     if (!ok) throw new NotFoundError("Wpis historii nie istnieje.");
+  }
+
+  /** Marks (or unmarks) a historical flight as actually flown by the user. */
+  async markFlown(
+    userId: string,
+    id: string,
+    flown: boolean,
+  ): Promise<FlightHistoryDTO> {
+    const ok = await this.repo.setHistoryFlown(userId, id, flown);
+    if (!ok) throw new NotFoundError("Wpis historii nie istnieje.");
+    const updated = await this.repo.findHistoryById(userId, id);
+    if (!updated) throw new NotFoundError("Wpis historii nie istnieje.");
+    return mapHistoryToDto(updated);
+  }
+
+  /**
+   * Returns the spatial path (GeoJSON) of the flight behind a history entry,
+   * so the user can view its route on the map.
+   */
+  async getHistoryRoute(userId: string, id: string): Promise<unknown> {
+    const entry = await this.repo.findHistoryById(userId, id);
+    if (!entry) throw new NotFoundError("Wpis historii nie istnieje.");
+    if (!entry.flightId) {
+      throw new NotFoundError("Ten wpis historii nie ma powiązanego lotu.");
+    }
+    return this.flightsService.getFlightPath(entry.flightId);
   }
 
   async exportHistoryCsv(userId: string): Promise<string> {
@@ -290,6 +352,7 @@ function mapHistoryToDto(h: FlightHistory): FlightHistoryDTO {
   }
   return {
     id: h.id,
+    flightId: h.flightId,
     travelDate: h.travelDate,
     ident: flight?.identIcao ?? null,
     airlineName: flight?.operatingAirline?.name ?? null,
@@ -300,6 +363,7 @@ function mapHistoryToDto(h: FlightHistory): FlightHistoryDTO {
     durationMinutes,
     wasDelayed: h.wasDelayed,
     delayMinutes: h.delayMinutes,
+    flown: h.flown,
   };
 }
 

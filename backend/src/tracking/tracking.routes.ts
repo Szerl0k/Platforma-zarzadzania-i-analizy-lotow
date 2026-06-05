@@ -4,10 +4,14 @@ import { TrackingRepository } from "./tracking.repository";
 import {
   ConfirmTrackSchema,
   HistoryQuerySchema,
+  MarkFlownSchema,
   NotificationListQuerySchema,
   PreviewFlightSchema,
+  PushSubscribeSchema,
+  PushUnsubscribeSchema,
   NotificationDTO,
 } from "./tracking.dto";
+import { getVapidPublicKey } from "./web-push.service";
 
 const router = Router();
 const service = new TrackingService();
@@ -88,6 +92,32 @@ router.get(
   }),
 );
 
+// Route of a specific historical flight (GeoJSON) — for "show route on map".
+router.get(
+  "/history/:id/route",
+  asyncHandler(async (req, res) => {
+    const result = await service.getHistoryRoute(
+      userId(req),
+      req.params.id as string,
+    );
+    res.json(result);
+  }),
+);
+
+// Mark / unmark a historical flight as actually flown by the user.
+router.patch(
+  "/history/:id",
+  asyncHandler(async (req, res) => {
+    const body = MarkFlownSchema.parse(req.body);
+    const result = await service.markFlown(
+      userId(req),
+      req.params.id as string,
+      body.flown,
+    );
+    res.json(result);
+  }),
+);
+
 router.delete(
   "/history/:id",
   asyncHandler(async (req, res) => {
@@ -156,5 +186,37 @@ notificationsRouter.post(
   asyncHandler(async (req, res) => {
     const updated = await repo.markAllNotificationsRead(userId(req));
     res.json({ updated });
+  }),
+);
+
+// ---------- Web Push ----------
+
+notificationsRouter.get(
+  "/push/public-key",
+  asyncHandler(async (_req, res) => {
+    res.json({ publicKey: getVapidPublicKey() });
+  }),
+);
+
+notificationsRouter.post(
+  "/push/subscribe",
+  asyncHandler(async (req, res) => {
+    const body = PushSubscribeSchema.parse(req.body);
+    await repo.upsertPushSubscription({
+      userId: userId(req),
+      endpoint: body.endpoint,
+      p256dh: body.keys.p256dh,
+      auth: body.keys.auth,
+    });
+    res.status(201).json({ ok: true });
+  }),
+);
+
+notificationsRouter.delete(
+  "/push/unsubscribe",
+  asyncHandler(async (req, res) => {
+    const body = PushUnsubscribeSchema.parse(req.body);
+    await repo.deletePushSubscription(userId(req), body.endpoint);
+    res.status(204).send();
   }),
 );

@@ -40,6 +40,12 @@ jest.mock("../../common/integrations/aeroapi", () => {
 
 const mockedGetRepository = AppDataSource.getRepository as jest.Mock;
 const mockedFindAirportInDb = geoService.findAirportInDb as jest.Mock;
+// CityBreakService depends on the GeoLookupPort; inject one backed by the
+// existing geo.service mock so test expectations stay the same.
+const testGeo = {
+  findAirport: mockedFindAirportInDb,
+  findAirline: jest.fn(),
+};
 const mockedGetAeroApiClient =
   aeroIntegration.getAeroApiClient as unknown as jest.Mock;
 
@@ -249,7 +255,7 @@ describe("CityBreakService.searchProposals", () => {
         }),
       ],
     });
-    const service = new CityBreakService();
+    const service = new CityBreakService(testGeo);
     const result = await service.searchProposals({
       origin: "EPWA",
       dateFrom: "2026-05-20",
@@ -267,7 +273,7 @@ describe("CityBreakService.searchProposals", () => {
 
   it("returns empty array when AeroAPI returns no schedules", async () => {
     aeroClient.getScheduledFlights.mockResolvedValue({ scheduled: [] });
-    const service = new CityBreakService();
+    const service = new CityBreakService(testGeo);
     const result = await service.searchProposals({
       origin: "EPWA",
       dateFrom: "2026-06-01",
@@ -287,7 +293,7 @@ describe("CityBreakService.searchProposals", () => {
       getOne: jest.fn().mockResolvedValue(null),
     };
     airportRepo.createQueryBuilder.mockReturnValue(qb);
-    const service = new CityBreakService();
+    const service = new CityBreakService(testGeo);
     await expect(
       service.searchProposals({
         origin: "ZZZZ",
@@ -302,7 +308,7 @@ describe("CityBreakService.searchProposals", () => {
     aeroClient.getScheduledFlights.mockRejectedValue(
       new AeroAPIError("nf", "/x", 404, null),
     );
-    const service = new CityBreakService();
+    const service = new CityBreakService(testGeo);
     await expect(
       service.searchProposals({
         origin: "EPWA",
@@ -354,7 +360,7 @@ describe("CityBreakService.getProposalDetails", () => {
         },
       ],
     });
-    const service = new CityBreakService();
+    const service = new CityBreakService(testGeo);
     const result = await service.getProposalDetails("eddf", {
       origin: "EPWA",
       dateFrom: "2026-05-20",

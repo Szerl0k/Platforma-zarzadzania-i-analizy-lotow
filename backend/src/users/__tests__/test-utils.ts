@@ -58,6 +58,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     passwordHash: "hash",
     nickname: "john",
     emailVerified: false,
+    blocked: false,
     verificationToken: null,
     verificationTokenExpires: null,
     passwordResetToken: null,
@@ -143,6 +144,7 @@ export function makePreferences(
 export function makeMailer(): jest.Mocked<Mailer> {
   return {
     sendPasswordReset: jest.fn(),
+    sendVerificationEmail: jest.fn(),
     sendFlightNotification: jest.fn(),
   };
 }

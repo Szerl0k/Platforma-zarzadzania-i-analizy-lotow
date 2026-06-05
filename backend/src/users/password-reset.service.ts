@@ -5,6 +5,7 @@ import { User } from "./entities/User";
 import { RefreshToken } from "./entities/RefreshToken";
 import { BadRequestError } from "../common/errors/http-errors";
 import { Mailer } from "./mailer";
+import { assertStrongPassword } from "./password-policy";
 
 export const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const PASSWORD_HASH_ROUNDS = 12;
@@ -55,9 +56,7 @@ export async function resetPassword(
   if (typeof input.token !== "string" || input.token.length === 0) {
     throw new BadRequestError("Token is required");
   }
-  if (typeof input.password !== "string" || input.password.length < 6) {
-    throw new BadRequestError("Password must be at least 6 characters");
-  }
+  const password = assertStrongPassword(input.password);
 
   const tokenHash = hashResetToken(input.token);
 
@@ -70,7 +69,7 @@ export async function resetPassword(
     throw new BadRequestError("Invalid or expired token");
   }
 
-  user.passwordHash = await bcrypt.hash(input.password, PASSWORD_HASH_ROUNDS);
+  user.passwordHash = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
   user.passwordResetToken = null;
   user.passwordResetExpires = null;
   user.updatedAt = now;

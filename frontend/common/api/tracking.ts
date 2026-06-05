@@ -26,6 +26,7 @@ export interface TrackedFlightDTO {
 
 export interface FlightHistoryDTO {
   id: string;
+  flightId: string | null;
   travelDate: string;
   ident: string | null;
   airlineName: string | null;
@@ -36,6 +37,7 @@ export interface FlightHistoryDTO {
   durationMinutes: number | null;
   wasDelayed: boolean | null;
   delayMinutes: number | null;
+  flown: boolean;
 }
 
 export interface NotificationDTO {
@@ -122,6 +124,17 @@ export async function listFlightHistory(
   return data;
 }
 
+export async function markHistoryFlown(
+  id: string,
+  flown: boolean,
+): Promise<FlightHistoryDTO> {
+  const { data } = await apiClient.patch<FlightHistoryDTO>(
+    `/tracking/history/${encodeURIComponent(id)}`,
+    { flown },
+  );
+  return data;
+}
+
 export async function deleteHistoryEntry(id: string): Promise<void> {
   await apiClient.delete(`/tracking/history/${encodeURIComponent(id)}`);
 }
@@ -165,4 +178,28 @@ export async function markAllNotificationsRead(): Promise<number> {
     "/notifications/read-all",
   );
   return data.updated;
+}
+
+// ---------- Web Push ----------
+
+export async function getPushPublicKey(): Promise<{
+  publicKey: string | null;
+}> {
+  const { data } = await apiClient.get<{ publicKey: string | null }>(
+    "/notifications/push/public-key",
+  );
+  return data;
+}
+
+export async function subscribePush(sub: {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}): Promise<void> {
+  await apiClient.post("/notifications/push/subscribe", sub);
+}
+
+export async function unsubscribePush(endpoint: string): Promise<void> {
+  await apiClient.delete("/notifications/push/unsubscribe", {
+    data: { endpoint },
+  });
 }

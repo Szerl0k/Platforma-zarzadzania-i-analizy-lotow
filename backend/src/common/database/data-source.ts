@@ -36,6 +36,7 @@ import { TrackingSource } from "../../tracking/entities/TrackingSource";
 import { FlightHistory } from "../../tracking/entities/FlightHistory";
 import { FavouriteDestination } from "../../tracking/entities/FavouriteDestination";
 import { NotificationLog } from "../../tracking/entities/NotificationLog";
+import { PushSubscription } from "../../tracking/entities/PushSubscription";
 
 // Simulations entities
 import { CustomFlightSimulation } from "../../simulations/entities/CustomFlightSimulation";
@@ -80,6 +81,7 @@ export const AppDataSource = new DataSource({
     FlightChangeType,
     FlightStatusChange,
     NotificationLog,
+    PushSubscription,
     RefreshToken,
     ApiUsageLog,
   ],

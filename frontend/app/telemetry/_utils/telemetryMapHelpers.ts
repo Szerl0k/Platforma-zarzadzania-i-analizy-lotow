@@ -11,6 +11,21 @@ export const EMPTY_GEOJSON: GeoJSON.FeatureCollection = {
   features: [],
 };
 
+/**
+ * Wraps a single (possibly null) GeoJSON geometry — e.g. a flight's traveled or
+ * remaining path segment — into a FeatureCollection, falling back to the empty
+ * collection. Keeps GeoJSON shaping out of the map component.
+ */
+export function singleGeometryFC(
+  geometry: GeoJSON.Geometry | null | undefined,
+): GeoJSON.FeatureCollection {
+  if (!geometry) return EMPTY_GEOJSON;
+  return {
+    type: "FeatureCollection",
+    features: [{ type: "Feature", geometry, properties: {} }],
+  };
+}
+
 export interface AirportFeatureProperties {
   icaoCode: string;
   iataCode: string | null;

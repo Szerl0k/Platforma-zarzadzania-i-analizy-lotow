@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
-import { RateLimitExceededError } from "../../telemetry/telemetry.errors";
+import { RateLimitExceededError } from "../errors";
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

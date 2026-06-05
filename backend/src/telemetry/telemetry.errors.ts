@@ -17,20 +17,8 @@ export class BoundingBoxLimitError extends Error {
   }
 }
 
-/**
- * Error thrown when an external API rate limit is reached.
- * Typically results in a 429 Too Many Requests response.
- */
-export class RateLimitExceededError extends Error {
-  public readonly statusCode: number = 429;
-
-  constructor(message: string = "Token limit exceeded for external API") {
-    super(message);
-    this.name = "RateLimitExceededError";
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, RateLimitExceededError);
-  }
-}
+// RateLimitExceededError moved to common/errors — cross-cutting concern.
+// Import it from "../common/errors".
 
 /**
  * Error thrown when received telemetry data is considered too old to be useful.

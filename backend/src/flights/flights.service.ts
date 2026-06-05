@@ -13,8 +13,13 @@ import {
 import { FlightNotFoundError } from "../common/errors";
 import { FlightsRepository } from "./flights.repository";
 import { FlightUtils } from "./flights.utils";
-import { findAirlineInDb } from "../geo/geo.service";
 import { Flight } from "./entities/Flight";
+import type { FlightLookupPort } from "../common/contracts/flight-lookup.port";
+import type { GeoLookupPort } from "../common/contracts/geo-lookup.port";
+import {
+  resolveService,
+  PORT_TOKENS,
+} from "../common/contracts/service-registry";
 
 const FULL_FLIGHT_RELATIONS = [
   "status",
@@ -32,17 +37,30 @@ const FULL_FLIGHT_RELATIONS = [
  * Service handling commercial flight operations, including integration with AeroAPI
  * and database persistence via FlightsRepository.
  */
-export class FlightsService {
+export class FlightsService implements FlightLookupPort {
   private readonly dataSource: DataSource;
   private readonly flightsRepository: FlightsRepository;
   private readonly aeroClient = getAeroApiClient();
+  private readonly geoOverride?: GeoLookupPort;
 
   constructor(
     dataSource: DataSource = AppDataSource,
     flightsRepository: FlightsRepository = new FlightsRepository(dataSource),
+    geo?: GeoLookupPort,
   ) {
     this.dataSource = dataSource;
     this.flightsRepository = flightsRepository;
+    this.geoOverride = geo;
+  }
+
+  /**
+   * Geo reference data via the GeoLookupPort contract (composition root, or
+   * injected in tests) so flights does not import geo.service directly.
+   */
+  private get geo(): GeoLookupPort {
+    return (
+      this.geoOverride ?? resolveService<GeoLookupPort>(PORT_TOKENS.GeoLookup)
+    );
   }
 
   /**
@@ -64,7 +82,7 @@ export class FlightsService {
     if (iataMatch && !icaoMatch) {
       const iataPrefix = iataMatch[1];
       const flightNumber = iataMatch[2];
-      const airline = await findAirlineInDb(iataPrefix);
+      const airline = await this.geo.findAirline(iataPrefix);
       if (airline && airline.icaoCode) {
         return `${airline.icaoCode}${flightNumber}`;
       }
@@ -424,6 +442,14 @@ export class FlightsService {
    * @param faFlightId - AeroAPI unique flight identifier.
    * @returns The persisted Flight entity, or null if AeroAPI returned no matching flight.
    */
+  /**
+   * Looks up a persisted flight by its AeroAPI flight id without hitting the
+   * external API. Part of the FlightLookupPort contract.
+   */
+  public async findByFaFlightId(faFlightId: string): Promise<Flight | null> {
+    return this.flightsRepository.findByFaFlightId(faFlightId);
+  }
+
   public async ingestByFaFlightId(faFlightId: string): Promise<Flight | null> {
     let response: AeroAPIStandardFlightsResponse;
     try {

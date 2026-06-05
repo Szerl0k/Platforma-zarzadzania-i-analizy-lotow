@@ -1,10 +1,11 @@
-import { DataSource, IsNull, Repository } from "typeorm";
+import { DataSource, EntityManager, IsNull, Repository } from "typeorm";
 import { AppDataSource } from "../common/database/data-source";
 import { TrackedFlight } from "./entities/TrackedFlight";
 import { TrackingStatus } from "./entities/TrackingStatus";
 import { TrackingSource } from "./entities/TrackingSource";
 import { FlightHistory } from "./entities/FlightHistory";
 import { NotificationLog } from "./entities/NotificationLog";
+import { PushSubscription } from "./entities/PushSubscription";
 
 const FLIGHT_RELATIONS = [
   "flight",
@@ -24,6 +25,7 @@ export class TrackingRepository {
   private readonly trackingSources: Repository<TrackingSource>;
   private readonly flightHistory: Repository<FlightHistory>;
   private readonly notifications: Repository<NotificationLog>;
+  private readonly pushSubscriptions: Repository<PushSubscription>;
 
   constructor(dataSource: DataSource = AppDataSource) {
     this.trackedFlights = dataSource.getRepository(TrackedFlight);
@@ -31,6 +33,7 @@ export class TrackingRepository {
     this.trackingSources = dataSource.getRepository(TrackingSource);
     this.flightHistory = dataSource.getRepository(FlightHistory);
     this.notifications = dataSource.getRepository(NotificationLog);
+    this.pushSubscriptions = dataSource.getRepository(PushSubscription);
   }
 
   async findActiveByUserAndFlight(
@@ -89,12 +92,26 @@ export class TrackingRepository {
     return this.trackedFlights.save(entity);
   }
 
-  async markStopped(id: string, now: Date = new Date()): Promise<void> {
-    await this.trackedFlights.update(id, { stoppedTrackingAt: now });
+  async markStopped(
+    id: string,
+    now: Date = new Date(),
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(TrackedFlight)
+      : this.trackedFlights;
+    await repo.update(id, { stoppedTrackingAt: now });
   }
 
-  async updateLastNotifiedAt(id: string, now: Date): Promise<void> {
-    await this.trackedFlights.update(id, { lastNotifiedAt: now });
+  async updateLastNotifiedAt(
+    id: string,
+    now: Date,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(TrackedFlight)
+      : this.trackedFlights;
+    await repo.update(id, { lastNotifiedAt: now });
   }
 
   async findStatusByName(name: string): Promise<TrackingStatus | null> {
@@ -106,9 +123,15 @@ export class TrackingRepository {
   }
 
   // History
-  async createHistory(data: Partial<FlightHistory>): Promise<FlightHistory> {
-    const entity = this.flightHistory.create(data);
-    return this.flightHistory.save(entity);
+  async createHistory(
+    data: Partial<FlightHistory>,
+    manager?: EntityManager,
+  ): Promise<FlightHistory> {
+    const repo = manager
+      ? manager.getRepository(FlightHistory)
+      : this.flightHistory;
+    const entity = repo.create(data);
+    return repo.save(entity);
   }
 
   async findHistoryByUserAndFlight(
@@ -116,6 +139,25 @@ export class TrackingRepository {
     flightId: string,
   ): Promise<FlightHistory | null> {
     return this.flightHistory.findOne({ where: { userId, flightId } });
+  }
+
+  async findHistoryById(
+    userId: string,
+    id: string,
+  ): Promise<FlightHistory | null> {
+    return this.flightHistory.findOne({
+      where: { id, userId },
+      relations: ["flight"],
+    });
+  }
+
+  async setHistoryFlown(
+    userId: string,
+    id: string,
+    flown: boolean,
+  ): Promise<boolean> {
+    const result = await this.flightHistory.update({ id, userId }, { flown });
+    return (result.affected ?? 0) > 0;
   }
 
   async listHistoryByUser(userId: string): Promise<FlightHistory[]> {
@@ -143,9 +185,13 @@ export class TrackingRepository {
   // Notifications
   async insertNotification(
     data: Partial<NotificationLog>,
+    manager?: EntityManager,
   ): Promise<NotificationLog> {
-    const entity = this.notifications.create(data);
-    return this.notifications.save(entity);
+    const repo = manager
+      ? manager.getRepository(NotificationLog)
+      : this.notifications;
+    const entity = repo.create(data);
+    return repo.save(entity);
   }
 
   async listNotifications(
@@ -186,5 +232,38 @@ export class TrackingRepository {
       { readAt: now },
     );
     return result.affected ?? 0;
+  }
+
+  // Push subscriptions
+  async upsertPushSubscription(data: {
+    userId: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  }): Promise<void> {
+    await this.pushSubscriptions.upsert(
+      {
+        userId: data.userId,
+        endpoint: data.endpoint,
+        p256dh: data.p256dh,
+        auth: data.auth,
+      },
+      ["endpoint"],
+    );
+  }
+
+  async listPushSubscriptions(userId: string): Promise<PushSubscription[]> {
+    return this.pushSubscriptions.find({ where: { userId } });
+  }
+
+  async deletePushSubscription(
+    userId: string,
+    endpoint: string,
+  ): Promise<void> {
+    await this.pushSubscriptions.delete({ userId, endpoint });
+  }
+
+  async deletePushSubscriptionByEndpoint(endpoint: string): Promise<void> {
+    await this.pushSubscriptions.delete({ endpoint });
   }
 }
