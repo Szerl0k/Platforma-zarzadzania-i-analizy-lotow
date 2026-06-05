@@ -19,12 +19,14 @@ export const createMockStateVector = (
     velocity: number | null;
     heading: number | null;
     onGround: boolean;
+    originCountry: string;
+    category: number;
   }> = {},
 ): StateVectorTuple => {
   return [
     overrides.icao24 !== undefined ? overrides.icao24 : "icao123",
     overrides.callsign !== undefined ? overrides.callsign : "CALL123 ",
-    "origin",
+    overrides.originCountry !== undefined ? overrides.originCountry : "origin",
     0,
     0,
     overrides.lon !== undefined ? overrides.lon : 21.0,
@@ -39,7 +41,7 @@ export const createMockStateVector = (
     null,
     false,
     0,
-    0,
+    overrides.category !== undefined ? overrides.category : 0,
   ];
 };
 

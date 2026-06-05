@@ -37,6 +37,8 @@ export const TelemetryUtils = {
       velocity: state[9] ?? null,
       heading: state[10] ?? null,
       onGround: state[8],
+      originCountry: state[2] ? state[2].trim() : null,
+      category: state[17] ?? null,
     };
   },
 

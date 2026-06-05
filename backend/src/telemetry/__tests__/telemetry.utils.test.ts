@@ -1,7 +1,44 @@
 import { TelemetryUtils } from "../telemetry.utils";
 import { BoundingBoxLimitError } from "../telemetry.errors";
+import { createMockStateVector } from "./test-utils";
 
 describe("TelemetryUtils", () => {
+  describe("mapStateVectorToSummaryDTO", () => {
+    it("should map a state vector to a summary DTO including country and category", () => {
+      const state = createMockStateVector({
+        icao24: "abc123",
+        callsign: "LOT123  ",
+        lon: 21.0,
+        lat: 52.0,
+        alt: 9000,
+        velocity: 230,
+        heading: 180,
+        originCountry: "Poland",
+        category: 4,
+      });
+
+      const result = TelemetryUtils.mapStateVectorToSummaryDTO(state);
+
+      expect(result).toEqual({
+        icao24: "abc123",
+        callsign: "LOT123",
+        location: { type: "Point", coordinates: [21.0, 52.0] },
+        altitude: 9000,
+        velocity: 230,
+        heading: 180,
+        onGround: false,
+        originCountry: "Poland",
+        category: 4,
+      });
+    });
+
+    it("should null out an empty origin country", () => {
+      const state = createMockStateVector({ originCountry: "" });
+      const result = TelemetryUtils.mapStateVectorToSummaryDTO(state);
+      expect(result.originCountry).toBeNull();
+    });
+  });
+
   describe("createBoundingBox", () => {
     it("should create a bounding box with the default buffer", () => {
       const lat = 52.0;

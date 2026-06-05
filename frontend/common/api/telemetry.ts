@@ -16,6 +16,8 @@ export interface FlightPositionDTO {
   velocity?: number | null;
   heading?: number | null;
   onGround: boolean;
+  originCountry?: string | null;
+  category?: number | null;
 }
 
 export interface LocateFlightResponseDTO {

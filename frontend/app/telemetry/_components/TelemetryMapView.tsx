@@ -19,6 +19,8 @@ import { useAuth } from "@/common/hooks/useAuth";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapOverlay } from "@/common/components/Map/TelemetryOverlay";
 import { FlightSearch } from "@/common/components/Map/FlightSearch";
+import { useFlightFilters } from "@/common/hooks/useFlightFilters";
+import { FlightFilterPanel } from "./FlightFilterPanel";
 import { MapLayers } from "./MapLayers";
 import { PanelContainer } from "./PanelContainer";
 import { AltitudeLegend } from "./AltitudeLegend";
@@ -143,9 +145,21 @@ export default function TelemetryMapView() {
     );
   }, [user, myTrackedFlights]);
 
+  const {
+    filters,
+    setFlightNumber,
+    toggleAirline,
+    toggleCountry,
+    toggleCategory,
+    clear: clearFilters,
+    options: filterOptions,
+    filtered: filteredFlights,
+    activeCount: activeFilterCount,
+  } = useFlightFilters(flights);
+
   const geoJsonData = useMemo(
-    () => mapFlightsToGeoJson(flights, trackedCallsigns),
-    [flights, trackedCallsigns],
+    () => mapFlightsToGeoJson(filteredFlights, trackedCallsigns),
+    [filteredFlights, trackedCallsigns],
   );
 
   const airportsGeoJson = useMemo<GeoJSON.FeatureCollection>(() => {
@@ -381,11 +395,25 @@ export default function TelemetryMapView() {
         <AltitudeLegend />
 
         <MapOverlay
-          flightsCount={flights.length}
+          flightsCount={filteredFlights.length}
+          totalCount={flights.length}
           loading={loading}
           error={error}
           onAirportSelect={handleSearchSelect}
-        />
+        >
+          <FlightFilterPanel
+            filters={filters}
+            options={filterOptions}
+            activeCount={activeFilterCount}
+            visibleCount={filteredFlights.length}
+            totalCount={flights.length}
+            onFlightNumberChange={setFlightNumber}
+            onToggleAirline={toggleAirline}
+            onToggleCountry={toggleCountry}
+            onToggleCategory={toggleCategory}
+            onClear={clearFilters}
+          />
+        </MapOverlay>
 
         {/* Flight Search (Top Right) */}
         <div className="absolute top-4 right-14 z-10 flex flex-col items-end gap-2">

@@ -6,7 +6,6 @@ import {
 import {
   getOpenSkyClient,
   OpenSkyClient,
-  StateVectorTuple,
   OpenSkyStateVectorsResponse,
 } from "../../common/integrations/opensky";
 import { TelemetryRepository } from "../telemetry.repository";
@@ -18,12 +17,6 @@ import { DataSource } from "typeorm";
 import { Flight } from "../../flights/entities/Flight";
 import { FlightTelemetry } from "../entities/FlightTelemetry";
 import { FlightDetailsResponseDTO } from "../../flights/flights.dto";
-import {
-  AeroAPIFlightDetails,
-  AeroAPIStandardFlightsResponse,
-  AeroAPIFlightPositionResponse,
-  AeroAPILastPosition,
-} from "../../common/integrations/aeroapi/types";
 import {
   createMockAeroFlightPosition,
   createMockAeroFlightsResponse,
@@ -101,6 +94,8 @@ describe("TelemetryService", () => {
         velocity: 200,
         heading: 90,
         onGround: false,
+        originCountry: "origin",
+        category: 0,
       });
     });
 
