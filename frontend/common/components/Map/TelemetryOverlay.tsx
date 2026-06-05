@@ -5,16 +5,20 @@ import type { Airport } from "@/common/api/airports";
 
 interface MapOverlayProps {
   flightsCount: number;
+  totalCount?: number;
   loading: boolean;
   error: Error | string | null;
   onAirportSelect: (airport: Airport, results: Airport[]) => void;
+  children?: React.ReactNode;
 }
 
 export function MapOverlay({
   flightsCount,
+  totalCount,
   loading,
   error,
   onAirportSelect,
+  children,
 }: MapOverlayProps) {
   return (
     <div className="absolute top-4 left-4 z-10 flex flex-col gap-3 pointer-events-none">
@@ -28,6 +32,9 @@ export function MapOverlay({
           </div>
           <p className="font-mono text-xs uppercase tracking-widest text-ink font-bold whitespace-nowrap">
             Widoczne statki: {flightsCount}
+            {totalCount !== undefined && totalCount !== flightsCount && (
+              <span className="text-ink-muted font-normal"> / {totalCount}</span>
+            )}
           </p>
         </div>
         <div className="border-l-2 border-ink flex items-center">
@@ -41,6 +48,7 @@ export function MapOverlay({
           </Alert>
         </div>
       )}
+      {children && <div className="pointer-events-auto">{children}</div>}
     </div>
   );
 }

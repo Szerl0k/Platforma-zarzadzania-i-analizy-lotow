@@ -147,7 +147,7 @@ export class OpenSkyClient {
     bbox?: BoundingBox,
     icao24?: string | string[],
   ): Promise<OpenSkyStateVectorsResponse> {
-    const params: Record<string, string | number> = {};
+    const params: Record<string, string | number> = { extended: 1 };
 
     if (bbox) {
       params.lamin = bbox.lamin;

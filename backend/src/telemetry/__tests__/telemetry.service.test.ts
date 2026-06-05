@@ -101,6 +101,8 @@ describe("TelemetryService", () => {
         velocity: 200,
         heading: 90,
         onGround: false,
+        originCountry: "origin",
+        category: 0,
       });
     });
 

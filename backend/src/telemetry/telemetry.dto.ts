@@ -104,4 +104,8 @@ export interface MapFlightSummaryDTO {
   heading: number | null;
   /** Indicates if the aircraft is on the ground. */
   onGround: boolean;
+  /** Country of aircraft registration as reported by OpenSky. */
+  originCountry: string | null;
+  /** OpenSky ADS-B emitter category (0-20), a coarse aircraft class. */
+  category: number | null;
 }
