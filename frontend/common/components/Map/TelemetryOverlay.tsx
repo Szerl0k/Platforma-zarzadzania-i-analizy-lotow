@@ -33,7 +33,10 @@ export function MapOverlay({
           <p className="font-mono text-xs uppercase tracking-widest text-ink font-bold whitespace-nowrap">
             Widoczne statki: {flightsCount}
             {totalCount !== undefined && totalCount !== flightsCount && (
-              <span className="text-ink-muted font-normal"> / {totalCount}</span>
+              <span className="text-ink-muted font-normal">
+                {" "}
+                / {totalCount}
+              </span>
             )}
           </p>
         </div>
