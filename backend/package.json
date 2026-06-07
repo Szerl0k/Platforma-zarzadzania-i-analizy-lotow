@@ -41,6 +41,7 @@
     "pg": "^8.20.0",
     "prettier": "^3.8.3",
     "typeorm": "^0.3.28",
+    "web-push": "^3.6.7",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "@types/nodemailer": "^6.4.23",
     "@types/pg": "^8.16.0",
     "@types/supertest": "^7.2.0",
+    "@types/web-push": "^3.6.4",
     "eslint": "^10.2.1",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",
