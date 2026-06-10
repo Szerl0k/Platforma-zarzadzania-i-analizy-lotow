@@ -92,26 +92,11 @@ export interface RouteCheckResult {
   connecting: ConnectingRouteDTO[];
 }
 
-export class NotFoundError extends Error {
-  statusCode = 404;
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-export class BadRequestError extends Error {
-  statusCode = 400;
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-export class UpstreamError extends Error {
-  statusCode = 502;
-  constructor(message: string) {
-    super(message);
-  }
-}
+export {
+  NotFoundError,
+  BadRequestError,
+  BadGatewayError as UpstreamError,
+} from "../common/errors/http-errors";
 
 export function airportRepo(): Repository<Airport> {
   return AppDataSource.getRepository(Airport);

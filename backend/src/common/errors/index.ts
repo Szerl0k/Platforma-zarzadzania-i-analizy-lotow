@@ -1,36 +1,24 @@
-export class FlightNotFoundError extends Error {
-  public readonly statusCode: number = 404;
+import { HttpError } from "./http-errors";
 
+export * from "./http-errors";
+
+export class FlightNotFoundError extends HttpError {
   constructor(message: string = "Flight details not found") {
-    super(message);
+    super(404, message);
     this.name = "FlightNotFoundError";
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, FlightNotFoundError);
   }
 }
 
-export class TelemetryNotFoundError extends Error {
-  public readonly statusCode: number = 404;
-
+export class TelemetryNotFoundError extends HttpError {
   constructor(message: string = "Telemetry data not found") {
-    super(message);
+    super(404, message);
     this.name = "TelemetryNotFoundError";
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, TelemetryNotFoundError);
   }
 }
 
-/**
- * Error thrown when an external API rate limit is reached. Lives in `common`
- * because it is a cross-cutting concern shared by middleware and integrations.
- */
-export class RateLimitExceededError extends Error {
-  public readonly statusCode: number = 429;
-
+export class RateLimitExceededError extends HttpError {
   constructor(message: string = "Token limit exceeded for external API") {
-    super(message);
+    super(429, message);
     this.name = "RateLimitExceededError";
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, RateLimitExceededError);
   }
 }
