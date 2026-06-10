@@ -69,7 +69,10 @@ export function mapError(err: unknown): { status: number; body: ErrorBody } {
   const errObj = err as Record<string, unknown>;
 
   if (errObj.code === "23505") {
-    return { status: 409, body: { success: false, error: "Resource already exists" } };
+    return {
+      status: 409,
+      body: { success: false, error: "Resource already exists" },
+    };
   }
   if (errObj.code === "23503") {
     return {
@@ -95,11 +98,17 @@ export function mapError(err: unknown): { status: number; body: ErrorBody } {
   if (typeof errObj.statusCode === "number") {
     return {
       status: errObj.statusCode,
-      body: { success: false, error: String(errObj.message ?? "Unknown error") },
+      body: {
+        success: false,
+        error: String(errObj.message ?? "Unknown error"),
+      },
     };
   }
 
-  return { status: 500, body: { success: false, error: "Internal Server Error" } };
+  return {
+    status: 500,
+    body: { success: false, error: "Internal Server Error" },
+  };
 }
 
 export function respondWithError(
@@ -119,7 +128,10 @@ export function respondWithError(
           body: redact(req.body),
         }
       : undefined;
-    logger.error("[Server Error]", { request: context, error: describeError(err) });
+    logger.error("[Server Error]", {
+      request: context,
+      error: describeError(err),
+    });
   }
 
   res.status(status).json(body);
