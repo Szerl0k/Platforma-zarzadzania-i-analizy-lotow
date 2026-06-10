@@ -10,12 +10,6 @@ export class HttpError extends Error {
     }
   }
 
-  /**
-   * Alias zgodności. Historycznie część błędów i handlerów używała pola
-   * `statusCode` (np. legacy klasy w modułach geo/telemetry). Po ujednoliceniu
-   * całej hierarchii do `HttpError` ten getter pozwala każdemu konsumentowi
-   * odczytać kod HTTP niezależnie od użytej nazwy pola.
-   */
   get statusCode(): number {
     return this.status;
   }

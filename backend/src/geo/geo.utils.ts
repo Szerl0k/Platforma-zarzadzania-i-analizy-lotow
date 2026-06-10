@@ -92,11 +92,6 @@ export interface RouteCheckResult {
   connecting: ConnectingRouteDTO[];
 }
 
-// Błędy współdzielone z kanoniczną hierarchią `common/errors` (HttpError).
-// Wcześniej moduł geo definiował własne `NotFoundError`/`BadRequestError`
-// (z polem `statusCode`), kolidujące nazwą z klasami w `common/errors`.
-// Re-eksport eliminuje tę kolizję, zachowując dotychczasowe miejsca użycia
-// (`new NotFoundError(...)`, `new UpstreamError(...)` w serwisach geo).
 export {
   NotFoundError,
   BadRequestError,
