@@ -40,6 +40,10 @@ function setAuthCookies(
     secure: isProduction,
     sameSite: "strict",
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    // UWAGA: ścieżka celowo zawęża wysyłkę tokenu odświeżającego do endpointów
+    // uwierzytelniania. Z perspektywy przeglądarki są one pod `/api/auth/*`,
+    // bo frontend (Next.js, next.config.js) przepisuje `/api/:path*` ->
+    // `/api/v1/:path*`. Zmiana tej reguły rewrite wymaga aktualizacji tej ścieżki.
     path: "/api/auth",
   });
 }

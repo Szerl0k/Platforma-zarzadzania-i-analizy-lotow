@@ -92,26 +92,16 @@ export interface RouteCheckResult {
   connecting: ConnectingRouteDTO[];
 }
 
-export class NotFoundError extends Error {
-  statusCode = 404;
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-export class BadRequestError extends Error {
-  statusCode = 400;
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-export class UpstreamError extends Error {
-  statusCode = 502;
-  constructor(message: string) {
-    super(message);
-  }
-}
+// Błędy współdzielone z kanoniczną hierarchią `common/errors` (HttpError).
+// Wcześniej moduł geo definiował własne `NotFoundError`/`BadRequestError`
+// (z polem `statusCode`), kolidujące nazwą z klasami w `common/errors`.
+// Re-eksport eliminuje tę kolizję, zachowując dotychczasowe miejsca użycia
+// (`new NotFoundError(...)`, `new UpstreamError(...)` w serwisach geo).
+export {
+  NotFoundError,
+  BadRequestError,
+  BadGatewayError as UpstreamError,
+} from "../common/errors/http-errors";
 
 export function airportRepo(): Repository<Airport> {
   return AppDataSource.getRepository(Airport);
