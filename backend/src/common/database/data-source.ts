@@ -14,7 +14,6 @@ import { AirportRoute } from "../../geo/entities/AirportRoute";
 import { FlightStatus } from "../../flights/entities/FlightStatus";
 import { Flight } from "../../flights/entities/Flight";
 import { FlightCodeshare } from "../../flights/entities/FlightCodeshare";
-import { SimulationStatus } from "../../flights/entities/SimulationStatus";
 import { FlightChangeType } from "../../flights/entities/FlightChangeType";
 import { FlightStatusChange } from "../../flights/entities/FlightStatusChange";
 
@@ -37,9 +36,6 @@ import { FlightHistory } from "../../tracking/entities/FlightHistory";
 import { FavouriteDestination } from "../../tracking/entities/FavouriteDestination";
 import { NotificationLog } from "../../tracking/entities/NotificationLog";
 import { PushSubscription } from "../../tracking/entities/PushSubscription";
-
-// Simulations entities
-import { CustomFlightSimulation } from "../../simulations/entities/CustomFlightSimulation";
 
 // Integrations entities
 import { ApiUsageLog } from "../integrations/usage/ApiUsageLog";
@@ -73,8 +69,6 @@ export const AppDataSource = new DataSource({
     UserPreferences,
     FlightHistory,
     FavouriteDestination,
-    SimulationStatus,
-    CustomFlightSimulation,
     TrackingStatus,
     TrackingSource,
     TrackedFlight,

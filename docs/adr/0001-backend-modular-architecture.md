@@ -78,7 +78,6 @@ backend/src/
 │   └── entities/          (Flight, FlightStatus, FlightCodeshare, FlightTelemetry,
 │                           FlightHistory, FlightStatusChange, FlightChangeType,
 │                           TrackedFlight, TrackingStatus, TrackingSource,
-│                           CustomFlightSimulation, SimulationStatus,
 │                           FavouriteDestination)
 └── geo/                           # mały moduł — uproszczony układ
     └── entities/          (Airport, City, Country, Airline)
