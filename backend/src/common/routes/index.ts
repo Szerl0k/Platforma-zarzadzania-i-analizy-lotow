@@ -37,13 +37,25 @@ apiRouter.get("/csrf-token", (req: Request, res: Response) => {
 apiRouter.use("/auth", authRoutes);
 
 // Protected routes
-apiRouter.use("/users/me/preferences", authenticate, preferencesRoutes);
-apiRouter.use("/users", authenticate, userRoutes);
+apiRouter.use(
+  "/users/me/preferences",
+  apiRateLimiter,
+  authenticate,
+  preferencesRoutes,
+);
+apiRouter.use("/users", apiRateLimiter, authenticate, userRoutes);
 
 // Admin routes
-apiRouter.use("/roles", authenticate, authorize("roles:write"), roleRoutes);
+apiRouter.use(
+  "/roles",
+  apiRateLimiter,
+  authenticate,
+  authorize("roles:write"),
+  roleRoutes,
+);
 apiRouter.use(
   "/permissions",
+  apiRateLimiter,
   authenticate,
   authorize("permissions:write"),
   permissionRoutes,
