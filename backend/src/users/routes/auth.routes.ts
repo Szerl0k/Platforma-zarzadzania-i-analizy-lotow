@@ -1,6 +1,9 @@
 import { Router, Request, Response } from "express";
 import { handleHttpError } from "../../common/errors/handle";
-import { authRateLimiter } from "../../common/middleware/rateLimiter";
+import {
+  authRateLimiter,
+  apiRateLimiter,
+} from "../../common/middleware/rateLimiter";
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   REFRESH_TOKEN_MAX_AGE_MS,
@@ -80,6 +83,7 @@ router.post(
 
 router.post(
   "/verify-email",
+  authRateLimiter,
   async (req: Request, res: Response): Promise<void> => {
     try {
       await verifyEmail(req.body.token);
@@ -125,26 +129,34 @@ router.post(
   },
 );
 
-router.post("/refresh", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const result = await rotateRefreshToken(req.cookies?.refresh_token);
-    setAuthCookies(res, result.accessToken, result.rawRefreshToken);
-    res.json({ user: result.user });
-  } catch (err: unknown) {
-    handleHttpError(err, res);
-  }
-});
+router.post(
+  "/refresh",
+  apiRateLimiter,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await rotateRefreshToken(req.cookies?.refresh_token);
+      setAuthCookies(res, result.accessToken, result.rawRefreshToken);
+      res.json({ user: result.user });
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
 
-router.post("/logout", async (req: Request, res: Response): Promise<void> => {
-  try {
-    await logoutUser(req.cookies?.refresh_token);
-    res.clearCookie("access_token", { path: "/" });
-    res.clearCookie("refresh_token", { path: "/api/auth" });
-    res.json({ message: "Logged out" });
-  } catch (err: unknown) {
-    handleHttpError(err, res);
-  }
-});
+router.post(
+  "/logout",
+  apiRateLimiter,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      await logoutUser(req.cookies?.refresh_token);
+      res.clearCookie("access_token", { path: "/" });
+      res.clearCookie("refresh_token", { path: "/api/auth" });
+      res.json({ message: "Logged out" });
+    } catch (err: unknown) {
+      handleHttpError(err, res);
+    }
+  },
+);
 
 router.post(
   "/forgot-password",
@@ -163,6 +175,7 @@ router.post(
 
 router.post(
   "/reset-password",
+  authRateLimiter,
   async (req: Request, res: Response): Promise<void> => {
     try {
       await resetPassword({

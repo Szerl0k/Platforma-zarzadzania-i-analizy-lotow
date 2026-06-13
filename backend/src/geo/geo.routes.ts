@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, authorize } from "../common/middleware/auth";
+import { geoRateLimiter } from "../common/middleware/rateLimiter";
 import {
   createAirline,
   createAirport,
@@ -21,6 +22,7 @@ import {
 } from "./geo.service";
 
 const router = Router();
+router.use(geoRateLimiter);
 
 function asyncHandler(
   fn: (req: Request, res: Response, next: NextFunction) => Promise<void>,

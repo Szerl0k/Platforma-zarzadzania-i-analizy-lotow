@@ -2,6 +2,7 @@ import { Router } from "express";
 import { FlightsService } from "./flights.service";
 import { asyncHandler } from "../common/utils/asyncHandler";
 import { authenticate, authorize } from "../common/middleware/auth";
+import { flightsRateLimiter } from "../common/middleware/rateLimiter";
 import {
   FlightDetailsQuerySchema,
   FlightListQuerySchema,
@@ -10,6 +11,7 @@ import {
 } from "./flights.dto";
 
 const router = Router();
+router.use(flightsRateLimiter);
 const flightService = new FlightsService();
 
 /**
