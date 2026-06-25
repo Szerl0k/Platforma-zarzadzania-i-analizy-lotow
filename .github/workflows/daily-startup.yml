@@ -1,8 +1,8 @@
 name: daily-startup.yml
 on:
   schedule:
-    # 10:00 AM CET
-    - cron: '0 9 * * *'
+    # 04:00 UTC (6:00 AM CEST) 
+    - cron: '0 4 * * *'
   workflow_dispatch:
 permissions:
   id-token: write
